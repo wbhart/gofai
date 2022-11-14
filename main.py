@@ -1,7 +1,8 @@
 import curses
+from curses import wrapper
 import interface.console
 
-def main():
+def main(stdscr):
     win1, win2 = interface.console.init_console()
 
     main_window = win1
@@ -18,4 +19,4 @@ def main():
 
     interface.console.exit_console()
 
-main()
+wrapper(main)
