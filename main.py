@@ -9,14 +9,14 @@ def main(stdscr):
 
     while True:
         c = main_window.getkey()
-        if c == '\t':
+        if c == '\t': # TAB = switch windows
             main_window = win2 if main_window == win1 else win1
             main_window.refresh()
-        elif c == 'q':
+        elif c == 'q': # q = quit
             break
         else:
             continue
 
     interface.console.exit_console()
 
-wrapper(main)
+wrapper(main) # curses wrapper handles exceptions

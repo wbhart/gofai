@@ -7,15 +7,17 @@ def init_console():
     curses.cbreak() # don't wait for enter key upon input
     stdscr.keypad(True) # make it easier to read the keypad
 
+    # compute width and height of windows
     width = curses.COLS
     height = curses.LINES
     win1_height = height//2
     win2_height = height//2
 
-    # divide the screen into two windows less than half the height
+    # divide the screen into two windows half the height
     win1 = curses.newwin(win1_height, width, 0, 0)
     win2 = curses.newwin(win2_height, width, win1_height - 1, 0)
     
+    # print borders on the windows
     win1.border(curses.ACS_VLINE, curses.ACS_VLINE,
                 curses.ACS_HLINE, curses.ACS_HLINE,
                 curses.ACS_ULCORNER, curses.ACS_URCORNER,
@@ -25,9 +27,11 @@ def init_console():
                 curses.ACS_LTEE, curses.ACS_RTEE,
                 curses.ACS_LLCORNER, curses.ACS_LRCORNER)
 
+    # move the cursors inside the window boxes
     win1.move(1, 1)
     win2.move(1, 1)
 
+    # redraw everything
     win2.refresh()
     win1.refresh()
 
