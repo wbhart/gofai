@@ -85,7 +85,29 @@ def edit(window, start_text, buffer_length):
 
     while True:
         c = stdscr.getkey()
-        if c == "KEY_IC": # insert key
+        if c == "KEY_RIGHT":
+            if cursor < width - 1:
+                if i < len(new_text):
+                    cursor += 1
+                    i += 1
+                    window.move(0, cursor)
+            else: # cursor = width - 1
+                if i < len(new_text):
+                    i += 1
+                    redraw_line(window, new_text, i - cursor, width - 1)
+            window.refresh()
+        elif c == "KEY_LEFT":
+            if cursor > 0:
+                cursor -= 1
+                i -= 1
+                window.move(0, cursor)
+            else: # cursor = 0
+                if i > 0:
+                    i -= 1
+                    redraw_line(window, new_text, i - cursor, width - 1)
+                    window.move(0, cursor)
+            window.refresh()
+        elif c == "KEY_IC": # insert key
             mode = EditMode.REPLACE if mode == EditMode.INSERT else EditMode.INSERT
         elif c == "\n": # enter key, KEY_ENTER is apparently unreliable
             window.clear()
