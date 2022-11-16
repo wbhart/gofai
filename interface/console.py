@@ -69,6 +69,9 @@ def process_char(window, new_text, i, cursor, width, mode, c):
         window.refresh()
     else: # INSERT
         new_text.insert(i, c)
+        i += 1
+        if cursor < width - 1:
+            cursor += 1
         redraw_line(window, new_text, i - cursor, width - 1)
         window.move(0, cursor)
         window.refresh()
@@ -107,6 +110,20 @@ def edit(window, start_text, buffer_length):
                     redraw_line(window, new_text, i - cursor, width - 1)
                     window.move(0, cursor)
             window.refresh()
+        elif c == "KEY_BACKSPACE":
+            if cursor == 0:
+                if i > 0:
+                    i -= 1
+                    del new_text[i]
+            else: # cursor > 0
+                i -= 1
+                del new_text[i]
+                cursor -= 1
+                redraw_line(window, new_text, i - cursor, width - 1)
+                if i - cursor + width - 1 > len(new_text):
+                    window.addstr(0, cursor + len(new_text) - i, " ")    
+                window.move(0, cursor)
+                window.refresh()
         elif c == "KEY_IC": # insert key
             mode = EditMode.REPLACE if mode == EditMode.INSERT else EditMode.INSERT
         elif c == "\n": # enter key, KEY_ENTER is apparently unreliable
