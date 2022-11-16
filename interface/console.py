@@ -124,6 +124,15 @@ def edit(window, start_text, buffer_length):
                     window.addstr(0, cursor + len(new_text) - i, " ")    
                 window.move(0, cursor)
                 window.refresh()
+        elif c == "KEY_DC": # delete key
+            if i < len(new_text):
+                del new_text[i]
+                if cursor < width - 1:
+                    redraw_line(window, new_text, i - cursor, width - 1)
+                    if i - cursor + width - 1 > len(new_text):
+                        window.addstr(0, cursor + len(new_text) - i, " ")
+                    window.move(0, cursor)
+                    window.refresh()
         elif c == "KEY_IC": # insert key
             mode = EditMode.REPLACE if mode == EditMode.INSERT else EditMode.INSERT
         elif c == "\n": # enter key, KEY_ENTER is apparently unreliable
