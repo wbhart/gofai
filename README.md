@@ -14,7 +14,7 @@ python main.py
 
 Interface commands:
 
-* <TAB> = switch windows
+* &lt;TAB&gt; = switch windows
 * e = edit mode
 
 Editor commands:
