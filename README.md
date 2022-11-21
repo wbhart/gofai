@@ -19,11 +19,11 @@ Interface commands:
 
 Editor commands:
 
-* <INS> = insert/replace
-* <DEL> = delete char under cursor
-* <BACKSPACE> = delete character before cursor
-* <LEFT>/<RIGHT> = move cursor
-* <ENTER> = finish editing
+* &lt;INS&gt; = insert/replace
+* &lt;DEL&gt; = delete char under cursor
+* &lt;BACKSPACE&gt; = delete character before cursor
+* &lt;LEFT&gt;/&lt;RIGHT&gt; = move cursor
+* &lt;ENTER&gt; = finish editing
 
 There is currently also a parser, but it is not hooked up to the editor. To run it, go into
 the parser directory, run Python and type:
