@@ -8,7 +8,7 @@ To install parsimonious:
 
 pip install parsimonious
 
-To run the editor:
+To run the interface (doesn't do much yet):
 
 python main.py
 
