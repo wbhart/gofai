@@ -34,6 +34,6 @@ input_parser.parse_input()
 
 A prompt will be displayed at which you can type an input to be parsed, e.g.
 
-(3 + 7k^4) - 7j = (8k + f(7s + 1)) + 3k - 1 \wedge 4k > f(23 + k, 3k^3)
+\forall x \exists k \neg((3 + 7k^4) - 7j = (8k + f(7s + 1)) + 3k - 1 \wedge 4k > f(23 + k, 3k^3) \implies x = 3k)
 
 
