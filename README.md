@@ -16,6 +16,7 @@ Interface commands:
 
 * &lt;TAB&gt; = switch windows
 * e = edit mode
+* q = quit
 
 Editor commands:
 
