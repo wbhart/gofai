@@ -1,9 +1,10 @@
 import curses
 from curses import wrapper
-import interface.console
+from interface.console import init_console, exit_console, edit
+from parser.input_parser import parse_hypothesis
 
 def main(stdscr):
-    win1, win2, win3 = interface.console.init_console()
+    win1, win2, win3 = init_console()
 
     main_window = win1
 
@@ -15,11 +16,13 @@ def main(stdscr):
         elif c == 'q': # q = quit
             break
         elif c == 'e': # e = edit
-            interface.console.edit(win3, [], 1000)
+            text_chars = edit(win3, []) # get characters from edit window
+            text = ''.join(text_chars) # join the list of chars together to make a string
             main_window.refresh()
+            ast = parse_hypothesis.parse(text) # parse input
         else:
             continue
 
-    interface.console.exit_console()
+    exit_console()
 
 wrapper(main) # curses wrapper handles exceptions

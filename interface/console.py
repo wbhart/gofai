@@ -77,7 +77,7 @@ def process_char(window, new_text, i, cursor, width, mode, c):
         window.refresh()
     return i, cursor
        
-def edit(window, start_text, buffer_length):
+def edit(window, start_text):
     window.refresh()
     mode = EditMode.REPLACE
     new_text = start_text.copy()

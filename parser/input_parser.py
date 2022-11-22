@@ -27,7 +27,3 @@ parse_hypothesis = Grammar(
     space = ~"\s*"
     """)
 
-def parse_input():
-    inp = input('Enter expression: ')
-    print(parse_hypothesis.parse(inp))
-
