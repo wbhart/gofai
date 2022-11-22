@@ -1,7 +1,27 @@
 import curses
 from curses import wrapper
-from interface.console import init_console, exit_console, edit
+from interface.console import init_console, exit_console, edit, report, clear_line, wait_for_key
 from parser.input_parser import parse_hypothesis
+from parsimonious import exceptions
+
+def get_text(main_window, win3):
+    string = ""
+    index = 0 # index in current string to start editing
+    while True:
+        clear_line(win3, 0)
+        string = edit(win3, string, index) # get characters from edit window
+        # main_window.refresh()
+        try:
+            ast = parse_hypothesis.parse(string) # parse input
+            break
+        except exceptions.IncompleteParseError as inst:
+            index = inst.args[1]
+            report(win3, "Extra characters on line, starting at column "+str(index + 1)+". Press ENTER to continue")
+            wait_for_key("\n")
+        except exceptions.ParseError as inst:
+            index = inst.pos
+            report(win3, "Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
+            wait_for_key("\n")
 
 def main(stdscr):
     win1, win2, win3 = init_console()
@@ -16,10 +36,8 @@ def main(stdscr):
         elif c == 'q': # q = quit
             break
         elif c == 'e': # e = edit
-            text_chars = edit(win3, []) # get characters from edit window
-            text = ''.join(text_chars) # join the list of chars together to make a string
+            get_text(main_window, win3)
             main_window.refresh()
-            ast = parse_hypothesis.parse(text) # parse input
         else:
             continue
 

@@ -77,14 +77,15 @@ def process_char(window, new_text, i, cursor, width, mode, c):
         window.refresh()
     return i, cursor
        
-def edit(window, start_text):
+def edit(window, start_text, i):
     window.refresh()
-    mode = EditMode.REPLACE
-    new_text = start_text.copy()
-    i = 0 # index in text buffer
-    cursor = 0 # cursor position in line
-    window.move(0, 0)
+    mode = EditMode.INSERT
+    new_text = list(start_text)
     (_, width) = window.getmaxyx() # get width of window display
+    cursor = min(i, width - 1)
+    redraw_line(window, new_text, i - cursor, width - 1)
+    window.move(0, cursor)
+    window.refresh()
 
     while True:
         c = stdscr.getkey()
@@ -138,9 +139,25 @@ def edit(window, start_text):
         elif c == "\n": # enter key, KEY_ENTER is apparently unreliable
             window.clear()
             window.refresh()
-            return new_text
+            return ''.join(new_text)
         elif len(c) == 1: # and curses.ascii.isgraph(ord(c)):
             i, cursor = process_char(window, new_text, i, cursor, width, mode, c)
         else:
             continue
-    
+
+def clear_line(window, line):
+    (_, width) = window.getmaxyx() # get width of window display
+    window.addstr(line, 0, ' '*(width - 1))
+    window.move(line, 0)
+    window.refresh()
+
+def report(window, string):
+    clear_line(window, 0)
+    window.addstr(0, 0, string)
+    window.refresh()
+
+def wait_for_key(key):
+     while True:
+        c = stdscr.getkey()
+        if c == key:
+            return      
