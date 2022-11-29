@@ -50,8 +50,10 @@ def exit_console():
 
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
-def redraw_line(window, new_text, start, width):
-    window.move(0, 0)
+def redraw_line(window, line, new_text, start, width, border=False):
+    startx = 1 if border else 0
+    line += (1 if border else 0)
+    window.move(line, startx)
     for j in range(width):
         if start + j < len(new_text):
             window.addstr(new_text[start + j])
@@ -64,7 +66,7 @@ def process_char(window, new_text, i, cursor, width, mode, c):
             window.addstr(c)
             cursor += 1
         else:
-            redraw_line(window, new_text, i - width + 1, width - 1)
+            redraw_line(window, 0, new_text, i - width + 1, width - 1)
             window.addstr(0, width - 2, c)
         window.refresh()
     else: # INSERT
@@ -72,7 +74,7 @@ def process_char(window, new_text, i, cursor, width, mode, c):
         i += 1
         if cursor < width - 1:
             cursor += 1
-        redraw_line(window, new_text, i - cursor, width - 1)
+        redraw_line(window, 0, new_text, i - cursor, width - 1)
         window.move(0, cursor)
         window.refresh()
     return i, cursor
@@ -83,7 +85,7 @@ def edit(window, start_text, i):
     new_text = list(start_text)
     (_, width) = window.getmaxyx() # get width of window display
     cursor = min(i, width - 1)
-    redraw_line(window, new_text, i - cursor, width - 1)
+    redraw_line(window, 0, new_text, i - cursor, width - 1)
     window.move(0, cursor)
     window.refresh()
 
@@ -98,7 +100,7 @@ def edit(window, start_text, i):
             else: # cursor = width - 1
                 if i < len(new_text):
                     i += 1
-                    redraw_line(window, new_text, i - cursor, width - 1)
+                    redraw_line(window, 0, new_text, i - cursor, width - 1)
             window.refresh()
         elif c == "KEY_LEFT":
             if cursor > 0:
@@ -108,7 +110,7 @@ def edit(window, start_text, i):
             else: # cursor = 0
                 if i > 0:
                     i -= 1
-                    redraw_line(window, new_text, i - cursor, width - 1)
+                    redraw_line(window, 0, new_text, i - cursor, width - 1)
                     window.move(0, cursor)
             window.refresh()
         elif c == "KEY_BACKSPACE":
@@ -120,7 +122,7 @@ def edit(window, start_text, i):
                 i -= 1
                 del new_text[i]
                 cursor -= 1
-                redraw_line(window, new_text, i - cursor, width - 1)
+                redraw_line(window, 0, new_text, i - cursor, width - 1)
                 if i - cursor + width - 1 > len(new_text):
                     window.addstr(0, cursor + len(new_text) - i, " ")    
                 window.move(0, cursor)
@@ -129,7 +131,7 @@ def edit(window, start_text, i):
             if i < len(new_text):
                 del new_text[i]
                 if cursor < width - 1:
-                    redraw_line(window, new_text, i - cursor, width - 1)
+                    redraw_line(window, 0, new_text, i - cursor, width - 1)
                     if i - cursor + width - 1 > len(new_text):
                         window.addstr(0, cursor + len(new_text) - i, " ")
                     window.move(0, cursor)
@@ -145,10 +147,15 @@ def edit(window, start_text, i):
         else:
             continue
 
-def clear_line(window, line):
+def clear_line(window, line, border=False):
     (_, width) = window.getmaxyx() # get width of window display
-    window.addstr(line, 0, ' '*(width - 1))
-    window.move(line, 0)
+    start = 0 # starting x position
+    if border:
+        width -= 1
+        start += 1
+        line += 1
+    window.addstr(line, start, ' '*(width - 1))
+    window.move(line, start)
     window.refresh()
 
 def report(window, string):
@@ -160,4 +167,44 @@ def wait_for_key(key):
      while True:
         c = stdscr.getkey()
         if c == key:
-            return      
+            return
+
+def redraw(window, pad):
+    (height, width) = window.getmaxyx() # get width of window display
+    width -= 2 # account for border
+    height -= 2
+    shift = pad.line - pad.cursor_line
+    for i in range(0, height):
+        clear_line(window, i, True)
+        if i + shift < pad.len():
+            redraw_line(window, i, pad.data[i + shift][0], pad.i - pad.cursor, width - 1, True)
+    window.move(pad.cursor_line + 1, pad.cursor + 1)
+
+class Pad:
+    def __init__(self):
+        self.data = []
+        self.line = 0
+        self.cursor = 0
+        self.cursor_line = 0 # account for border
+        self.i = 0
+
+    def __setitem__(self, key, value):
+        if key == len(self.data):
+            self.data.append(value)
+        else:
+            self.data[key] = value
+
+    def len(self):
+        return len(self.data)
+
+    def adjust(self):
+        if self.line == len(self.data): # if we are on the final blank line
+            self.i = 0
+            self.cursor = 0
+        else:
+            data = self.data[self.line]
+            line_length = len(data[0])
+            if self.i > line_length: # character is beyond end of text
+                self.i = line_length
+                self.cursor = min(self.cursor, self.i)
+
