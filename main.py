@@ -36,23 +36,31 @@ def main(stdscr):
         if c == '\t': # TAB = switch window focus (and associated pad)
             main_window = win2 if main_window == win1 else win1
             main_pad = pad2 if main_pad == pad1 else pad1
-            main_window.refresh()
+            main_window.refresh() # tell curses to update display (moves the cursor)
         elif c == 'q': # q = quit
             break
         elif c == 'e': # e = edit
-            main_pad[main_pad.line] = get_text(main_window, win3)
-            main_pad.adjust()
-            redraw(main_window, main_pad)
-            main_window.refresh()
+            main_pad[main_pad.line] = get_text(main_window, win3) # get text from user and parse
+            main_pad.adjust() # line might now be shorter, so adjust window it is being inserted in
+            redraw(main_window, main_pad) # redraw the window
+            main_window.refresh() # tell curses it can now update display
         elif c == 'KEY_DOWN':
-            if main_pad.line < main_pad.len():
+            if main_pad.line < main_pad.len(): # if we are not on the last line of data
                 height, width = main_window.getmaxyx()
-                if main_pad.cursor_line < height - 3:
+                if main_pad.cursor_line < height - 3: # if the cursor is not at the bottom of window
                     main_pad.cursor_line += 1
-                main_pad.line += 1
-                main_pad.adjust()
-                redraw(main_window, main_pad)
-                main_window.refresh()
+                main_pad.line += 1 # move down one in the data
+                main_pad.adjust() # new cursor line might be shorter, so adjust window
+                redraw(main_window, main_pad) # redraw the window
+                main_window.refresh() # tell curses it can now update display
+        elif c == 'KEY_UP':
+            if main_pad.line > 0: # if we are not on the first line of data
+                if main_pad.cursor_line > 0: # if the cursor is not on first line of window
+                    main_pad.cursor_line -= 1
+                main_pad.line -= 1 # move up one line in the data
+                main_pad.adjust() # new cursor line might be shorter, so adjust window
+                redraw(main_window, main_pad) # redraw the window
+                main_window.refresh() # tell curses it can now update display
         else:
             continue
 
