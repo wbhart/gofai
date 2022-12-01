@@ -61,6 +61,25 @@ def main(stdscr):
                 main_pad.adjust() # new cursor line might be shorter, so adjust window
                 redraw(main_window, main_pad) # redraw the window
                 main_window.refresh() # tell curses it can now update display
+        elif c == 'KEY_RIGHT':
+            if main_pad.i < len((main_pad.data[main_pad.line])[0]):
+                _, width = main_window.getmaxyx()
+                main_pad.i += 1
+                if main_pad.cursor < width - 3:
+                    main_pad.cursor += 1
+                    main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
+                else:
+                    redraw(main_window, main_pad)
+                main_window.refresh()
+        elif c == 'KEY_LEFT':
+            if main_pad.i > 0:
+                main_pad.i -= 1
+                if main_pad.cursor > 0:
+                    main_pad.cursor -= 1
+                    main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
+                else:
+                    redraw(main_window, main_pad)
+                main_window.refresh()
         else:
             continue
 
