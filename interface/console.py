@@ -257,6 +257,7 @@ class Pad:
             data = self.data[self.line]
             line_length = len(data[0])
             if self.i > line_length: # character is beyond end of text
+                shift = self.i - self.cursor
+                self.cursor = min(self.cursor, max(line_length - shift, 0))
                 self.i = line_length # adjust to end of text in current line
-                self.cursor = min(self.cursor, self.i)
 
