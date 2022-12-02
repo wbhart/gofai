@@ -62,12 +62,12 @@ def redraw_line(window, line, new_text, start, width, border=False):
     border, which caller must do. Note the existing line is not cleared by
     this function so if width is less than the width of the display area then
     additional characters may be left behind."""
-    startx = 1 if border else 0
-    line += (1 if border else 0)
-    window.move(line, startx)
+    startx = 1 if border else 0 # starting x position on line (border aware)
+    line += (1 if border else 0) # line in the window (border aware)
+    window.move(line, startx) # move cursor to start position
     for j in range(width):
-        if start + j < len(new_text):
-            window.addstr(new_text[start + j])
+        if start + j < len(new_text): # check there's text for that posn.
+            window.addstr(new_text[start + j]) # write the text if so
    
 def process_char(window, new_text, i, cursor, width, mode, c):
     """Deal with a character 'c' entered by the user, i.e. display it in the

@@ -62,26 +62,26 @@ def main(stdscr):
                 redraw(main_window, main_pad) # redraw the window
                 main_window.refresh() # tell curses it can now update display
         elif c == 'KEY_RIGHT':
-            if main_pad.i < len((main_pad.data[main_pad.line])[0]):
-                _, width = main_window.getmaxyx()
-                main_pad.i += 1
-                if main_pad.cursor < width - 3:
-                    main_pad.cursor += 1
+            if main_pad.i < len((main_pad.data[main_pad.line])[0]): # if theres text to the right
+                _, width = main_window.getmaxyx() # get width of window
+                main_pad.i += 1 # increment text pointer
+                if main_pad.cursor < width - 3: # if we aren't at the right of window
+                    main_pad.cursor += 1 # increment cursor position and move there
                     main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
-                else:
-                    redraw(main_window, main_pad)
+                else: # we are at the right of the window
+                    redraw(main_window, main_pad) # redraw entire window (scroll)
                 main_window.refresh()
         elif c == 'KEY_LEFT':
-            if main_pad.i > 0:
-                main_pad.i -= 1
-                if main_pad.cursor > 0:
-                    main_pad.cursor -= 1
+            if main_pad.i > 0: # if we aren't at the beginning of the text
+                main_pad.i -= 1 # decrement text position
+                if main_pad.cursor > 0: # if cursor isn't at beginning of line
+                    main_pad.cursor -= 1 # decrement cursor posn. and move there
                     main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
-                else:
-                    redraw(main_window, main_pad)
-                main_window.refresh()
+                else: # we are at left of window
+                    redraw(main_window, main_pad) # redraw entire window (scroll)
+                main_window.refresh() # update display
         else:
-            continue
+            continue # ignore any other keys
 
     exit_console()
 
