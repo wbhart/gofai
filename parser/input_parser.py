@@ -1,5 +1,7 @@
 from parsimonious.grammar import Grammar
 
+# TODO: add \sum, \integral, subscripts (incl. braces)
+
 parse_hypothesis = Grammar(
     """
     hypothesis = type_hypothesis / substantive_hypothesis
