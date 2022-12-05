@@ -7,13 +7,20 @@ parse_hypothesis = Grammar(
     type_decl = dep_type / type_name
     dep_type = type_name "(" var ")"
     type_name = ~"[A-Z][A-Za-z]*"
-    substantive_hypothesis = existential / universal / hypothesis_body
-    hypothesis_body = space expression
+    substantive_hypothesis = existential / universal / expression
     existential = "\\\\exists" space var space substantive_hypothesis
     universal = "\\\\forall" space var space substantive_hypothesis
     expression = (and_expression space "\\\\implies" space)* and_expression
     and_expression = (relation space ("\\\\wedge" / "\\\\vee") space)* relation
-    relation = (add_expression space ("<" / ">" / "\\\\leq" / "\\\\geq" / "=" / "\\\\neq") space)* add_expression
+    relation = elem_relation / subset_relation / alg_relation
+    subset_relation = (set_expression space ("\\\\subset" / "\\\\subseteq" / "\\\\supset" / "\\\\supseteq") space)+ set_expression
+    elem_relation = add_expression space "\\\\in" space set_expression
+    set_expression = set_diff / set_union
+    set_diff = set_union space "\\\\setminus" space set_union
+    set_union = (set space ("\\\\cup" / "\\\\cap") space)* set
+    set = set_paren / var
+    set_paren = "(" set_expression ")"
+    alg_relation = (add_expression space ("<" / ">" / "\\\\leq" / "\\\\geq" / "=" / "\\\\neq") space)* add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2
     mult_expression1 = const mult_expression2
