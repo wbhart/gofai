@@ -6,27 +6,27 @@ from pprint import pprint
 # TODO: add proper node objects instead of lists
 
 parse_hypothesis = Grammar(
-    """
+    r"""
     hypothesis = type_hypothesis / substantive_hypothesis
     type_hypothesis = var space ":" space type_decl
     type_decl = dep_type / type_name
     dep_type = type_name "(" var ")"
     type_name = ~"[A-Z][A-Za-z]*"
     substantive_hypothesis = existential / universal / neg_expression
-    existential = "\\\\exists" space var space substantive_hypothesis
-    universal = "\\\\forall" space var space substantive_hypothesis
-    neg_expression = ("\\\\neg" space)? expression
-    expression = (and_expression space ("\\\\implies" / "\\\\leftrightarrow") space)* and_expression
-    and_expression = (relation space ("\\\\wedge" / "\\\\vee") space)* relation
+    existential = "\\exists" space var space substantive_hypothesis
+    universal = "\\forall" space var space substantive_hypothesis
+    neg_expression = ("\\neg" space)? expression
+    expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
+    and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = elem_relation / subset_relation / alg_relation
-    subset_relation = (set_expression space ("\\\\subseteq" / "\\\\subset" / "\\\\supseteq" / "\\\\supset") space)+ set_expression
-    elem_relation = add_expression space "\\\\in" space set_expression
+    subset_relation = (set_expression space ("\\subseteq" / "\\subset" / "\\supseteq" / "\\supset") space)+ set_expression
+    elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
-    set_diff = set_union space "\\\\setminus" space set_union
-    set_union = (set space ("\\\\cup" / "\\\\cap") space)* set
+    set_diff = set_union space "\\setminus" space set_union
+    set_union = (set space ("\\cup" / "\\cap") space)* set
     set = set_paren / var
     set_paren = "(" set_expression ")"
-    alg_relation = (add_expression space ("<" / ">" / "\\\\leq" / "\\\\geq" / "=" / "\\\\neq") space)? add_expression
+    alg_relation = (add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space)? add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2
     mult_expression1 = const mult_expression2
