@@ -1,9 +1,13 @@
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
 from pprint import pprint
+from parser.ast import AddNode, AndNode, ConstNode, DepNode, DiffNode, DivNode, \
+     ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, GtNode, \
+     IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, NegNode, \
+     NeqNode, OrNode, ParenNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
+     SupseteqNode, TypeNode, UnionNode, VarNode
 
-# TODO: add \sum, \integral, subscripts (incl. braces)
-# TODO: add proper node objects instead of lists
+# TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
 parse_hypothesis = Grammar(
     r"""
@@ -34,11 +38,35 @@ parse_hypothesis = Grammar(
     exp_expression = terminal (space "^" space terminal)*
     terminal = paren_expression / fn_application / const / var
     paren_expression = "(" neg_expression ")"
-    fn_application = var "(" (add_expression space "," space)* add_expression ")"
+    fn_application = name "(" (add_expression space "," space)* add_expression ")"
     const = "-"? ~"[1-9][0-9]*"
+    name = ~"[a-z][a-z0-9_]*"
     var = ~"[A-Za-z_][A-Za-z0-9_]*"
     space = ~"\s*"
     """)
+
+node_dict = {
+    "+" : AddNode,
+    "-" : SubNode,
+    "*" : MulNode,
+    "/" : DivNode,
+    "<" : LtNode,
+    ">" : GtNode,
+    "\\leq" : LeqNode,
+    "\\geq" : GeqNode,
+    "=" : EqNode,
+    "\\neq" : NeqNode,
+    "\\wedge" : AndNode,
+    "\\vee" : OrNode,
+    "\\implies" : ImpliesNode,
+    "\\leftrightarrow" : IffNode,
+    "\\cup" : UnionNode,
+    "\\cap" : IntersectNode,
+    "\\subset" : SubsetNode,
+    "\\subseteq" : SubseteqNode,
+    "\\supset" : SupsetNode,
+    "\\supseteq" : SupseteqNode
+}
 
 def left_rec(L, v):
     """Turn a list L and final value v into a tree. Each element of the list
@@ -46,7 +74,8 @@ def left_rec(L, v):
     """
     if hasattr(L, '__getitem__') and len(L) > 0:
         x = L.pop()
-        return [x[2][0].text, left_rec(L, x[0]), v]
+        Node = node_dict[x[2][0].text]
+        return Node(left_rec(L, x[0]), v)
     else:
         return v
 
@@ -59,17 +88,17 @@ class HypothesisVisitor(NodeVisitor):
     def visit_type_decl(self, node, visited_children):
         return visited_children[0]
     def visit_type_hypothesis(self, node, visited_children):
-        return ['type', visited_children[0], visited_children[4]]
+        return TypeNode(visited_children[0], visited_children[4])
     def visit_dep_type(self, node, visited_children):
-        return ['dep', visited_children[0], visited_children[2]]
+        return DepNode(visited_children[0], visited_children[2])
     def visit_type_name(self, node, visited_children):
         return node.text
     def visit_substantive_hypothesis(self, node, visited_children):
         return visited_children[0]
     def visit_universal(self, node, visited_children):
-        return ['\\forall', visited_children[2], visited_children[4]]
+        return ForallNode(visited_children[2], visited_children[4])
     def visit_existential(self, node, visited_children):
-        return ['\\exists', visited_children[2], visited_children[4]]
+        return ExistsNode(visited_children[2], visited_children[4])
     def visit_relation(self, node, visited_children):
         return visited_children[0]
     def visit_subset_relation(self, node, visited_children):
@@ -78,21 +107,21 @@ class HypothesisVisitor(NodeVisitor):
     def visit_set_expression(self, node, visited_children):
         return visited_children[0]
     def visit_elem_relation(self, node, visited_children):
-        return [visited_children[2].text, visited_children[0], visited_children[4]]
+        return ElemNode(visited_children[0], visited_children[4])
     def visit_set_diff(self, node, visited_children):
-        return [visited_children[2][0].text, visited_children[0], visited_children[4]]
+        return DiffNode(visited_children[0], visited_children[4])
     def visit_set_union(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
     def visit_set(self, node, visited_children):
         return visited_children[0]
     def visit_set_paren(self, node, visited_children):
-        return visited_children[1]
+        return ParenNode(visited_children[1])
     def visit_neg_expression(self, node, visited_children):
         L = visited_children[0]
         expr = visited_children[1]
         if hasattr(L, '__getitem__'):
-            return ['\\neg', expr]
+            return NegNode(expr)
         else:
             return expr
     def visit_expression(self, node, visited_children):
@@ -110,26 +139,28 @@ class HypothesisVisitor(NodeVisitor):
     def visit_mult_expression(self, node, visited_children):
         return visited_children[0]
     def visit_mult_expression1(self, node, visited_children):
-        return ['*', visited_children[0], visited_children[1]]
+        return MulNode(visited_children[0], visited_children[1])
     def visit_mult_expression2(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
     def visit_var(self, node, visited_children):
-        return node.text
+        return VarNode(node.text)
     def visit_terminal(self, node, visited_children):
         return visited_children[0]
     def visit_paren_expression(self, node, visited_children):
-        return visited_children[1]
+        return ParenNode(visited_children[1])
     def visit_fn_application(self, node, visited_children):
         args = []
         for v in visited_children[2]:
             args.append(v[0])
         args.append(visited_children[3])
-        return ['fn', visited_children[0], args]
+        return FnNode(visited_children[0], args)
+    def visit_name(self, node, visited_children):
+        return node.text
     def visit_exp_expression(self, node, visited_children):
         res = visited_children[0]
         for v in visited_children[1]:
-            res = ['^', res, v[3]]
+            res = ExpNode(res, v[3])
         return res
     def visit_const(self, node, visited_children):
-        return node.text
+        return ConstNode(node.text)
