@@ -4,8 +4,8 @@ from interface.console import Pad, clear_line, edit, exit_console, init_console,
 from parser.input_parser import parse_hypothesis, HypothesisVisitor
 from parsimonious import exceptions
 
-def get_text(main_window, win3):
-    string = ""
+def get_text(main_pad, main_window, win3):
+    string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""
     index = 0 # index in current string to start editing
     while True:
         clear_line(win3, 0)
@@ -24,7 +24,7 @@ def get_text(main_window, win3):
             index = inst.pos
             report(win3, "Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
             wait_for_key("\n")
-    return string, output
+    main_pad[main_pad.line] = str(output), output
 
 def main(stdscr):
     win1, win2, win3 = init_console()
@@ -42,7 +42,7 @@ def main(stdscr):
         elif c == 'q': # q = quit
             break
         elif c == 'e': # e = edit
-            main_pad[main_pad.line] = get_text(main_window, win3) # get text from user and parse
+            get_text(main_pad, main_window, win3) # get text from user and parse
             main_pad.adjust() # line might now be shorter, so adjust window it is being inserted in
             redraw(main_window, main_pad) # redraw the window
             main_window.refresh() # tell curses it can now update display
