@@ -4,6 +4,10 @@ from interface.console import Pad, clear_line, edit, exit_console, init_console,
 from parser.input_parser import parse_hypothesis, HypothesisVisitor
 from parsimonious import exceptions
 
+# TODO : Add insert/delete line
+# TODO : Allow cancelling of edit mode (ESC?)
+# TODO : Allow pressing ESC to exit program ??
+
 def get_text(main_pad, main_window, win3):
     string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""
     index = 0 # index in current string to start editing
