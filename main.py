@@ -2,6 +2,7 @@ import curses
 from curses import wrapper
 from interface.console import Pad, clear_line, edit, exit_console, init_console, redraw, report, wait_for_key
 from parser.input_parser import parse_hypothesis, HypothesisVisitor
+from parser.debruijn import annotate_debruijn
 from parsimonious import exceptions
 
 # TODO : Add insert/delete line
@@ -28,7 +29,9 @@ def get_text(main_pad, main_window, win3):
             index = inst.pos
             report(win3, "Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
             wait_for_key("\n")
-    main_pad[main_pad.line] = str(output), output
+    ddict = dict()
+    annotate_debruijn(output, ddict, 0)
+    main_pad[main_pad.line] = str(output), output, ddict
 
 def main(stdscr):
     win1, win2, win3 = init_console()

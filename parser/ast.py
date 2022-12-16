@@ -1,6 +1,14 @@
+# Common class for all nodes with a left and right child
+class LRNode:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+# AST Nodes
 class VarNode:
     def __init__(self, name):
         self.name = name
+        self.dbr = -1 # used for debruijn indices (-1 = free variable)
 
     def __str__(self):
         return self.name
@@ -18,21 +26,18 @@ class ConstNode:
     def __repr__(self):
         return str(self.value)
 
-class ExpNode:
-    def __init__(self, base, exp):
-        self.base = base
-        self.exp = exp
-
+class ExpNode(LRNode):
     def __str__(self):
-        return str(self.base)+"^"+str(self.exp)
+        return str(self.left)+"^"+str(self.right)
 
     def __repr__(self):
-        return repr(self.base)+"^"+repr(self.exp)
+        return repr(self.left)+"^"+repr(self.right)
 
 class FnNode:
     def __init__(self, name, args):
         self.name = name
         self.args = args
+        self.dbr = -1 # debruijn indices (-1 = free)
 
     def __str__(self):
         return self.name+"("+', '.join(str(e) for e in self.args)+")"
@@ -40,231 +45,147 @@ class FnNode:
     def __repr__(self):
         return self.name+"("+', '.join(repr(e) for e in self.args)+")"
 
-class AddNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class AddNode(LRNode):
     def __str__(self):
         return str(self.left)+" + "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" + "+repr(self.right)
 
-class SubNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class SubNode(LRNode):
     def __str__(self):
         return str(self.left)+" - "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" - "+repr(self.right)
 
-class MulNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class MulNode(LRNode):
     def __str__(self):
         return str(self.left)+"*"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+"*"+repr(self.right)
 
-class DivNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class DivNode(LRNode):
     def __str__(self):
         return str(self.left)+"/"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+"/"+repr(self.right)
 
-class LtNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class LtNode(LRNode):
     def __str__(self):
         return str(self.left)+" < "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" < "+repr(self.right)
 
-class GtNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class GtNode(LRNode):
     def __str__(self):
         return str(self.left)+" > "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" > "+repr(self.right)
 
-class LeqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class LeqNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2264 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\leq "+repr(self.right)
 
-class GeqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class GeqNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2265 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\geq "+repr(self.right)
 
-class EqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class EqNode(LRNode):
     def __str__(self):
         return str(self.left)+" = "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" = "+repr(self.right)
 
-class NeqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class NeqNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2260 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\neq "+repr(self.right)
 
-class ImpliesNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class ImpliesNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u21d2 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\implies "+repr(self.right)
 
-class IffNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class IffNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u21d4 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\leftrightarrow "+repr(self.right)
 
-class AndNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class AndNode(LRNode):
     def __str__(self):
         return str(self.left)+"\u2227"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\wedge "+repr(self.right)
 
-class OrNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class OrNode(LRNode):
     def __str__(self):
         return str(self.left)+"\u2228"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\vee "+repr(self.right)
 
-class IntersectNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class IntersectNode(LRNode):
     def __str__(self):
         return str(self.left)+"\u2229"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\cap "+repr(self.right)
 
-class UnionNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class UnionNode(LRNode):
     def __str__(self):
         return str(self.left)+"\u222a"+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\cup "+repr(self.right)
 
-class SubsetNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class SubsetNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2282 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\subset "+repr(self.right)
 
-class SubseteqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class SubseteqNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2286 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\subseteq "+repr(self.right)
 
-class SupsetNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class SupsetNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2283 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\supset "+repr(self.right)
 
-class SupseteqNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class SupseteqNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2287 "+str(self.right)
 
     def __repr__(self):
         return repr(self.left)+" \\supseteq "+repr(self.right)
 
-class DiffNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class DiffNode(LRNode):
     def __str__(self):
         return str(self.left)+" \\ "+str(self.right)
 
@@ -276,10 +197,10 @@ class NegNode:
         self.expr = expr
 
     def __str__(self):
-        return "\u00ac"+str(self.right)
+        return "\u00ac"+str(self.expr)
 
     def __repr__(self):
-        return "\\neg"+repr(self.right)
+        return "\\neg"+repr(self.expr)
 
 class ExistsNode:
     def __init__(self, var, expr):
@@ -303,11 +224,7 @@ class ForallNode:
     def __repr__(self):
         return "\\forall "+repr(self.var)+" "+repr(self.expr)
 
-class ElemNode:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-
+class ElemNode(LRNode):
     def __str__(self):
         return str(self.left)+" \u2208 "+str(self.right)
 
@@ -331,10 +248,10 @@ class DepNode:
         self.dep = dep
 
     def __str__(self):
-        return str(self.typename)+"("+str(dep)+")"
+        return str(self.typename)+"("+str(self.dep)+")"
 
     def __repr__(self):
-        return repr(self.typename)+"("+repr(dep)+")"
+        return repr(self.typename)+"("+repr(self.dep)+")"
 
 class ParenNode:
     def __init__(self, expr):
