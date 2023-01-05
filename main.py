@@ -33,6 +33,9 @@ def get_text(main_pad, main_window, win3):
     annotate_debruijn(output, ddict, 0)
     main_pad[main_pad.line] = str(output), output, ddict
 
+def delete_text(main_pad, line):
+    del main_pad.data[line]
+    
 def main(stdscr):
     win1, win2, win3 = init_console()
     pad1 = Pad() # data that is in the windows (test + AST)
@@ -53,6 +56,12 @@ def main(stdscr):
             main_pad.adjust() # line might now be shorter, so adjust window it is being inserted in
             redraw(main_window, main_pad) # redraw the window
             main_window.refresh() # tell curses it can now update display
+        elif c == 'd': # d = delete line
+            if main_pad.line != main_pad.len(): # ensure we are not deleting blank line
+                delete_text(main_pad, main_pad.line)
+                main_pad.adjust() # after deleting line cursor may be on shorter line, so adjust window
+                redraw(main_window, main_pad) # redraw the window
+                main_window.refresh() # tell curses it can now update display
         elif c == 'KEY_DOWN':
             if main_pad.line < main_pad.len(): # if we are not on the last line of data
                 height, width = main_window.getmaxyx()
@@ -61,6 +70,7 @@ def main(stdscr):
                 main_pad.line += 1 # move down one in the data
                 main_pad.adjust() # new cursor line might be shorter, so adjust window
                 redraw(main_window, main_pad) # redraw the window
+                main_window.redrawwin()
                 main_window.refresh() # tell curses it can now update display
         elif c == 'KEY_UP':
             if main_pad.line > 0: # if we are not on the first line of data
@@ -69,22 +79,29 @@ def main(stdscr):
                 main_pad.line -= 1 # move up one line in the data
                 main_pad.adjust() # new cursor line might be shorter, so adjust window
                 redraw(main_window, main_pad) # redraw the window
+                main_window.redrawwin()
                 main_window.refresh() # tell curses it can now update display
         elif c == 'KEY_RIGHT':
-            if main_pad.i < len((main_pad.data[main_pad.line])[0]): # if theres text to the right
-                _, width = main_window.getmaxyx() # get width of window
-                main_pad.i += 1 # increment text pointer
-                if main_pad.cursor < width - 3: # if we aren't at the right of window
-                    main_pad.cursor += 1 # increment cursor position and move there
-                    main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
-                else: # we are at the right of the window
-                    redraw(main_window, main_pad) # redraw entire window (scroll)
-                main_window.refresh()
+            if main_pad.len() != main_pad.line: # check we are not on the blank line
+                line = main_pad.data[main_pad.line][0]
+                if main_pad.i < len(line): # if theres text to the right
+                    extraw = 1 if ord(line[main_pad.i]) > 127 else 0 # account for wide chars
+                    _, width = main_window.getmaxyx() # get width of window
+                    main_pad.i += 1 # increment text pointer
+                    if main_pad.cursor < width - 3: # if we aren't at the right of window
+                        main_pad.cursor += 1 + extraw # increment cursor position and move there
+                        main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
+                        main_window.redrawwin()
+                    else: # we are at the right of the window
+                        redraw(main_window, main_pad) # redraw entire window (scroll)
+                    main_window.refresh()
         elif c == 'KEY_LEFT':
             if main_pad.i > 0: # if we aren't at the beginning of the text
+                line = main_pad.data[main_pad.line][0]
+                extraw = 1 if main_pad.i > 1 and ord(line[main_pad.i - 2]) > 127 else 0 # take account of wide chars
                 main_pad.i -= 1 # decrement text position
                 if main_pad.cursor > 0: # if cursor isn't at beginning of line
-                    main_pad.cursor -= 1 # decrement cursor posn. and move there
+                    main_pad.cursor -= 1 + extraw # decrement cursor posn. and move there
                     main_window.move(main_pad.cursor_line + 1, main_pad.cursor + 1)
                 else: # we are at left of window
                     redraw(main_window, main_pad) # redraw entire window (scroll)

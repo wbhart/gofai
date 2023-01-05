@@ -187,7 +187,7 @@ def clear_line(window, line, border=False):
         width -= 1
         start += 1
         line += 1
-    window.addstr(line, start, ' '*(width - 1)) # put blank chars on line
+    window.addstr(line, start, ' '*(width - 1))
     window.move(line, start) # move cursor to start of line
     # TODO: move seems orthogonal, perhaps make caller do this and refresh?
     window.refresh() # update display
@@ -207,6 +207,14 @@ def wait_for_key(key):
         if c == key:
             return
 
+def adjusted_i(line, i, cursor):
+    """Adjust i - cursor for wide characters in line"""
+    while cursor > 0:
+        # TODO: this is not correct if wide char straddles start of line
+        cursor -= (2 if ord(line[i - 1]) > 127 else 1)
+        i -= 1
+    return i
+
 def redraw(window, pad):
     """Fill the given window with lines of text from the given Pad structure.
     Details about cursor position and window position within text are in the
@@ -220,8 +228,10 @@ def redraw(window, pad):
         clear_line(window, i, True) # clear entire line before writing it
         if i + shift < pad.len(): # if there's a text line for this window line
             # write the line to window shifting for cursor and text x position
-            redraw_line(window, i, pad.data[i + shift][0], pad.i - pad.cursor, width - 1, True)
+            line = pad.data[i + shift][0]
+            redraw_line(window, i, line, adjusted_i(line, pad.i, pad.cursor), width - 1, True)
     window.move(pad.cursor_line + 1, pad.cursor + 1) # move cursor back to correct pos.
+    window.redrawwin() # work around a bug in curses where lines are not properly cleared
 
 class Pad:
     """Structure to contain parsed text strings for a window. Each line
