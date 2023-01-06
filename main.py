@@ -4,10 +4,17 @@ from interface.console import Pad, clear_line, edit, exit_console, init_console,
 from parser.input_parser import parse_hypothesis, HypothesisVisitor
 from parser.debruijn import annotate_debruijn
 from parsimonious import exceptions
+from moves import manual_moves
+from navigation import navigate_up, navigate_down
+from tree import tree_to_hypothesis
 
-# TODO : Add insert/delete line
+# TODO : Add insert
 # TODO : Allow cancelling of edit mode (ESC?)
 # TODO : Allow pressing ESC to exit program ??
+# TODO : Fix unicode bug when scrolling left/right and wide char straddles end of line
+# TODO : Factor out a tab and left/right navigation in navigation.py and use in moves.py
+# TODO : Add menu in status bar
+# TODO : Add instructions in status bar when applying moves
 
 def get_text(main_pad, main_window, win3):
     string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""
@@ -29,13 +36,8 @@ def get_text(main_pad, main_window, win3):
             index = inst.pos
             report(win3, "Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
             wait_for_key("\n")
-    ddict = dict()
-    annotate_debruijn(output, ddict, 0)
-    main_pad[main_pad.line] = str(output), output, ddict
+    tree_to_hypothesis(main_pad, main_pad.line, output)
 
-def delete_text(main_pad, line):
-    del main_pad.data[line]
-    
 def main(stdscr):
     win1, win2, win3 = init_console()
     pad1 = Pad() # data that is in the windows (test + AST)
@@ -57,30 +59,14 @@ def main(stdscr):
             redraw(main_window, main_pad) # redraw the window
             main_window.refresh() # tell curses it can now update display
         elif c == 'd': # d = delete line
-            if main_pad.line != main_pad.len(): # ensure we are not deleting blank line
-                delete_text(main_pad, main_pad.line)
-                main_pad.adjust() # after deleting line cursor may be on shorter line, so adjust window
-                redraw(main_window, main_pad) # redraw the window
-                main_window.refresh() # tell curses it can now update display
+            delete_line(main_window, main_pad, main_pad.line)
+        elif c == 'm': # manual mode (allows the user to specify and apply moves)
+            manual_moves(stdscr, win1, win2, win3, pad1, pad2)
+            main_window.refresh()
         elif c == 'KEY_DOWN':
-            if main_pad.line < main_pad.len(): # if we are not on the last line of data
-                height, width = main_window.getmaxyx()
-                if main_pad.cursor_line < height - 3: # if the cursor is not at the bottom of window
-                    main_pad.cursor_line += 1
-                main_pad.line += 1 # move down one in the data
-                main_pad.adjust() # new cursor line might be shorter, so adjust window
-                redraw(main_window, main_pad) # redraw the window
-                main_window.redrawwin()
-                main_window.refresh() # tell curses it can now update display
+            navigate_down(main_window, main_pad)
         elif c == 'KEY_UP':
-            if main_pad.line > 0: # if we are not on the first line of data
-                if main_pad.cursor_line > 0: # if the cursor is not on first line of window
-                    main_pad.cursor_line -= 1
-                main_pad.line -= 1 # move up one line in the data
-                main_pad.adjust() # new cursor line might be shorter, so adjust window
-                redraw(main_window, main_pad) # redraw the window
-                main_window.redrawwin()
-                main_window.refresh() # tell curses it can now update display
+            navigate_up(main_window, main_pad)
         elif c == 'KEY_RIGHT':
             if main_pad.len() != main_pad.line: # check we are not on the blank line
                 line = main_pad.data[main_pad.line][0]
