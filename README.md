@@ -15,7 +15,9 @@ python main.py
 Interface commands:
 
 * &lt;TAB&gt; = switch windows
+* &lt;LEFT&gt;/&lt;RIGHT&gt;&lt;UP&gt;&lt;DOWN&gt; = move cursor
 * e = edit mode
+* m = manual mode
 * q = quit
 
 Editor commands:
@@ -26,15 +28,13 @@ Editor commands:
 * &lt;LEFT&gt;/&lt;RIGHT&gt; = move cursor
 * &lt;ENTER&gt; = finish editing
 
-There is currently also a parser, but it is not hooked up to the editor. To run it, go into
-the parser directory, run Python and type:
+Manual mode commands:
 
-import input_parser
+* p = modus ponens
+* q = quit
 
-input_parser.parse_input()
+The various moves are used as follows:
 
-A prompt will be displayed at which you can type an input to be parsed, e.g.
-
-\forall x \exists k \neg((3 + 7k^4) - 7j = (8k + f(7s + 1)) + 3k - 1 \wedge 4k > f(23 + k, 3k^3) \implies x = 3k)
-
+* Modus Ponens: navigate to an implication whose precedent is in the list of
+  hypotheses and press Enter.
 
