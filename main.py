@@ -5,7 +5,7 @@ from parser.input_parser import parse_hypothesis, HypothesisVisitor
 from parser.debruijn import annotate_debruijn
 from parsimonious import exceptions
 from moves import manual_moves
-from navigation import navigate_up, navigate_down
+from navigation import navigate_up, navigate_down, delete_line
 from tree import tree_to_hypothesis
 
 # TODO : Add insert
@@ -15,6 +15,7 @@ from tree import tree_to_hypothesis
 # TODO : Factor out a tab and left/right navigation in navigation.py and use in moves.py
 # TODO : Add menu in status bar
 # TODO : Add instructions in status bar when applying moves
+# TODO : Remove parentheses from tree and write function to insert them when printing
 
 def get_text(main_pad, main_window, win3):
     string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""

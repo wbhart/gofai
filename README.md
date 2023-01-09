@@ -31,10 +31,13 @@ Editor commands:
 Manual mode commands:
 
 * p = modus ponens
-* q = quit
+* d = delete hypothesis
+* &lt;ESC&gt; = quit
 
 The various moves are used as follows:
 
 * Modus Ponens: navigate to an implication whose precedent is in the list of
   hypotheses and press Enter.
+* Delete hypothesis: navigate to hypothesis to delete and press Enter
 
+&lt;ESC&gt; cancels application of a move.
