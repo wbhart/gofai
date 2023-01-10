@@ -2,7 +2,6 @@ import curses
 from curses import wrapper
 from interface.console import Pad, clear_line, edit, exit_console, init_console, redraw, report, wait_for_key
 from parser.input_parser import parse_hypothesis, HypothesisVisitor
-from parser.debruijn import annotate_debruijn
 from parsimonious import exceptions
 from moves import manual_moves
 from navigation import navigate_up, navigate_down, delete_line

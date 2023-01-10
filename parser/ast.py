@@ -8,7 +8,7 @@ class LRNode:
 class VarNode:
     def __init__(self, name):
         self.name = name
-        self.dbr = -1 # used for debruijn indices (-1 = free variable)
+        self.dbr = -1 # used for debruijn indices (-1 = not set)
 
     def __str__(self):
         return self.name
@@ -37,7 +37,7 @@ class FnNode:
     def __init__(self, name, args):
         self.name = name
         self.args = args
-        self.dbr = -1 # debruijn indices (-1 = free)
+        self.dbr = -1 # debruijn indices (-1 = not set)
 
     def __str__(self):
         return self.name+"("+', '.join(str(e) for e in self.args)+")"
