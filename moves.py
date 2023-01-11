@@ -1,49 +1,34 @@
-from navigation import navigate_up, navigate_down, delete_line
+from navigation import navigate_up, navigate_down, delete_line, select_hypothesis
 from interface.console import redraw
-from tree import tree_to_hypothesis, trees_match
+from tree import tree_to_hypothesis, trees_match, tree_is_Px
 from parser.ast import *
 
 def apply_modus_ponens(stdscr, win1, win2, win3, pad1, pad2):
-    main_window = win1
     main_pad = pad1
-    main_window.refresh()
-    
-    while True:
-        c = stdscr.getkey()
-        if c == 'KEY_UP':
-            navigate_up(main_window, main_pad)
-        elif c == 'KEY_DOWN':
-            navigate_down(main_window, main_pad)
-        elif c == '\x1b':
-            break
-        elif c == '\n':
-            selected_tree = main_pad.data[main_pad.line][1]
-            if isinstance(selected_tree, ImpliesNode): # make sure this is actually an implication
-                prec = selected_tree.left # precedent of selected implication
-                for h in range(0, main_pad.len()): # look through all hypotheses
-                    s = main_pad.data[h][1] 
-                    if trees_match(prec, s): # find a statement that matches precedent
-                        tree_to_hypothesis(main_pad, main_pad.len(), selected_tree.right)
-                        redraw(main_window, main_pad)
-                        main_window.refresh()
-                        return
-                
+    main_window = win1
+    line1 = select_hypothesis(stdscr, win1, pad1)
+    if line1 == -1: # Cancelled
+        return
+    line2 = select_hypothesis(stdscr, win1, pad1)
+    if line2 == -1: # Cancelled
+        return
+    tree1 = main_pad.data[line1][1]
+    tree2 = main_pad.data[line2][1]
+    if isinstance(tree1, ImpliesNode): # check if first selection is an implication 
+        if trees_match(tree1.left, tree2): # P, P => Q case
+            tree_to_hypothesis(main_pad, main_pad.len(), tree1.right)
+            redraw(main_window, main_pad)
+            main_window.refresh()
+        elif isinstance(tree2, ForallNode): # \forall P(x), P(a) => Q
+            matched, _, _ = tree_is_Px(tree1.left, tree2)
+            if matched:
+                tree_to_hypothesis(main_pad, main_pad.len(), tree1.right)
+                redraw(main_window, main_pad)
+                main_window.refresh()
+              
 def apply_delete_hypothesis(stdscr, win1, win2, win3, pad1, pad2):
-    main_window = win1
-    main_pad = pad1
-    main_window.refresh()
-
-    while True:
-        c = stdscr.getkey()
-        if c == 'KEY_UP':
-            navigate_up(main_window, main_pad)
-        elif c == 'KEY_DOWN':
-            navigate_down(main_window, main_pad)
-        elif c == '\x1b':
-            break
-        elif c == '\n':
-            delete_line(main_window, main_pad, main_pad.line)
-            break 
+    line = select_hypothesis(stdscr, win1, pad1)
+    delete_line(main_window, main_pad, line)
 
 def manual_moves(stdscr, win1, win2, win3, pad1, pad2):
     main_window = win1

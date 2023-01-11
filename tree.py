@@ -3,6 +3,7 @@ from parser.ast import *
 
 # TODO: implement trees_match for TypeNode and DepNode
 # TODO: make tree_is_Px correctly handle FnNode as a variable like VarNode
+# TODO: implement version of trees_match that permute quantifiers (optional arg?)
 
 def isexpression(tree):
     if isinstance(tree, VarNode):
@@ -64,7 +65,7 @@ def tree_is_Px_recurse(tree, P, Qx, a=None, dbr=[]):
         for i in range(0, num_forall_t):
             tree = rotate_nodes(tree, num_forall_tree)
             annotate_debruijn(tree, dbr)
-            if not Matched:
+            if not matched:
                 push(dbr, tree.var)
                 is_Px, expr = tree_is_Px_recurse(tree.expr, P.expr, Qx, a, dbr)
                 if is_Px:
@@ -89,7 +90,7 @@ def tree_is_Px_recurse(tree, P, Qx, a=None, dbr=[]):
         for i in range(0, num_exists_t):
             tree = rotate_nodes(tree, num_exists_tree)
             annotate_debruijn(tree, dbr)
-            if not Matched:
+            if not matched:
                 push(dbr, tree.var)
                 is_Px, expr = tree_is_Px_recurse(tree.expr, P.expr, Qx, a, dbr)
                 if is_Px:
@@ -98,7 +99,7 @@ def tree_is_Px_recurse(tree, P, Qx, a=None, dbr=[]):
                 pop(dbr)
         return matched, a
     elif isinstance(P, VarNode):
-        if P.name == x.name: # we found x
+        if P.name == Qx.name: # we found x
             if not isexpression(tree):
                 return False, None
             elif a != None:
@@ -172,12 +173,13 @@ def tree_is_Px(tree, Q):
         while isinstance(t, ForallNode):
             num_forall_Q += 1
             t = t.expr
+        matched = False
         for i in range(0, num_forall_Q):
             Q = rotate_nodes(Q, num_forall_Q)
             annotate_debruijn(Q, [])
-            if not Matched:
+            if not matched:
                 n += 1
-                is_Px, expr = tree_is_Px_recurse(tree.expr, Q.expr, Q.var, a)
+                is_Px, expr = tree_is_Px_recurse(tree, Q.expr, Q.var, a)
                 if is_Px:
                     a = expr
                     matched = True
@@ -188,12 +190,13 @@ def tree_is_Px(tree, Q):
         while isinstance(t, ExistsNode):
             num_exists_Q += 1
             t = t.expr
+        matched = False
         for i in range(0, num_exists_Q):
             Q = rotate_nodes(Q, num_exists_Q)
             annotate_debruijn(Q, [])
-            if not Matched:
+            if not matched:
                 n += 1
-                is_Px, expr = tree_is_Px_recurse(tree.expr, Q.expr, Q.var, a)
+                is_Px, expr = tree_is_Px_recurse(tree, Q.expr, Q.var, a)
                 if is_Px:
                     a = expr
                     matched = True

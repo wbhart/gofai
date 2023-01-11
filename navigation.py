@@ -21,6 +21,22 @@ def navigate_up(main_window, main_pad):
         main_window.redrawwin()
         main_window.refresh() # tell curses it can now update display
 
+def select_hypothesis(stdscr, win1, pad1):
+    main_window = win1
+    main_pad = pad1
+    main_window.refresh()
+
+    while True:
+        c = stdscr.getkey()
+        if c == 'KEY_UP':
+            navigate_up(main_window, main_pad)
+        elif c == 'KEY_DOWN':
+            navigate_down(main_window, main_pad)
+        elif c == '\x1b': # ESC = cancel
+            return -1
+        elif c == '\n':
+            return main_pad.line
+
 def delete_line(main_window, main_pad, line):
     if line != main_pad.len(): # ensure we are not deleting blank line
         save_line = main_pad.line

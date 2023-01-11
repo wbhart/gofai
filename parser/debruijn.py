@@ -4,9 +4,9 @@ from parser.ast import *
 
 def annotate_debruijn(tree, dbr=[]):
     if type(tree) == ExistsNode or type(tree) == ForallNode:
-        push(dbr, tree.var)
+        dbr.append(tree.var)
         annotate_debruijn(tree.expr, dbr)
-        pop(dbr)
+        dbr.pop()
     elif type(tree) == VarNode or type(tree) == FnNode:
         tree.dbr = 0
         if len(dbr) == 0:
