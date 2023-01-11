@@ -11,6 +11,7 @@ from tree import tree_to_hypothesis
 # TODO : Allow cancelling of edit mode (ESC?)
 # TODO : Allow pressing ESC to exit program ??
 # TODO : Fix unicode bug when scrolling left/right and wide char straddles end of line
+# TODO : Fix unicode bug when scrolling up/down from non-wide to wide char
 # TODO : Factor out a tab and left/right navigation in navigation.py and use in moves.py
 # TODO : Add menu in status bar
 # TODO : Add instructions in status bar when applying moves

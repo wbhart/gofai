@@ -1,9 +1,12 @@
 from parser.debruijn import annotate_debruijn
 from parser.ast import *
+from interface.console import exit_console
+import copy
 
 # TODO: implement trees_match for TypeNode and DepNode
 # TODO: make tree_is_Px correctly handle FnNode as a variable like VarNode
 # TODO: implement version of trees_match that permute quantifiers (optional arg?)
+# TODO: make trees_unify handle expressions that are arithmetically equal but not syntactically identical
 
 def isexpression(tree):
     if isinstance(tree, VarNode):
@@ -27,190 +30,153 @@ def isexpression(tree):
     else:
         return False
 
-def rotate_nodes(tree, num):
-    """Rotate the first num nodes of the given tree.
+def tree_find_quantifier(tree, var):
+    """Given a VarNode var, find the associated quantifier in the given tree
+       and return it.
     """
-    if num != 1:
-        node = tree
-        t = tree
-        tree = tree.expr
-        for i in range(0, num - 1):
-            t = t.expr
-        node.expr = t.expr
-        t.expr = node
-    return tree
+    if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+        if tree.var.name == var.name:
+            return tree
+        else:
+            return tree_find_quantifier(tree.expr, var)
+    if isinstance(tree, LRNode):
+        if isexpression(tree):
+            return None
+        else:
+            q = tree_find_quantifier(tree.left, var)
+            if q != None:
+                return q
+            return tree_find_quantifier(tree.right, var)
+    if isinstance(tree, ParenNode):
+        return tree_find_quantifier(tree.expr, var)
+    return None
 
-def tree_is_Px_recurse(tree, P, Qx, a=None, dbr=[]):
-    """Return (True, a) if the given tree is of the form P(x) where x is the
-       bound variable in P with the quantifier Qx and where a is an expression
-       such that tree = P(a). Otherwise return (False, None). If the optional
-       argument a is provided the function checks that tree = P(a) for that
-       specific value of a and returns (False, None) if not. If dbr is set it
-       is a list of the qunatifiers in scope at this level of the tree.
+def tree_subst(tree, assign):
+    """Given a tree and a list of assignments [(x, a), (y, b), ....] make the
+       given substitions in the tree, including possibly changing quantifiers.
     """
-    if isinstance(P, ForallNode):
-        num_forall_P = 0
-        t = P
-        while isinstance(t, ForallNode):
-            num_forall_P += 1
-            t = t.expr
-        num_forall_tree = 0
-        t = tree
-        while isinstance(t, ForallNode):
-            num_forall_tree += 1
-            t = t.expr
-        if num_forall_P != num_forall_tree:
-            return False, None
-        matched = False
-        for i in range(0, num_forall_t):
-            tree = rotate_nodes(tree, num_forall_tree)
-            annotate_debruijn(tree, dbr)
-            if not matched:
-                push(dbr, tree.var)
-                is_Px, expr = tree_is_Px_recurse(tree.expr, P.expr, Qx, a, dbr)
-                if is_Px:
-                    a = expr
-                    matched = True
-                pop(dbr)
-        return matched, a
-    elif isinstance(P, ExistsNode):
-        num_exists_P = 0
-        t = P
-        while isinstance(t, ExistsNode):
-            num_exists_P += 1
-            t = t.expr
-        num_exists_tree = 0
-        t = tree
-        while isinstance(t, ExistsNode):
-            num_exists_tree += 1
-            t = t.expr
-        if num_exists_P != num_exists_tree:
-            return False, None
-        matched = False
-        for i in range(0, num_exists_t):
-            tree = rotate_nodes(tree, num_exists_tree)
-            annotate_debruijn(tree, dbr)
-            if not matched:
-                push(dbr, tree.var)
-                is_Px, expr = tree_is_Px_recurse(tree.expr, P.expr, Qx, a, dbr)
-                if is_Px:
-                    a = expr
-                    matched = True
-                pop(dbr)
-        return matched, a
-    elif isinstance(P, VarNode):
-        if P.name == Qx.name: # we found x
-            if not isexpression(tree):
-                return False, None
-            elif a != None:
-                if trees_match(a, tree):
-                    return True, a
-                else:
-                    return False, None
-            else:
-                return True, a
-        elif not isinstance(tree, VarNode):
-            return False, None
-        elif P.dbr > 0:
-            if tree.dbr != P.dbr:
-                return False, None
-        elif tree.name != P.name:
-            return False, None
-        return True, a
-    elif isinstance(P, LRNode) or isinstance(P, ExpNode):
-        if not isinstance(tree, type(P)):
-            return False, None
-        is_Px, expr = tree_is_Px_recurse(tree.left, P.left, Qx, a, dbr)
-        if is_Px:
-            a = expr
-        else:
-            return False, None
-        is_Px, expr = tree_is_Px_recurse(tree.right, P.right, Qx, a, dbr)
-        if is_Px:
-            a = expr
-        else:
-            return False, None
-        return True, a
-    elif isinstance(P, ConstNode):
-        if not isinstance(tree, ConstNode):
-            return False, None
-        elif tree.value != P.value:
-            return False, None
-        else:
-            return True, a
-    elif isinstance(P, FnNode):
-        if not isinstance(tree, FnNode):
-            return False, None
-        elif tree.name != P.name or len(tree.args) != len(P.args):
-            return False, None
+    if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+        for (a, b) in assign:
+            if a.var.name == tree.var.name:
+                if isinstance(b, ForallNode) or isinstance(b, ExistsNode): # if substituting quantifier
+                    b.expr = tree_subst(tree.expr, assign)
+                    return b
+                else: # we are substituting a value, so drop quantifier
+                    return tree_subst(tree.expr, assign)
+        return tree_subst(tree.expr, assign) # quantifier doesn't need substituting
+    elif isinstance(tree, VarNode):
+        if tree.dbr > 0: # we have a bound variable
+            for (a, b) in assign:
+                if a.var.name == tree.name:
+                    if isinstance(b, ForallNode) or isinstance(b, ExistsNode): # if substituting variable
+                        tree.name = b.var.name
+                        return tree
+                    else: # we are substituting a value
+                        return copy.deepcopy(b)
+            return tree # nothing was substituted
+        else: # not bound
+            return tree
+    elif isinstance(tree, LRNode):
+        tree.left = tree_subst(tree.left, assign)
+        tree.right = tree_subst(tree.right, assign)
+        return tree
+    elif isinstance(tree, FnNode):
         for i in range(0, len(tree.args)):
-            is_Px, expr = tree_is_Px_recurse(tree.args[i], P.args[i], Qx, a, dbr)
-            if is_Px:
-                a = expr
-            else:
-                return False, None
-        return True, a
-    elif isinstance(P, NegNode) or isinstance(P, ParenNode):
-        if not isinstance(tree, type(P)):
-            return False, None
-        is_Px, expr = tree_is_Px_recurse(tree.expr, P.expr, Qx, a, dbr)
-        if is_Px:
-            a = expr
-        else:
-            return False, None
-        return True, a
-
-def tree_is_Px(tree, Q):
-    """Return (True, a, n) if tree is of the form P(a) where Q = R x P(x) for
-       some quantifier R (one of the first commuting ones), and n is which
-       quantifier is R, numbered starting from 0 on the left of Q.
-    """
-    a = None
-    n = 0
-    if isinstance(Q, ForallNode):
-        num_forall_Q = 0
-        t = Q
-        while isinstance(t, ForallNode):
-            num_forall_Q += 1
-            t = t.expr
-        matched = False
-        for i in range(0, num_forall_Q):
-            Q = rotate_nodes(Q, num_forall_Q)
-            annotate_debruijn(Q, [])
-            if not matched:
-                n += 1
-                is_Px, expr = tree_is_Px_recurse(tree, Q.expr, Q.var, a)
-                if is_Px:
-                    a = expr
-                    matched = True
-        return matched, a, n%num_forall_Q
-    elif isinstance(Q, ExistsNode):
-        num_exists_Q = 0
-        t = Q
-        while isinstance(t, ExistsNode):
-            num_exists_Q += 1
-            t = t.expr
-        matched = False
-        for i in range(0, num_exists_Q):
-            Q = rotate_nodes(Q, num_exists_Q)
-            annotate_debruijn(Q, [])
-            if not matched:
-                n += 1
-                is_Px, expr = tree_is_Px_recurse(tree, Q.expr, Q.var, a)
-                if is_Px:
-                    a = expr
-                    matched = True
-        return matched, a, n%num_exists_Q
+            tree.args[i] = tree_subst(tree.args[i], assign)
+        return tree
+    elif isinstance(tree, ParenNode) or isinstance(tree, NegNode):
+        tree.expr = tree_subst(tree.expr, assign)
+        return tree
     else:
-        return False, None
+        return tree # nothing to substitute
 
 def tree_to_hypothesis(pad, line, tree):
     """Convert the given tree into the tuple (str, tree) where str is the
        string form of the tree. Set the given line of the pad to this tuple.
     """
+    while isinstance(tree, ParenNode):
+        tree = tree.expr
     annotate_debruijn(tree)
     pad[line] = str(tree), tree
 
+def var_is_assigned_L(assign, tree1):
+    for (a, b) in assign:
+        if isinstance(a, VarNode) and a.dbr > 0 and a.name == tree1.name:
+            return True, b
+    return False, None
+
+def var_is_assigned_R(assign, tree2):
+    for (a, b) in assign:
+        if isinstance(b, VarNode) and b.dbr > 0 and b.name == tree2.name:
+            return True, a
+    return False, None
+
+def trees_unify(tree1, tree2, assign=[]):
+    """Unify two trees by finding values for the bound variables that result in
+       both statements being the same. The function returns a tuple of the form
+       (True, [(x, a), (b, y),... ]) if the trees can be unified, where x = a,
+       y = b are the assignments that make the trees match. If the trees cannot
+       be unified (False, []) is returned. If assign is set it contains all
+       assignments known to hold up to this point.
+    """
+    while isinstance(tree1, ExistsNode) or isinstance(tree1, ForallNode) or isinstance(tree1, ParenNode):
+        tree1 = tree1.expr
+    while isinstance(tree2, ExistsNode) or isinstance(tree2, ForallNode) or isinstance(tree2, ParenNode):
+        tree2 = tree2.expr
+    if isinstance(tree1, VarNode) and tree1.dbr > 0: # bound variable
+        if isexpression(tree2):
+            assigned, a = var_is_assigned_L(assign, tree1)
+            if assigned: # if we already assigned this variable
+                if not trees_match(a, tree2): # check we assigned it to the same thing
+                    return False, []
+            else:
+                assign.append((tree1, tree2)) # if not assigned, assign it
+        else:
+            return False, []
+    elif isinstance(tree2, VarNode) and tree2.dbr > 0: # bound variable
+        if isexpression(tree1):
+            assigned, a = var_is_assigned_R(assign, tree2)
+            if assigned: # if we already assigned this variable
+                if not trees_match(a, tree1): # check we assigned it to the same thing
+                    return False, []
+            else:
+                assign.append((tree1, tree2)) # if not assigned, assign it
+        else:
+            return False, []
+    elif isinstance(tree1, VarNode) or isinstance(tree2, VarNode):
+        if not trees_match(tree1, tree2): # if not bound make sure it matches
+            exit_console()
+            print(tree1)
+            print(tree2)
+            print(tree2.dbr)
+            exit(1)
+            return False, []
+    else: # we didn't hit a variable
+        if type(tree1) != type(tree2):
+            return False, []
+        elif isinstance(tree1, ConstNode):
+            if tree1.value != tree2.value:
+                return False, []
+        elif isinstance(tree1, LRNode):
+            unify, assign = trees_unify(tree1.left, tree2.left, assign)
+            if not unify:
+                return False, []
+            unify, assign = trees_unify(tree1.right, tree2.right, assign)
+            if not unify:
+                return False, []
+        elif isinstance(tree1, NegNode) or isinstance(tree1, ParenNode):
+            unify, assign = trees_unify(tree1.expr, tree2.expr, assign)
+            if not unify:
+                return False, []
+        elif isinstance(tree1, FnNode):
+            if tree1.name != tree2.name or len(tree1.args) != len(tree2.args):
+                return False, []
+            for i in range(0, tree1.args):
+                unify, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
+                if not unify:
+                    return False, []
+    return True, assign      
+  
 def trees_match(tree1, tree2):
     """Return True if the given trees are the same expression, up to names of
        bound variables. Does not permute deBruijn indices.
@@ -220,10 +186,7 @@ def trees_match(tree1, tree2):
     if isinstance(tree1, LRNode) or isinstance(tree1, ExpNode):
         return trees_match(tree1.left, tree2.left) and trees_match(tree1.right, tree2.right)
     elif isinstance(tree1, VarNode):
-        if tree1.dbr > 0:
-            return tree2.dbr == tree1.dbr
-        else:
-            return tree2.name == tree1.name
+        return tree2.name == tree1.name
     elif isinstance(tree1, ConstNode):
         return tree1.value == tree2.value
     elif isinstance(tree1, FnNode):
