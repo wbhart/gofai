@@ -19,7 +19,7 @@ def annotate_debruijn(tree, dbr=[]):
                 break
     elif isinstance(tree, ConstNode) or isinstance(tree, VarNode) or isinstance(tree, DepNode):
         pass
-    elif isinstance(tree, NegNode) or isinstance(tree, ParenNode):
+    elif isinstance(tree, NegNode):
         annotate_debruijn(tree.expr, dbr)
     elif isinstance(tree, LRNode):
         annotate_debruijn(tree.left, dbr)

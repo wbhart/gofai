@@ -4,7 +4,7 @@ from pprint import pprint
 from parser.ast import AddNode, AndNode, ConstNode, DepNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, GtNode, \
      IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, NegNode, \
-     NeqNode, OrNode, ParenNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
+     NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
      SupseteqNode, TypeNode, UnionNode, VarNode
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -116,7 +116,7 @@ class HypothesisVisitor(NodeVisitor):
     def visit_set(self, node, visited_children):
         return visited_children[0]
     def visit_set_paren(self, node, visited_children):
-        return ParenNode(visited_children[1])
+        return visited_children[1]
     def visit_neg_expression(self, node, visited_children):
         L = visited_children[0]
         expr = visited_children[1]
@@ -148,7 +148,7 @@ class HypothesisVisitor(NodeVisitor):
     def visit_terminal(self, node, visited_children):
         return visited_children[0]
     def visit_paren_expression(self, node, visited_children):
-        return ParenNode(visited_children[1])
+        return visited_children[1]
     def visit_fn_application(self, node, visited_children):
         args = []
         for v in visited_children[2]:

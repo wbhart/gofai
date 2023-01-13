@@ -21,9 +21,6 @@ def apply_modus_ponens(stdscr, win1, win2, win3, pad1, pad2):
     while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
         last_q = t
         t = t.expr
-    while isinstance(t, ParenNode):
-        last_q = t
-        t = t.expr
     if not isinstance(t, ImpliesNode): # no implication after quantifiers
         return      
     # temporarily get rid of implication leaving only quantified right P

@@ -17,8 +17,6 @@ def isexpression(tree):
         return True
     elif isinstance(tree, NegNode):
         return True
-    elif isinstance(tree, ParenNode):
-        return isexpression(tree.expr)
     elif isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
         False
     elif isinstance(tree, ExpNode) or isinstance(tree, AddNode) or isinstance(tree, SubNode):
@@ -47,8 +45,6 @@ def tree_find_quantifier(tree, var):
             if q != None:
                 return q
             return tree_find_quantifier(tree.right, var)
-    if isinstance(tree, ParenNode):
-        return tree_find_quantifier(tree.expr, var)
     return None
 
 def tree_subst(tree, assign):
@@ -84,7 +80,7 @@ def tree_subst(tree, assign):
         for i in range(0, len(tree.args)):
             tree.args[i] = tree_subst(tree.args[i], assign)
         return tree
-    elif isinstance(tree, ParenNode) or isinstance(tree, NegNode):
+    elif isinstance(tree, NegNode):
         tree.expr = tree_subst(tree.expr, assign)
         return tree
     else:
@@ -94,8 +90,6 @@ def tree_to_hypothesis(pad, line, tree):
     """Convert the given tree into the tuple (str, tree) where str is the
        string form of the tree. Set the given line of the pad to this tuple.
     """
-    while isinstance(tree, ParenNode):
-        tree = tree.expr
     annotate_debruijn(tree)
     pad[line] = str(tree), tree
 
@@ -119,9 +113,9 @@ def trees_unify(tree1, tree2, assign=[]):
        be unified (False, []) is returned. If assign is set it contains all
        assignments known to hold up to this point.
     """
-    while isinstance(tree1, ExistsNode) or isinstance(tree1, ForallNode) or isinstance(tree1, ParenNode):
+    while isinstance(tree1, ExistsNode) or isinstance(tree1, ForallNode):
         tree1 = tree1.expr
-    while isinstance(tree2, ExistsNode) or isinstance(tree2, ForallNode) or isinstance(tree2, ParenNode):
+    while isinstance(tree2, ExistsNode) or isinstance(tree2, ForallNode):
         tree2 = tree2.expr
     if isinstance(tree1, VarNode) and tree1.dbr > 0: # bound variable
         if isexpression(tree2):
@@ -164,7 +158,7 @@ def trees_unify(tree1, tree2, assign=[]):
             unify, assign = trees_unify(tree1.right, tree2.right, assign)
             if not unify:
                 return False, []
-        elif isinstance(tree1, NegNode) or isinstance(tree1, ParenNode):
+        elif isinstance(tree1, NegNode):
             unify, assign = trees_unify(tree1.expr, tree2.expr, assign)
             if not unify:
                 return False, []
@@ -196,7 +190,7 @@ def trees_match(tree1, tree2):
             if not trees_match(tree1.args[i], tree2.args[i]):
                 return False
         return True
-    elif isinstance(tree1, NegNode) or isinstance(tree1, ParenNode):
+    elif isinstance(tree1, NegNode):
         return trees_match(tree1.expr, tree2.expr)
     elif isinstance(tree1, ExistsNode) or isinstance(tree1, ForallNode):
         return trees_match(tree1.var, tree2.var) and trees_match(tree1.expr, tree2.expr)
