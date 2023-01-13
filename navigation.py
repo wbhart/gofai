@@ -1,10 +1,15 @@
-from interface.console import redraw
+from interface.console import redraw, cursor_pos
 
 def navigate_down(main_window, main_pad):
     if main_pad.line < main_pad.len(): # if we are not on the last line of data
         height, width = main_window.getmaxyx()
         if main_pad.cursor_line < height - 3: # if the cursor is not at the bottom of window
             main_pad.cursor_line += 1
+        if main_pad.line + 1 < main_pad.len():
+            line1 = main_pad.data[main_pad.line + 1][0]
+            line2 = main_pad.data[main_pad.line][0]
+            main_pad.i, diff = cursor_pos(line1, line2, main_pad.i)
+            main_pad.cursor -= diff
         main_pad.line += 1 # move down one in the data
         main_pad.adjust() # new cursor line might be shorter, so adjust window
         redraw(main_window, main_pad) # redraw the window
@@ -15,6 +20,11 @@ def navigate_up(main_window, main_pad):
     if main_pad.line > 0: # if we are not on the first line of data
         if main_pad.cursor_line > 0: # if the cursor is not on first line of window
             main_pad.cursor_line -= 1
+            if main_pad.line < main_pad.len():
+                line1 = main_pad.data[main_pad.line - 1][0]
+                line2 = main_pad.data[main_pad.line][0]
+                main_pad.i, diff = cursor_pos(line1, line2, main_pad.i)
+                main_pad.cursor -= diff
         main_pad.line -= 1 # move up one line in the data
         main_pad.adjust() # new cursor line might be shorter, so adjust window
         redraw(main_window, main_pad) # redraw the window

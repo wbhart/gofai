@@ -11,11 +11,9 @@ from tree import tree_to_hypothesis
 # TODO : Allow cancelling of edit mode (ESC?)
 # TODO : Allow pressing ESC to exit program ??
 # TODO : Fix unicode bug when scrolling left/right and wide char straddles end of line
-# TODO : Fix unicode bug when scrolling up/down from non-wide to wide char
 # TODO : Factor out a tab and left/right navigation in navigation.py and use in moves.py
 # TODO : Add menu in status bar
 # TODO : Add instructions in status bar when applying moves
-# TODO : Remove parentheses from tree and write function to insert them when printing
 
 def get_text(main_pad, main_window, win3):
     string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""
@@ -85,7 +83,7 @@ def main(stdscr):
         elif c == 'KEY_LEFT':
             if main_pad.i > 0: # if we aren't at the beginning of the text
                 line = main_pad.data[main_pad.line][0]
-                extraw = 1 if main_pad.i > 1 and ord(line[main_pad.i - 2]) > 127 else 0 # take account of wide chars
+                extraw = 1 if main_pad.i > 0 and ord(line[main_pad.i - 1]) > 127 else 0 # take account of wide chars
                 main_pad.i -= 1 # decrement text position
                 if main_pad.cursor > 0: # if cursor isn't at beginning of line
                     main_pad.cursor -= 1 + extraw # decrement cursor posn. and move there

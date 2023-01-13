@@ -211,10 +211,40 @@ def adjusted_i(line, i, cursor):
     """Adjust i - cursor for wide characters in line"""
     while cursor > 0:
         # TODO: this is not correct if wide char straddles start of line
-        cursor -= (2 if ord(line[i - 1]) > 127 else 1)
+        diff = (2 if ord(line[i - 1]) > 127 else 1)
+        cursor -= diff
         i -= 1
     return i
 
+def cursor_pos(line1, line2, i):
+    """Return (k, j) where k is the position in line 1 corresponding to
+       position i in line 2 (taking account of wide chars), and j = 1 if the
+       same position would be the second half of a wide char.
+    """
+    j = 0
+    for k in range(0, i):
+        # Compute cursor pos for line2[i] from beginning of line
+        if ord(line2[k]) > 127:
+            j += 2
+        else:
+            j += 1
+    k = 0
+    while j > 1:
+        if k >= len(line1):
+            return k, j
+        if ord(line1[k]) > 127:
+            j -= 2
+        else:
+            j -= 1
+        k += 1
+    if j > 0:
+        if k >= len(line1):
+            return k, j
+        if ord(line1[k]) <= 127:
+            k += 1
+            j -= 1
+    return k, j
+        
 def redraw(window, pad):
     """Fill the given window with lines of text from the given Pad structure.
     Details about cursor position and window position within text are in the
@@ -224,13 +254,20 @@ def redraw(window, pad):
     height -= 2
     # compute line in pad corresponding to first line of window
     shift = pad.line - pad.cursor_line
+    if pad.line < pad.len():
+        curr_line = pad.data[pad.line][0]
     for i in range(0, height): # we'll display 'height' lines from pad
         clear_line(window, i, True) # clear entire line before writing it
         if i + shift < pad.len(): # if there's a text line for this window line
             # write the line to window shifting for cursor and text x position
             line = pad.data[i + shift][0]
-            redraw_line(window, i, line, adjusted_i(line, pad.i, pad.cursor), width - 1, True)
-    window.move(pad.cursor_line + 1, pad.cursor + 1) # move cursor back to correct pos.
+            if pad.line < pad.len():
+                pos, shift = cursor_pos(line, curr_line, pad.i)
+            else:
+                pos, shift = 0, 0
+            cursor = pad.cursor - shift
+            redraw_line(window, i, line, adjusted_i(line, pos, cursor), width - 1, True)
+    window.move(pad.cursor_line + 1, cursor + 1) # move cursor back to correct pos.
     window.redrawwin() # work around a bug in curses where lines are not properly cleared
 
 class Pad:
@@ -263,11 +300,13 @@ class Pad:
         if self.line == len(self.data): # if we are on the final blank line
             self.i = 0 # line has len 0 so shift text/cursor pos to left
             self.cursor = 0
-        else: # not on final blank line
-            data = self.data[self.line]
-            line_length = len(data[0])
-            if self.i > line_length: # character is beyond end of text
-                shift = self.i - self.cursor
-                self.cursor = min(self.cursor, max(line_length - shift, 0))
-                self.i = line_length # adjust to end of text in current line
-
+        else:
+            line = self.data[self.line][0]
+            if self.i >= len(line):
+                self.i = len(line)
+            self.cursor = 0
+            for i in range(0, self.i):
+                if ord(line[i]) > 127:
+                    self.cursor += 2
+                else:
+                    self.cursor += 1
