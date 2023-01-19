@@ -14,6 +14,7 @@ from tree import tree_to_hypothesis
 # TODO : Factor out a tab and left/right navigation in navigation.py and use in moves.py
 # TODO : Add menu in status bar
 # TODO : Add instructions in status bar when applying moves
+# TODO : Fix parentheses for - and /
 
 def get_text(main_pad, main_window, win3):
     string = repr(main_pad.data[main_pad.line][1]) if main_pad.line != main_pad.len() else ""

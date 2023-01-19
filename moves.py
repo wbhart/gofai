@@ -1,6 +1,6 @@
 from navigation import navigate_up, navigate_down, delete_line, select_hypothesis
 from interface.console import redraw, exit_console
-from tree import tree_to_hypothesis, trees_match, trees_unify, tree_subst, tree_find_quantifier
+from tree import tree_to_hypothesis, trees_unify, tree_subst, tree_find_quantifier
 from parser.ast import *
 import copy
 
