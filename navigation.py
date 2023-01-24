@@ -1,4 +1,4 @@
-from interface.console import redraw, cursor_pos
+from interface.console import redraw, cursor_pos, exit_console
 
 def navigate_down(main_window, main_pad):
     if main_pad.line < main_pad.len(): # if we are not on the last line of data

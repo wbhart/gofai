@@ -262,12 +262,12 @@ def redraw(window, pad):
             # write the line to window shifting for cursor and text x position
             line = pad.data[i + shift][0]
             if pad.line < pad.len():
-                pos, shift = cursor_pos(line, curr_line, pad.i)
+                pos, cshift = cursor_pos(line, curr_line, pad.i)
             else:
-                pos, shift = 0, 0
-            cursor = pad.cursor - shift
+                pos, cshift = 0, 0
+            cursor = pad.cursor - cshift
             redraw_line(window, i, line, adjusted_i(line, pos, cursor), width - 1, True)
-    window.move(pad.cursor_line + 1, cursor + 1) # move cursor back to correct pos.
+    window.move(pad.cursor_line + 1, pad.cursor + 1) # move cursor back to correct pos.
     window.redrawwin() # work around a bug in curses where lines are not properly cleared
 
 class Pad:
