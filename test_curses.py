@@ -1,0 +1,194 @@
+import curses # console library
+import curses.ascii # ascii classification
+from curses import wrapper
+
+def iswide_char(c):
+    return ord(c) > 127
+
+def redraw_line(window, line, string, i, width, border=False):
+    """Write the given unicode string starting at character i to the given
+       window of the given width, adjusting for the border if it exists.
+    """
+    start = 1 if border else 0
+    # clear line
+    for j in range(0, width - 2*start - 1):
+        window.addch(line + start, start + j, ' ')
+    # draw new line
+    j = 0
+    k = 0
+    while j < width - 2*start - 1:
+        if i + k < len(string):
+            c = string[i + k]
+            window.addch(line + start, start + k, c)
+            j += 2 if iswide_char(c) else 1
+        else:
+            window.addch(line + start, start + k, ' ')
+            j += 1
+        k += 1
+
+class Pad:
+    def __init__(self, window, lines, y, x, height, width, border=False):
+        """Initialise a pad of the given number of lines for display within a
+           window starting at absolute screen position (y, x). When the pad
+           scrolls left/right it moves by 1 full char (narrow or wide) at a
+           time, for every line. When the cursor moves, it only moves by 1
+           narrow char (nchar) at a time.
+        """
+        self.scroll_line = 0 # which line of the pad is at the upper left of window
+        self.scroll_char = 0 # how many chars is the pad scrolled from the left
+        self.cursor_line = 0 # which line of the window is the cursor on
+        self.cursor_char = 0 # which nchar position is the cursor on
+        
+        self.window = window
+        self.pad = ['' for i in range(0, lines)] # blank pad with given number of lines
+        self.x = x # absolute screen position of upper left corner of pad
+        self.y = y
+        self.height = height # height of visible portion of pad on screen
+        self.width = width # width of visible portion of pad on screen
+
+        self.lines = lines # number of lines allocated in pad
+        self.border = border # whether the pad window has a border
+
+        self.refresh()
+
+    def inch(self, y, x):
+        return self.pad[y][x]
+
+    def cursor_right(self, iswide):
+        """Move the cursor right one char and scroll the window if necessary.
+           The function needs to be supplied with a parameter to say whether
+           the character under the cursor is wide or not.
+        """
+        start = 1 if self.border else 0
+        if self.cursor_char < self.width - 2*start - 2: # not at right of window
+            self.cursor_char += 2 if iswide else 1 # just move the cursor
+        else:
+            c = self.inch(self.scroll_line + self.cursor_line, self.scroll_char)
+            self.scroll_char += 1
+            if iswide_char(c): # line will move two nchars
+                if not iswide: # next char is only one nchar
+                    self.cursor_char -= 1
+            else: # line would only move 1 nchar
+                if iswide: # next char is two nchars
+                    self.cursor_char += 1
+                    if self.cursor_char >= self.width - 2*start - 3: # we need to move one more char
+                        c = self.inch(self.scroll_line + self.cursor_line, self.scroll_char)
+                        self.scroll_char += 1
+                        self.cursor_char -= 2 if iswide_char(c) else 1
+
+    def cursor_left(self, iswide):
+        """Move the cursor left one char and scroll the window if necessary.
+           The function needs to know if the character to the left is wide.
+        """
+        if self.cursor_char > 0: # not at left of window
+            self.cursor_char -= 2 if iswide else 1 # just move the cursor
+        else:
+            self.scroll_char -= 1
+
+    def move(self, y, x):
+        """Move cursor to position (y, x) in pad (assuming it is in range).
+        """
+        self.cursor_line = y - self.scroll_line
+        self.cursor_char = x - self.scroll_char
+
+    def refresh(self):
+        """Redraw the pad in position on screen. Due to bugs in python curses
+           when working with unicode on WSL, this needs to be done by hand.
+        """
+        for y in range(0, self.height):
+            line = y + self.scroll_line
+            if line < len(self.pad):
+                redraw_line(self.window, y, self.pad[line], self.scroll_char, self.width, border=self.border)
+
+        start = 1 if self.border else 0
+        self.window.move(self.cursor_line + start, self.cursor_char + start)
+        self.window.refresh()
+        self.window.redrawwin()
+
+class Screen:
+    def __init__(self):
+        """Initialise the console for use, including drawing the windows on the
+           screen and initialising the corresponding pads. The screen includes
+           a quantifier zone, a hypothesis window, a target window and a status
+           bar. The first three will have borders.
+        """
+        self.stdscr = curses.initscr() # initialise curses, return object for entire screen
+        curses.noecho() # turn off echoing of keys
+        curses.cbreak() # don't wait for enter key upon input
+        self.stdscr.keypad(True) # make it easier to read the keypad
+        
+        # compute window heights, leaving room for the quantifier zone and status bar
+        self.win1_height = (curses.LINES - 2)//2
+        self.win2_height = curses.LINES - self.win1_height - 2
+
+        # divide the screen into three bordered windows and space for status bar
+        self.win0 = curses.newwin(3, curses.COLS, 0, 0)
+        self.win1 = curses.newwin(self.win1_height, curses.COLS, 2, 0)
+        self.win2 = curses.newwin(self.win2_height, curses.COLS, self.win1_height + 1, 0)
+        self.win3 = curses.newwin(1, curses.COLS, curses.LINES - 1, 0)
+
+        # print borders on the windows
+        self.win0.border(curses.ACS_VLINE, curses.ACS_VLINE,
+                    curses.ACS_HLINE, curses.ACS_HLINE,
+                    curses.ACS_ULCORNER, curses.ACS_URCORNER,
+                    curses.ACS_LTEE, curses.ACS_RTEE)
+        self.win1.border(curses.ACS_VLINE, curses.ACS_VLINE,
+                    curses.ACS_HLINE, curses.ACS_HLINE,
+                    curses.ACS_LTEE, curses.ACS_RTEE,
+                    curses.ACS_LTEE, curses.ACS_RTEE)
+        self.win2.border(curses.ACS_VLINE, curses.ACS_VLINE,
+                    curses.ACS_HLINE, curses.ACS_HLINE,
+                    curses.ACS_LTEE, curses.ACS_RTEE,
+                    curses.ACS_LLCORNER, curses.ACS_LRCORNER)
+
+        # draw border windows
+        self.win0.refresh()
+        self.win1.refresh()
+        self.win2.refresh()
+
+        # initialise pads with plenty of lines
+        self.pad0 = Pad(self.win0, 1, 1, 1, 1, curses.COLS, border=True)
+        self.pad1 = Pad(self.win1, 100, 3, 1, self.win1_height - 2, curses.COLS, border=True)
+        self.pad2 = Pad(self.win2, 100, self.win1_height + 2, 1, self.win2_height - 2, curses.COLS, border=True)
+        self.pad3 = Pad(self.win3, 1, curses.LINES - 1, 0, 1, curses.COLS)
+
+        # update screen
+        self.pad3.refresh()
+        self.pad2.refresh()
+        self.pad1.refresh()
+        self.pad0.refresh()
+
+    def exit(self):
+        """Return control of the console from curses back to Python,
+        """
+        curses.nocbreak() # wait for enter upon console input
+        self.stdscr.keypad(False) # disable curses handling of keypad
+        curses.echo() # echo characters to console
+        curses.endwin() # return control of console
+
+def main(stdscr):
+    screen = Screen()
+
+    screen.pad1.pad[0] = '\u2200Ax\u2200\u2200x\u2200xyt\u2200c\u2200\u2200xxyxyxxxx\u2208yyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
+    screen.pad1.pad[1] = '\u2200x\u2200x\u2200xyt\u2200c\u2200\u2200xyxyxyxxyxyyxxxxxxxxxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
+    screen.pad1.move(0, 0)
+    screen.pad1.refresh()
+
+    i = 0
+
+    while True:
+        c = stdscr.getkey()
+        if c == 'q': # q = quit
+            break
+        elif c == 'm':
+            screen.pad1.cursor_right(iswide_char(screen.pad1.pad[0][i]))
+            screen.pad1.refresh()
+            i += 1
+        elif c == 'n':
+            screen.pad1.cursor_left(iswide_char(screen.pad1.pad[0][i - 1]))
+            screen.pad1.refresh()
+            i -= 1
+    
+    screen.exit()
+
+wrapper(main) # curses wrapper handles exceptions
