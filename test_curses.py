@@ -11,20 +11,51 @@ def redraw_line(window, line, string, i, width, border=False):
     """
     start = 1 if border else 0
     # clear line
+    window.move(line + start, start)
     for j in range(0, width - 2*start - 1):
-        window.addch(line + start, start + j, ' ')
+        window.addch(' ')
     # draw new line
     j = 0
     k = 0
+    window.move(line + start, start)
     while j < width - 2*start - 1:
         if i + k < len(string):
             c = string[i + k]
-            window.addch(line + start, start + k, c)
+            window.addch(c)
             j += 2 if iswide_char(c) else 1
         else:
-            window.addch(line + start, start + k, ' ')
+            window.addch(' ')
             j += 1
         k += 1
+
+def adjust_nchars(string, scroll_chars, nchars):
+    """Given a unicode string which we have scrolled the given number of chars
+       return (j, extra) where j is the number of chars past the scroll to
+       reach the given nchar. If we are 1 nchar short, extra will be set to 1,
+       otherwise 0.
+    """
+    k = 0
+    j = 0
+    while j < nchars - 1:
+        c = string[scroll_chars + k]
+        j += 2 if iswide_char(c) else 1
+        k += 1
+    c = string[scroll_chars + k]
+    if not iswide_char(c) and j < nchars:
+        j += 1
+    return j
+
+def nchars_to_chars(string, scroll_chars, nchars):
+    """Return the number of chars past scroll_chars to achieve the given number
+       of nchars.
+    """
+    k = 0
+    j = 0
+    while j < nchars:
+        c = string[scroll_chars + k]
+        j += 2 if iswide_char(c) else 1
+        k += 1
+    return k
 
 class Pad:
     def __init__(self, window, lines, y, x, height, width, border=False):
@@ -85,6 +116,26 @@ class Pad:
         else:
             self.scroll_char -= 1
 
+    def cursor_down(self):
+        start = 1 if self.border else 0
+        if self.cursor_line < self.height - 2*start - 1:
+            # just move the cursor
+            self.cursor_line += 1
+        else:
+            self.scroll_line += 1
+        self.cursor_char = adjust_nchars(self.pad[self.scroll_line + self.cursor_line], \
+                            self.scroll_char, self.cursor_char)
+         
+    def cursor_up(self):
+        start = 1 if self.border else 0
+        if self.cursor_line > 0:
+            # just move the cursor
+            self.cursor_line -= 1
+        else:
+            self.scroll_line -= 1
+        self.cursor_char = adjust_nchars(self.pad[self.scroll_line + self.cursor_line], \
+                            self.scroll_char, self.cursor_char)
+
     def move(self, y, x):
         """Move cursor to position (y, x) in pad (assuming it is in range).
         """
@@ -102,6 +153,8 @@ class Pad:
 
         start = 1 if self.border else 0
         self.window.move(self.cursor_line + start, self.cursor_char + start)
+        self.window.refresh()
+        self.window.redrawwin()
         self.window.refresh()
         self.window.redrawwin()
 
@@ -170,24 +223,37 @@ def main(stdscr):
     screen = Screen()
 
     screen.pad1.pad[0] = '\u2200Ax\u2200\u2200x\u2200xyt\u2200c\u2200\u2200xxyxyxxxx\u2208yyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
-    screen.pad1.pad[1] = '\u2200x\u2200x\u2200xyt\u2200c\u2200\u2200xyxyxyxxyxyyxxxxxxxxxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
+    screen.pad1.pad[1] = '\u2200x\u2200x\u2200xyt\u2200c\u2200\u2200xyyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
     screen.pad1.move(0, 0)
     screen.pad1.refresh()
 
     i = 0
+    j = 0
 
     while True:
         c = stdscr.getkey()
         if c == 'q': # q = quit
             break
         elif c == 'm':
-            screen.pad1.cursor_right(iswide_char(screen.pad1.pad[0][i]))
+            screen.pad1.cursor_right(iswide_char(screen.pad1.pad[j][i]))
             screen.pad1.refresh()
             i += 1
         elif c == 'n':
-            screen.pad1.cursor_left(iswide_char(screen.pad1.pad[0][i - 1]))
+            screen.pad1.cursor_left(iswide_char(screen.pad1.pad[j][i - 1]))
             screen.pad1.refresh()
             i -= 1
+        elif c == 'l':
+            screen.pad1.cursor_down()
+            screen.pad1.refresh()
+            j += 1
+            i = screen.pad1.scroll_char + nchars_to_chars(screen.pad1.pad[j], \
+                screen.pad1.scroll_char, screen.pad1.cursor_char)
+        elif c == 'p':
+            screen.pad1.cursor_up()
+            screen.pad1.refresh()
+            j -= 1
+            i = screen.pad1.scroll_char + nchars_to_chars(screen.pad1.pad[j], \
+                screen.pad1.scroll_char, screen.pad1.cursor_char)
     
     screen.exit()
 
