@@ -142,6 +142,18 @@ class Pad:
         self.cursor_line = y - self.scroll_line
         self.cursor_char = x - self.scroll_char
 
+    def clear_line(self, line):
+        """Clear the line with index 'line' in the given window (index starting
+        at 0) avoiding the border if there is one (specified by 'border=True').
+        """
+        width = self.width # get width of window display
+        start = 0 # starting x position
+        if self.border: # adjust starting pos., width and line index for border
+            width -= 1
+            start += 1
+            line += 1
+        self.window.addstr(line, start, ' '*(width - 1))
+
     def refresh(self):
         """Redraw the pad in position on screen. Due to bugs in python curses
            when working with unicode on WSL, this needs to be done by hand.
@@ -199,6 +211,9 @@ class Screen:
         self.win1.refresh()
         self.win2.refresh()
 
+        # window with current focus
+        self.focus = self.win0
+
         # initialise pads with plenty of lines
         self.pad0 = Pad(self.win0, 1, 1, 1, 1, curses.COLS, border=True)
         self.pad1 = Pad(self.win1, 100, 3, 1, self.win1_height - 2, curses.COLS, border=True)
@@ -219,42 +234,38 @@ class Screen:
         curses.echo() # echo characters to console
         curses.endwin() # return control of console
 
-def main(stdscr):
-    screen = Screen()
+    def wait_key(self, key):
+         """Wait for the given key to be pressed.
+         """
+         while True:
+             c = self.stdscr.getkey()
+             if c == key:
+                  return
 
-    screen.pad1.pad[0] = '\u2200Ax\u2200\u2200x\u2200xyt\u2200c\u2200\u2200xxyxyxxxx\u2208yyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
-    screen.pad1.pad[1] = '\u2200x\u2200x\u2200xyt\u2200c\u2200\u2200xyyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyxxyxyxyxyxyxyxyxyxyxyxyxyxyxyxyyxyxyxyyxyxx\u2200\u2200x\u2200\u2200x\u2200xyz\u2200xyz\u2200'
-    screen.pad1.move(0, 0)
-    screen.pad1.refresh()
+    def status(self, string):
+        """Print the specified message in the status bar of the window.
+        """
+        pad = self.pad3
+        window = pad.window
+        pad.clear_line(0) # clear the entire line
+        window.addstr(0, 0, string) # output string
+        window.refresh() # update display
 
-    i = 0
-    j = 0
+    def dialog(self, string):
+        """Print the given status message and wait for a key to be pressed.
+        """
+        self.status(string)
+        self.wait_key("\n")
+        self.pad3.clear_line(0)
 
-    while True:
-        c = stdscr.getkey()
-        if c == 'q': # q = quit
-            break
-        elif c == 'm':
-            screen.pad1.cursor_right(iswide_char(screen.pad1.pad[j][i]))
-            screen.pad1.refresh()
-            i += 1
-        elif c == 'n':
-            screen.pad1.cursor_left(iswide_char(screen.pad1.pad[j][i - 1]))
-            screen.pad1.refresh()
-            i -= 1
-        elif c == 'l':
-            screen.pad1.cursor_down()
-            screen.pad1.refresh()
-            j += 1
-            i = screen.pad1.scroll_char + nchars_to_chars(screen.pad1.pad[j], \
-                screen.pad1.scroll_char, screen.pad1.cursor_char)
-        elif c == 'p':
-            screen.pad1.cursor_up()
-            screen.pad1.refresh()
-            j -= 1
-            i = screen.pad1.scroll_char + nchars_to_chars(screen.pad1.pad[j], \
-                screen.pad1.scroll_char, screen.pad1.cursor_char)
-    
-    screen.exit()
+    def switch_window(self):
+        """Switch focus to next window (0-2).
+        """
+        if self.focus == self.win0:
+            self.focus = self.win1
+        elif self.focus == self.win1:
+            self.focus = self.win2
+        elif self.focus == self.win2:
+            self.focus = self.win0
+        self.focus.refresh()
 
-wrapper(main) # curses wrapper handles exceptions
