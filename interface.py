@@ -89,7 +89,7 @@ class Pad:
     def inch(self, y, x):
         return self.pad[y][x]
 
-    def cursor_right(self, iswide=False):
+    def move_right(self, iswide=False):
         """Move the cursor right one char and scroll the window if necessary.
            The function needs to be supplied with a parameter to say whether
            the character under the cursor is wide or not.
@@ -111,7 +111,7 @@ class Pad:
                         self.scroll_char += 1
                         self.cursor_char -= 2 if iswide_char(c) else 1
 
-    def cursor_left(self, iswide=False):
+    def move_left(self, iswide=False):
         """Move the cursor left one char and scroll the window if necessary.
            The function needs to know if the character to the left is wide.
         """
@@ -119,6 +119,28 @@ class Pad:
             self.cursor_char -= 2 if iswide else 1 # just move the cursor
         else:
             self.scroll_char -= 1
+
+    def cursor_left(self):
+        """Move the cursor left one char and scroll the window if necessary.
+        """
+        line = self.scroll_line + self.cursor_line
+        string = self.pad[line]
+        i = self.scroll_char + nchars_to_chars(string, \
+                self.scroll_char, self.cursor_char) # current pos. within string
+        if i > 0:
+            iswide = iswide_char(string[i - 1])
+            self.move_left(iswide)
+
+    def cursor_right(self):
+        """Move the cursor left one char and scroll the window if necessary.
+        """
+        line = self.scroll_line + self.cursor_line
+        string = self.pad[line]
+        i = self.scroll_char + nchars_to_chars(string, \
+                self.scroll_char, self.cursor_char) # current pos. within string
+        if i < len(string):
+            iswide = iswide_char(string[i])
+            self.move_right(iswide)
 
     def cursor_down(self):
         start = 1 if self.border else 0

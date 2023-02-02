@@ -27,23 +27,12 @@ def main(stdscr):
             screen.focus.refresh()
         elif c == 'KEY_RIGHT':
             pad = screen.focus
-            line = pad.scroll_line + pad.cursor_line
-            string = pad.pad[line]
-            i = pad.scroll_char + nchars_to_chars(string, \
-                pad.scroll_char, pad.cursor_char) # current pos. within string
-            if i < len(string): # check we are not at end of string
-                screen.focus.cursor_right(iswide_char(string[i]))
-                screen.focus.refresh()
+            pad.cursor_right()
+            pad.refresh()
         elif c == 'KEY_LEFT':
             pad = screen.focus
-            line = pad.scroll_line + pad.cursor_line
-            string = pad.pad[line]
-            i = pad.scroll_char + nchars_to_chars(string, \
-                pad.scroll_char, pad.cursor_char) # current pos. within string
-            if i > 0: # check we are not at end of string
-                string = pad.pad[line]
-                screen.focus.cursor_left(iswide_char(string[i - 1]))
-                screen.focus.refresh()
+            pad.cursor_left()
+            pad.refresh()
         elif c == 'KEY_DOWN':
             pad = screen.focus
             if pad != screen.pad0 and tl.focus.line != tl.focus.len():
