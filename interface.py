@@ -172,6 +172,12 @@ class Pad:
         self.window.redrawwin()
         self.window.refresh()
         self.window.redrawwin()
+        self.window.refresh()
+
+    def __setitem__(self, key, value):
+        """Overload array notation so lines can be added.
+        """
+        self.pad[key] = value
 
 class Screen:
     def __init__(self):
@@ -214,14 +220,14 @@ class Screen:
         self.win1.refresh()
         self.win2.refresh()
 
-        # window with current focus
-        self.focus = self.win0
-
         # initialise pads with plenty of lines
         self.pad0 = Pad(self.win0, 1, 1, 1, 1, curses.COLS, border=True)
         self.pad1 = Pad(self.win1, 100, 3, 1, self.win1_height - 2, curses.COLS, border=True)
         self.pad2 = Pad(self.win2, 100, self.win1_height + 2, 1, self.win2_height - 2, curses.COLS, border=True)
         self.pad3 = Pad(self.win3, 1, curses.LINES - 1, 0, 1, curses.COLS)
+
+        # pad with current focus
+        self.focus = self.pad0
 
         # update screen
         self.pad3.refresh()
@@ -264,14 +270,14 @@ class Screen:
         self.pad3.clear_line(0)
 
     def switch_window(self):
-        """Switch focus to next window (0-2).
+        """Switch focus to next pad (0-2).
         """
-        if self.focus == self.win0:
-            self.focus = self.win1
-        elif self.focus == self.win1:
-            self.focus = self.win2
-        elif self.focus == self.win2:
-            self.focus = self.win0
+        if self.focus == self.pad0:
+            self.focus = self.pad1
+        elif self.focus == self.pad1:
+            self.focus = self.pad2
+        elif self.focus == self.pad2:
+            self.focus = self.pad0
         self.focus.refresh()
 
     def process_char(self, i, mode, c):
