@@ -39,13 +39,14 @@ def adjust_nchars(string, scroll_chars, nchars):
     """
     k = 0
     j = 0
-    while j < nchars - 1:
+    while j < nchars - 1 and scroll_chars + k < len(string):
         c = string[scroll_chars + k]
         j += 2 if iswide_char(c) else 1
         k += 1
-    c = string[scroll_chars + k]
-    if not iswide_char(c) and j < nchars:
-        j += 1
+    if scroll_chars + k < len(string):
+        c = string[scroll_chars + k]
+        if not iswide_char(c) and j < nchars:
+            j += 1
     return j
 
 def nchars_to_chars(string, scroll_chars, nchars):
