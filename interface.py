@@ -1,6 +1,9 @@
 import curses # console library
 import curses.ascii # ascii classification
+from enum import Enum
 from curses import wrapper
+
+EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
     return ord(c) > 127
@@ -85,7 +88,7 @@ class Pad:
     def inch(self, y, x):
         return self.pad[y][x]
 
-    def cursor_right(self, iswide):
+    def cursor_right(self, iswide=False):
         """Move the cursor right one char and scroll the window if necessary.
            The function needs to be supplied with a parameter to say whether
            the character under the cursor is wide or not.
@@ -107,7 +110,7 @@ class Pad:
                         self.scroll_char += 1
                         self.cursor_char -= 2 if iswide_char(c) else 1
 
-    def cursor_left(self, iswide):
+    def cursor_left(self, iswide=False):
         """Move the cursor left one char and scroll the window if necessary.
            The function needs to know if the character to the left is wide.
         """
@@ -226,6 +229,8 @@ class Screen:
         self.pad1.refresh()
         self.pad0.refresh()
 
+        self.edit_text = [] # text entered at the edit/status bar as chars
+
     def exit(self):
         """Return control of the console from curses back to Python,
         """
@@ -269,3 +274,21 @@ class Screen:
             self.focus = self.win0
         self.focus.refresh()
 
+    def process_char(self, i, mode, c):
+        """Deal with a character 'c' entered at the status bar, scrolling if
+           necessary, and insert it into the text string at index 'i'. The edit
+           mode REPLACE/INSERT is given by 'mode'.
+        """
+        pad = self.pad3
+        window = pad.window
+        edit_text = self.edit_text
+        if mode == EditMode.REPLACE:
+            if i == len(edit_text):
+                edit_text.append(c)
+            else:
+                edit_text[i] = c # overwrite char at index 'i'
+        else: # INSERT
+            edit_text.insert(i, c) # insert character in string 'edit_text'
+        pad.pad[0] = ''.join(edit_text)
+        pad.cursor_right()
+        pad.refresh() # update display
