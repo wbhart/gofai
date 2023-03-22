@@ -6,6 +6,8 @@ from curses import wrapper
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
+    if c == '\u22A4':
+        return False
     return ord(c) > 127
 
 def redraw_line(window, line, string, i, width, border=False):

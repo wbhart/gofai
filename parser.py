@@ -5,7 +5,7 @@ from nodes import AddNode, AndNode, ConstNode, DepNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NegNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, TypeNode, UnionNode, VarNode
+     SupseteqNode, TypeNode, UnionNode, VarNode, BoolNode
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -22,7 +22,7 @@ statement = Grammar(
     neg_expression = ("\\neg" space)? expression
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
-    relation = elem_relation / subset_relation / alg_relation
+    relation = bool / elem_relation / subset_relation / alg_relation
     subset_relation = (set_expression space ("\\subseteq" / "\\subset" / "\\supseteq" / "\\supset") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
@@ -37,6 +37,7 @@ statement = Grammar(
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
     exp_expression = terminal (space "^" space terminal)*
     terminal = paren_expression / fn_application / const / var
+    bool = ("True" / "False")
     paren_expression = "(" neg_expression ")"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
     const = "-"? ~"[1-9][0-9]*"
@@ -164,4 +165,6 @@ class StatementVisitor(NodeVisitor):
         return res
     def visit_const(self, node, visited_children):
         return ConstNode(node.text)
-
+    def visit_bool(self, node, visited_children):
+        value = True if node.text == "True" else False
+        return BoolNode(value)

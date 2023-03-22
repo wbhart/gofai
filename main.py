@@ -4,12 +4,13 @@ from interface import Screen
 from curses import wrapper
 from editor import get_text
 from tree import TreeList
-
+from automation import AutoDict, automate
 from interface import iswide_char, nchars_to_chars
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
     tl = TreeList() # object representing lists of parsed statements
+    ad = AutoDict() # get initial automation dictionary containing basic axioms
 
     while True:
         c = stdscr.getkey()
@@ -25,6 +26,8 @@ def main(stdscr):
             tl.focus[line] = tree # insert tree in treelist
             screen.focus[line] = str(tree) # insert unicode string into pad
             screen.focus.refresh()
+        elif c == 'a': # a = automate
+            automate(screen, tl, ad)
         elif c == 'KEY_RIGHT':
             pad = screen.focus
             pad.cursor_right()

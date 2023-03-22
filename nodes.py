@@ -3,6 +3,7 @@ def isatomic(node):
         return False
     elif isinstance(node, ExistsNode) or isinstance(node, ForallNode):
         return False
+    return True
 
 # Common class for all nodes with a left and right child
 class LRNode:
@@ -277,9 +278,20 @@ class DepNode:
     def __repr__(self):
         return repr(self.typename)+"("+repr(self.dep)+")"
 
+class BoolNode:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return "\u22A4" if self.value else "\u22A5"
+
+    def __repr__(self):
+        return "True" if self.value else "False"
+
 precedence = {ExistsNode:8, ForallNode:8,
               ImpliesNode:7, IffNode:7,
               AndNode:6, OrNode:6,
+              BoolNode:5,
               # Set nodes
               SubsetNode:5, SubseteqNode:5,
               SupsetNode:5, SupseteqNode:5, ElemNode:5,
