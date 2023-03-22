@@ -1,5 +1,7 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
                   BoolNode, LRNode
+from functools import reduce
+from operator import add
 
 def addition(tree):
    sum = tree.left.value + tree.right.value
@@ -25,13 +27,13 @@ class Transform:
 class AutoDict:
     def __init__(self):
         self.dict = dict()
-        self.dict['Const + Const'] = \
+        self.dict[ihash(add_hash('Const', '+', 'Const'))] = \
                   [Transform('addition', addition)]
-        self.dict['Const - Const'] = \
+        self.dict[ihash(add_hash('Const', '-', 'Const'))] = \
                   [Transform('subtraction', subtraction)]
-        self.dict['Const * Const'] = \
+        self.dict[ihash(add_hash('Const', '*', 'Const'))] = \
                   [Transform('multiplication', multiplication)]
-        self.dict['Const = Const'] = \
+        self.dict[ihash(add_hash('Const', '=', 'Const'))] = \
                   [Transform('equality', equality)]
 
     def __getitem__(self, key):
@@ -47,6 +49,22 @@ class AutoDict:
         else:
             self.dict[key] = [value]
        
+def iarr(string):
+    return list(map(ord, list(string)))
+
+def add_hash(*args):
+    n = max(map(len, args))
+    h = list(map(sum, map(lambda x : iarr(x)+(n - len(x))*[0], args)))
+    return h
+
+def add_iarr(*args):
+    n = max(map(len, args))
+    h = list(map(sum, map(lambda x : x +(n - len(x))*[0], args)))
+    return h
+
+def ihash(arr):
+    return reduce(add, map(str, arr))
+
 def automate(screen, tl, ad):
     done = False
     while not done:
@@ -67,23 +85,24 @@ def automate(screen, tl, ad):
 
 def identify_moves(tree, ad, moves):
     if isinstance(tree, LRNode):
-        text1 = identify_moves(tree.left, ad, moves)
-        text2 = identify_moves(tree.right, ad, moves)
+        iarr1 = identify_moves(tree.left, ad, moves)
+        iarr2 = identify_moves(tree.right, ad, moves)
         if isinstance(tree, AddNode):
-            text = text1+' + '+text2
+            iar = add_iarr(iarr1, iarr('+'), iarr2)
         elif isinstance(tree, SubNode):
-            text = text1+' - '+text2
+            iar = add_iarr(iarr1, iarr('-'), iarr2)
         elif isinstance(tree, MulNode):
-            text = text1+' * '+text2
+            iar = add_iarr(iarr1, iarr('*'), iarr2)
         elif isinstance(tree, EqNode):
-            text = text1+' = '+text2
+            iar = add_iarr(iarr1, iarr('='), iarr2)
         else:
             raise Exception("Node not handled")
-        if text in ad.dict:
-            moves.append((tree, ad[text][0]))
-        return text
+        h = ihash(iar)
+        if h in ad.dict:
+            moves.append((tree, ad[h][0]))
+        return iar
     elif isinstance(tree, ConstNode):
-        return 'Const'
+        return iarr('Const')
 
 def execute_move(screen, tl, moves1, moves2):
     for i in range(len(moves1)):
