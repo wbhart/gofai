@@ -28,13 +28,13 @@ class AutoDict:
     def __init__(self):
         self.dict = dict()
         self.dict[ihash(add_hash('Const', '+', 'Const'))] = \
-                  [Transform('addition', addition)]
+            [('Natural + Natural', Transform('addition', addition))]
         self.dict[ihash(add_hash('Const', '-', 'Const'))] = \
-                  [Transform('subtraction', subtraction)]
+            [('Natural - Natural', Transform('subtraction', subtraction))]
         self.dict[ihash(add_hash('Const', '*', 'Const'))] = \
-                  [Transform('multiplication', multiplication)]
+            [('Natural * Natural', Transform('multiplication', multiplication))]
         self.dict[ihash(add_hash('Const', '=', 'Const'))] = \
-                  [Transform('equality', equality)]
+            [('Natural = Natural', Transform('equality', equality))]
 
     def __getitem__(self, key):
         if key in self.dict:
@@ -84,6 +84,7 @@ def automate(screen, tl, ad):
             screen.stdscr.getkey()
 
 def identify_moves(tree, ad, moves):
+    ty = get_typed(tree)
     if isinstance(tree, LRNode):
         iarr1 = identify_moves(tree.left, ad, moves)
         iarr2 = identify_moves(tree.right, ad, moves)
@@ -99,10 +100,35 @@ def identify_moves(tree, ad, moves):
             raise Exception("Node not handled")
         h = ihash(iar)
         if h in ad.dict:
-            moves.append((tree, ad[h][0]))
+            pot = ad[h] # get potential moves
+            for p in pot:
+                if p[0] == ty:
+                    moves.append((tree, p[1]))
         return iar
     elif isinstance(tree, ConstNode):
         return iarr('Const')
+    else:
+        raise Exception("Node not handled")
+
+def get_typed(tree):
+    if isinstance(tree, LRNode):
+        ltyped = get_typed(tree.left)
+        rtyped = get_typed(tree.right)
+        if isinstance(tree, AddNode):
+            typed = ltyped+' + '+rtyped
+        elif isinstance(tree, SubNode):
+            typed = ltyped+' - '+rtyped
+        elif isinstance(tree, MulNode):
+            typed = ltyped+' * '+rtyped
+        elif isinstance(tree, EqNode):
+            typed = ltyped+' = '+rtyped
+        else:
+            raise Exception("Node not handled")
+        return typed
+    elif isinstance(tree, ConstNode):
+        return 'Natural'
+    else:
+        raise Exception("Node not handled")
 
 def execute_move(screen, tl, moves1, moves2):
     for i in range(len(moves1)):
@@ -156,3 +182,40 @@ def replace_node(tree, old, new):
         return tree
     else:
         return tree
+
+def find_common_subexpressions(root):
+    subexpr_nodes = {}  # Dictionary to store nodes for each subexpression
+    
+    def traverse(node):
+        if isinstance(node, LRNode):
+            # Traverse left and right subtrees
+            traverse(node.left)
+            traverse(node.right)
+        elif isinstance(node, FnNode):
+            for n in node.args:
+                traverse(n)
+        elif isinstance(node, NegNode):
+            traverse(node.expr)
+        elif isinstance(node, ExistsNode) or isinstance(node, ForallNode):
+            traverse(node.var)
+            traverse(node.expr)
+
+        # Get current subtree as a string
+        subexpr = node.str()
+        
+        # Add node to the list of nodes corresponding to the subexpression
+        if subexpr in subexpr_nodes:
+            subexpr_nodes[subexpr].append(node)
+        else:
+            subexpr_nodes[subexpr] = [node]
+        
+        return subexpr
+    
+    traverse(root)
+    
+    # Extract the subexpression lists containing more than one node
+    common_subexprs = [nodes for nodes in subexpr_nodes.values() \
+                       if len(nodes) > 1]
+    
+    return common_subexprs
+
