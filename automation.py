@@ -1,5 +1,7 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
-                  BoolNode, LRNode
+                  BoolNode, ImpliesNode, FnNode, NegNode, ExistsNode, \
+                  ForallNode, LRNode
+
 from functools import reduce
 from operator import add
 
@@ -78,6 +80,9 @@ def automate(screen, tl, ad):
             move = []
             identify_moves(tree, ad, move)
             moves2.append(move)
+        # join hypotheses and targets into single tree temporarily
+        data = join_problem_state(tl.tlist1.data, tl.tlist2.data)
+        comsub = find_common_subexpressions(data)
         # rank moves
         done = execute_move(screen, tl, moves1, moves2)
         if not done:
@@ -130,6 +135,21 @@ def get_typed(tree):
     else:
         raise Exception("Node not handled")
 
+def join_problem_state(tl1, tl2):
+    if not tl1:
+        hyps = BoolNode(True)
+    else:
+        hyps = tl1[0]
+        for i in tl1[1:-1]:
+            hyps = AndNode(hyps, i)
+    if not tl2:
+        tars = BoolNode(True)
+    else:
+        tars = tl2[0]
+        for i in tl2[1:-1]:
+            tars = AndNode(tars, i)
+    return ImpliesNode(hyps, tars)
+        
 def execute_move(screen, tl, moves1, moves2):
     for i in range(len(moves1)):
         m = moves1[i]
@@ -201,7 +221,7 @@ def find_common_subexpressions(root):
             traverse(node.expr)
 
         # Get current subtree as a string
-        subexpr = node.str()
+        subexpr = str(node)
         
         # Add node to the list of nodes corresponding to the subexpression
         if subexpr in subexpr_nodes:
