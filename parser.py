@@ -1,24 +1,22 @@
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
 from pprint import pprint
-from nodes import AddNode, AndNode, ConstNode, DepNode, DiffNode, DivNode, \
+from nodes import AddNode, AndNode, ConstNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NegNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, TypeNode, UnionNode, VarNode, BoolNode
+     SupseteqNode, UnionNode, VarNode, BoolNode, TypedVarNode
+from type_system import NumberType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
 statement = Grammar(
     r"""
-    statement = type_hypothesis / substantive_hypothesis
-    type_hypothesis = var space ":" space type_decl
-    type_decl = dep_type / type_name
-    dep_type = type_name "(" var ")"
-    type_name = ~"[A-Z][A-Za-z]*"
-    substantive_hypothesis = existential / universal / neg_expression
-    existential = "\\exists" space var space substantive_hypothesis
-    universal = "\\forall" space var space substantive_hypothesis
+    statement = existential / universal / neg_expression
+    existential = "\\exists" space typed_var space statement
+    universal = "\\forall" space typed_var space statement
+    typed_var = var space "\\in" space number_type
+    number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{R}" / "\\mathbb{C}"
     neg_expression = ("\\neg" space)? expression
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
@@ -86,20 +84,14 @@ class StatementVisitor(NodeVisitor):
         return visited_children or node
     def visit_statement(self, node, visited_children):
         return visited_children[0]
-    def visit_type_decl(self, node, visited_children):
-        return visited_children[0]
-    def visit_type_hypothesis(self, node, visited_children):
-        return TypeNode(visited_children[0], visited_children[4])
-    def visit_dep_type(self, node, visited_children):
-        return DepNode(visited_children[0], visited_children[2])
-    def visit_type_name(self, node, visited_children):
-        return node.text
-    def visit_substantive_hypothesis(self, node, visited_children):
-        return visited_children[0]
     def visit_universal(self, node, visited_children):
         return ForallNode(visited_children[2], visited_children[4])
     def visit_existential(self, node, visited_children):
         return ExistsNode(visited_children[2], visited_children[4])
+    def visit_typed_var(self, node, visited_children):
+        return TypedVarNode(visited_children[0], visited_children[4])
+    def visit_number_type(self, node, visited_children):
+        return NumberType(node.text)
     def visit_relation(self, node, visited_children):
         return visited_children[0]
     def visit_subset_relation(self, node, visited_children):

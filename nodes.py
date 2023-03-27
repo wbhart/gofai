@@ -25,9 +25,10 @@ class LRNode:
 
 # AST Nodes
 class VarNode:
-    def __init__(self, name):
+    def __init__(self, name, var_type=None):
         self.name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
+        self.var_type = var_type
 
     def __str__(self):
         return self.name
@@ -249,34 +250,23 @@ class ForallNode:
     def __repr__(self):
         return "\\forall "+repr(self.var)+" "+repr(self.expr)
 
+class TypedVarNode:
+    def __init__(self, var, var_type):
+        self.var = var
+        self.var_type = var_type
+
+    def __str__(self):
+        return str(self.var)+" \u2208 "+str(self.var_type)
+
+    def __repr__(self):
+        return repr(self.var)+" \\in "+repr(self.var_type)
+
 class ElemNode(LRNode):
     def __str__(self):
         return self.paren_str(self.left)+" \u2208 "+self.paren_str(self.right)
 
     def __repr__(self):
         return self.paren_repr(self.left)+" \\in "+self.paren_repr(self.right)
-
-class TypeNode:
-    def __init__(self, var, typename):
-        self.var = var
-        self.typename = typename
-
-    def __str__(self):
-        return str(self.var)+" : "+str(self.typename)
-
-    def __repr__(self):
-        return repr(self.var)+" : "+repr(self.typename)
-
-class DepNode:
-    def __init__(self, typename, dep):
-        self.typename = typename
-        self.dep = dep
-
-    def __str__(self):
-        return str(self.typename)+"("+str(self.dep)+")"
-
-    def __repr__(self):
-        return repr(self.typename)+"("+repr(self.dep)+")"
 
 class BoolNode:
     def __init__(self, value):
@@ -287,6 +277,8 @@ class BoolNode:
 
     def __repr__(self):
         return "True" if self.value else "False"
+
+
 
 precedence = {ExistsNode:8, ForallNode:8,
               ImpliesNode:7, IffNode:7,

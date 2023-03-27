@@ -1,9 +1,10 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
                   BoolNode, ImpliesNode, FnNode, NegNode, ExistsNode, \
-                  ForallNode, LRNode
+                  ForallNode, VarNode, LRNode
 
 from functools import reduce
 from operator import add
+import copy
 
 def addition(tree):
    sum = tree.left.value + tree.right.value
@@ -83,10 +84,61 @@ def automate(screen, tl, ad):
         # join hypotheses and targets into single tree temporarily
         data = join_problem_state(tl.tlist1.data, tl.tlist2.data)
         comsub = find_common_subexpressions(data)
+        conj = conjecture_theorems(data, comsub)
         # rank moves
         done = execute_move(screen, tl, moves1, moves2)
         if not done:
             screen.stdscr.getkey()
+
+def conjecture_theorems(data, comsub):
+    if contains_constants(comsub):
+        data = copy.deepcopy(data)
+        varlist = get_vars(data) # get list of current vars used
+
+def get_vars(data):
+    varlist = []
+
+    def traverse(data):
+        if isinstance(data, VarNode):
+            found = False
+            for v in varlist:
+                if v.name == data.name:
+                    found = True
+            if not found:
+                varlist.append(data)
+        elif isinstance(data, LRNode):
+            traverse(data.left)
+            traverse(data.right)
+        elif isinstance(data, FnNode):
+            for p in data.args:
+                traverse(p)
+        elif isinstance(data, ExistsNode) or isinstance(data, ForallNode) or \
+             isinstance(data, NegNode):
+            traverse(data.expr)
+    
+    traverse(data)
+    return varlist
+
+def contains_constants(comsub):
+    for c in comsub:
+        if is_constant_expr(c[0]):
+            return True
+    return False
+
+def is_constant_expr(c):
+    if isinstance(c, ConstNode):
+        return True
+    elif isinstance(c, AddNode) or isinstance(c, SubNode) or \
+       isinstance(c, MulNode) or isinstance(c, DivNode) or \
+       isinstance(c, ExpNode):
+        return is_constant_expr(c.left) and is_constant_expr(c.right)
+    elif isinstance(c, FnNode):
+        for p in c.args:
+            if not is_constant_expr(p):
+                return False
+        return True
+    else:
+        return False 
 
 def identify_moves(tree, ad, moves):
     ty = get_typed(tree)
