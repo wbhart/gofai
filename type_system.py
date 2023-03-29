@@ -1,17 +1,17 @@
-type_name = {"\\mathbb{N}" : "Naturals",
-             "\\mathbb{Z}" : "Integers",
-             "\\mathbb{R}" : "Reals",
-             "\\mathbb{C}" : "Complex numbers"}
+type_name = {"\\mathbb{N}" : "Natural",
+             "\\mathbb{Z}" : "Integer",
+             "\\mathbb{R}" : "Real",
+             "\\mathbb{C}" : "Complex"}
 
-type_repr = {"Naturals" : "\\mathbb{N}",
-              "Integers" : "\\mathbb{Z}",
-              "Reals"    : "\\mathbb{R}",
-              "Complex numbers" : "\\mathbb{C}"}
+type_repr = {"Natural" : "\\mathbb{N}",
+              "Integer" : "\\mathbb{Z}",
+              "Real"    : "\\mathbb{R}",
+              "Complex" : "\\mathbb{C}"}
 
-type_str = {"Naturals" : "\u2115",
-              "Integers" : "\u2124",
-              "Reals"    : "\u211d",
-              "Complex numbers" : "\u2102"}
+type_str = {"Natural" : "\u2115",
+              "Integer" : "\u2124",
+              "Real"    : "\u211d",
+              "Complex" : "\u2102"}
 
 class NumberType:
     def __init__(self, name):

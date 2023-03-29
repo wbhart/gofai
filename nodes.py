@@ -1,3 +1,5 @@
+from type_system import NumberType
+
 def isatomic(node):
     if isinstance(node, LRNode):
         return False
@@ -39,6 +41,7 @@ class VarNode:
 class ConstNode:
     def __init__(self, string):
         self.value = int(string)
+        self.type = NumberType('\\mathbb{N}')
 
     def __str__(self):
         return str(self.value)
@@ -253,13 +256,13 @@ class ForallNode:
 class TypedVarNode:
     def __init__(self, var, var_type):
         self.var = var
-        self.var_type = var_type
+        self.type = var_type
 
     def __str__(self):
-        return str(self.var)+" \u2208 "+str(self.var_type)
+        return str(self.var)+" \u2208 "+str(self.type)
 
     def __repr__(self):
-        return repr(self.var)+" \\in "+repr(self.var_type)
+        return repr(self.var)+" \\in "+repr(self.type)
 
 class ElemNode(LRNode):
     def __str__(self):

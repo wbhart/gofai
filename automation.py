@@ -1,10 +1,18 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
                   BoolNode, ImpliesNode, FnNode, NegNode, ExistsNode, \
-                  ForallNode, VarNode, LRNode
+                  ForallNode, VarNode, TypedVarNode, LRNode
 
 from functools import reduce
 from operator import add
 import copy
+
+var_names = {'Natural' : ['m', 'n', 'p', 'q', 'a', 'b', 'c', 'd', \
+                         'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], \
+             'Integer' : ['m', 'n', 'p', 'q', 'a', 'b', 'c', 'd', \
+                         'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'], \
+             'Real' : ['x', 'y', 'z', 'w', 'a', 'b', 'c', 'd', 'r', \
+                       's', 't', 'u', 'v'], \
+             'Complex' : ['z', 'u', 'v', 'w', 'c', 'd', 'r', 's', 't']}
 
 def addition(tree):
    sum = tree.left.value + tree.right.value
@@ -93,7 +101,61 @@ def automate(screen, tl, ad):
 def conjecture_theorems(data, comsub):
     if contains_constants(comsub):
         data = copy.deepcopy(data)
-        varlist = get_vars(data) # get list of current vars used
+        varlist = [n.name for n in get_vars(data)] # get list of current vars used
+        binders = [] # any new biders to be added
+
+        def replace_constants(data, cslist, newvar):
+            if data in cslist:
+                return copy.deepcopy(newvar)
+            if isinstance(data, LRNode):
+                data.left = replace_constants(data.left, cslist, newvar)
+                data.right = replace_constants(data.right, cslist, newvar)
+            return data
+        
+        for nlist in comsub:
+            if is_constant_expr(nlist[0]):
+                var_type = nlist[0].type
+                new_var = get_new_var(var_type, varlist)
+                data = replace_constants(data, nlist, new_var)
+                new_bind = ForallNode(TypedVarNode(copy.deepcopy(new_var), \
+                           copy.deepcopy(var_type)), None)
+                binders.append(new_bind)
+        
+        # split into hypotheses and targets again
+        hyps = data.left
+        targs = data.right
+        quants = None
+        for b in binders:
+            in1 = var_in_tree(hyps, b.var)
+            in2 = var_in_tree(targs, b.var)
+            if in1 and in2:
+                b.expr = quants
+                quants = b
+            elif in1 and not in2:
+                b.expr = hyps
+                hyps = b
+            else:
+                b.expr = targs
+                targs = b
+        return quants, hyps, targs
+
+def var_in_tree(tree, var):
+    if isinstance(tree, VarNode):
+        return tree.name == var.name
+    elif isinstance(tree, LRNode):
+        if var_in_tree(tree.left, var):
+             return True
+        else:
+             return var_in_tree(tree.right, var)
+    else:
+        return False
+
+def first_not_in_second(list1, list2):
+    return next(filter(lambda x: x not in list2, list1), None)
+
+def get_new_var(var_type, usedvarlist):
+    varlist = var_names[var_type.name]
+    return VarNode(first_not_in_second(varlist, usedvarlist))
 
 def get_vars(data):
     varlist = []
