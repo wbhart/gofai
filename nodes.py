@@ -220,7 +220,7 @@ class DiffNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\setminus "+self.paren_repr(self.right)
 
-class NegNode(LRNode):
+class NotNode(LRNode):
     def __init__(self, expr):
         self.left = expr
         self.right = None
@@ -294,7 +294,7 @@ precedence = {ExistsNode:8, ForallNode:8,
               GeqNode:5, GtNode:5,
               EqNode:5, NeqNode:5,
               AddNode:4, SubNode:4,
-              NegNode:3,
+              NotNode:3,
               MulNode:2, DivNode:2,
               ExpNode:1,
               NaturalNode:0, VarNode:0, FnNode:0}

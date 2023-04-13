@@ -4,7 +4,7 @@ from pprint import pprint
 from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
-     NegNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
+     NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode
 from type import NumberType
 
@@ -115,7 +115,7 @@ class StatementVisitor(NodeVisitor):
         L = visited_children[0]
         expr = visited_children[1]
         if hasattr(L, '__getitem__'):
-            return NegNode(expr)
+            return NotNode(expr)
         else:
             return expr
     def visit_expression(self, node, visited_children):
