@@ -89,7 +89,8 @@ class StatementVisitor(NodeVisitor):
     def visit_existential(self, node, visited_children):
         return ExistsNode(visited_children[2], visited_children[4])
     def visit_typed_var(self, node, visited_children):
-        return VarNode(visited_children[0], visited_children[4])
+        visited_children[0].type = visited_children[4]
+        return visited_children[0]
     def visit_number_type(self, node, visited_children):
         return NumberType(node.text)
     def visit_relation(self, node, visited_children):

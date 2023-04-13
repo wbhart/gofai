@@ -173,8 +173,6 @@ def get_vars(data):
         elif isinstance(data, FnNode):
             for p in data.args:
                 traverse(p)
-        elif isinstance(data, ExistsNode) or isinstance(data, ForallNode):
-            traverse(data.expr)
     
     traverse(data)
     return varlist
@@ -269,6 +267,7 @@ def execute_move(screen, tl, moves1, moves2):
             m = m[0]
             tl.tlist1.data[i] = apply_hyp_move(tl, i, m)
             screen.pad1.pad[i] = str(tl.tlist1.data[i])
+            screen.pad1.cursor_adjust()
             screen.pad1.refresh()
             return False # not done
     for i in range(len(moves2)):
@@ -277,6 +276,7 @@ def execute_move(screen, tl, moves1, moves2):
             m = m[0]
             tl.tlist2.data[i] = apply_target_move(tl, i, m)
             screen.pad2.pad[i] = str(tl.tlist2.data[i])
+            screen.pad2.cursor_adjust()
             screen.pad2.refresh()
             return check_if_done(tl)
     return True
@@ -328,7 +328,7 @@ def find_common_subexpressions(root):
                 traverse(n)
         elif isinstance(node, ExistsNode) or isinstance(node, ForallNode):
             traverse(node.var)
-            traverse(node.expr)
+            traverse(node.left)
 
         # Get current subtree as a string
         subexpr = str(node)

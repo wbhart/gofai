@@ -6,7 +6,8 @@ from curses import wrapper
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
-    if c == '\u22A4':
+    if c == '\u22A4' or c == '\u2115' or c == '\u2124' or \
+       c == '\u2102' or c == '\u211d':
         return False
     return ord(c) > 127
 
@@ -122,6 +123,10 @@ class Pad:
         else:
             self.scroll_char -= 1
 
+    def cursor_adjust(self):
+        self.cursor_char = adjust_nchars(self.pad[self.scroll_line + self.cursor_line], \
+                            self.scroll_char, self.cursor_char)
+
     def cursor_left(self):
         """Move the cursor left one char and scroll the window if necessary.
         """
@@ -151,9 +156,8 @@ class Pad:
             self.cursor_line += 1
         else:
             self.scroll_line += 1
-        self.cursor_char = adjust_nchars(self.pad[self.scroll_line + self.cursor_line], \
-                            self.scroll_char, self.cursor_char)
-         
+        self.cursor_adjust()
+ 
     def cursor_up(self):
         start = 1 if self.border else 0
         if self.cursor_line > 0:
@@ -161,8 +165,7 @@ class Pad:
             self.cursor_line -= 1
         else:
             self.scroll_line -= 1
-        self.cursor_char = adjust_nchars(self.pad[self.scroll_line + self.cursor_line], \
-                            self.scroll_char, self.cursor_char)
+        self.cursor_adjust()
 
     def move(self, y, x):
         """Move cursor to position (y, x) in pad (assuming it is in range).

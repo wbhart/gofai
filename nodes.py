@@ -237,27 +237,29 @@ class NegNode(LRNode):
         else:
             return "\\neg"+repr(self.left)
 
-class ExistsNode:
+class ExistsNode(LRNode):
     def __init__(self, var, expr):
         self.var = var
-        self.expr = expr
+        self.left = expr
+        self.right = None
 
     def __str__(self):
-        return "\u2203"+str(self.var)+" "+str(self.expr)
+        return "\u2203"+str(self.var)+" : "+str(self.var.type)+" "+str(self.left)
 
     def __repr__(self):
-        return "\\exists "+repr(self.var)+" "+repr(self.expr)
+        return "\\exists "+repr(self.var)+" : "+repr(self.var.type)+" "+repr(self.left)
 
-class ForallNode:
+class ForallNode(LRNode):
     def __init__(self, var, expr):
         self.var = var
-        self.expr = expr
+        self.left = expr
+        self.right = None
 
     def __str__(self):
-        return "\u2200"+str(self.var)+" "+str(self.expr)
+        return "\u2200"+str(self.var)+" : "+str(self.var.type)+" "+str(self.left)
 
     def __repr__(self):
-        return "\\forall "+repr(self.var)+" "+repr(self.expr)
+        return "\\forall "+repr(self.var)+" : "+repr(self.var.type)+" "+repr(self.left)
 
 class ElemNode(LRNode):
     def __str__(self):
