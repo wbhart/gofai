@@ -43,7 +43,7 @@ class VarNode(LeafNode):
     def __repr__(self):
         return self.name
 
-class ConstNode(LeafNode):
+class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
         self.type = NumberType('\\mathbb{N}')
@@ -295,4 +295,4 @@ precedence = {ExistsNode:8, ForallNode:8,
               NegNode:3,
               MulNode:2, DivNode:2,
               ExpNode:1,
-              ConstNode:0, VarNode:0, FnNode:0}
+              NaturalNode:0, VarNode:0, FnNode:0}

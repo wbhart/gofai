@@ -1,4 +1,4 @@
-from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
+from nodes import NaturalNode, AddNode, SubNode, MulNode, EqNode, \
                   BoolNode, ImpliesNode, FnNode, ExistsNode, \
                   ForallNode, VarNode, LRNode
 
@@ -16,15 +16,15 @@ var_names = {'Natural' : ['m', 'n', 'p', 'q', 'a', 'b', 'c', 'd', \
 
 def addition(tree):
    sum = tree.left.value + tree.right.value
-   return ConstNode(sum)
+   return NaturalNode(sum)
 
 def subtraction(tree):
     diff = tree.left.value - tree.right.value
-    return ConstNode(diff)
+    return NaturalNode(diff)
 
 def multiplication(tree):
     prod = tree.left.value*tree.right.value
-    return ConstNode(prod)
+    return NaturalNode(prod)
 
 def equality(tree):
     val = tree.left.value == tree.right.value
@@ -186,7 +186,7 @@ def contains_constants(comsub):
     return False
 
 def is_constant_expr(c):
-    if isinstance(c, ConstNode):
+    if isinstance(c, NaturalNode):
         return True
     elif isinstance(c, AddNode) or isinstance(c, SubNode) or \
        isinstance(c, MulNode) or isinstance(c, DivNode) or \
@@ -222,7 +222,7 @@ def identify_moves(tree, ad, moves):
                 if p[0] == ty:
                     moves.append((tree, p[1]))
         return iar
-    elif isinstance(tree, ConstNode):
+    elif isinstance(tree, NaturalNode):
         return iarr('Const')
     else:
         raise Exception("Node not handled")
@@ -242,7 +242,7 @@ def get_typed(tree):
         else:
             raise Exception("Node not handled")
         return typed
-    elif isinstance(tree, ConstNode):
+    elif isinstance(tree, NaturalNode):
         return 'Natural'
     else:
         raise Exception("Node not handled")

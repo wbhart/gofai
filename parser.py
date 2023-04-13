@@ -1,7 +1,7 @@
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor
 from pprint import pprint
-from nodes import AddNode, AndNode, ConstNode, DiffNode, DivNode, \
+from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NegNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
@@ -31,14 +31,14 @@ statement = Grammar(
     alg_relation = (add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space)? add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2
-    mult_expression1 = const mult_expression2
+    mult_expression1 = natural mult_expression2
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
     exp_expression = terminal (space "^" space terminal)*
-    terminal = paren_expression / fn_application / const / var
+    terminal = paren_expression / fn_application / natural / var
     bool = ("True" / "False")
     paren_expression = "(" neg_expression ")"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
-    const = "-"? ~"[1-9][0-9]*"
+    natural = ~"[1-9][0-9]*"
     name = ~"[a-z][a-z0-9_]*"
     var = ~"[A-Za-z_][A-Za-z0-9_]*"
     space = ~"\s*"
@@ -155,8 +155,8 @@ class StatementVisitor(NodeVisitor):
         for v in visited_children[1]:
             res = ExpNode(res, v[3])
         return res
-    def visit_const(self, node, visited_children):
-        return ConstNode(node.text)
+    def visit_natural(self, node, visited_children):
+        return NaturalNode(node.text)
     def visit_bool(self, node, visited_children):
         value = True if node.text == "True" else False
         return BoolNode(value)
