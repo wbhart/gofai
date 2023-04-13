@@ -1,5 +1,5 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
-                  BoolNode, ImpliesNode, FnNode, NegNode, ExistsNode, \
+                  BoolNode, ImpliesNode, FnNode, ExistsNode, \
                   ForallNode, VarNode, LRNode
 
 from functools import reduce
@@ -173,8 +173,7 @@ def get_vars(data):
         elif isinstance(data, FnNode):
             for p in data.args:
                 traverse(p)
-        elif isinstance(data, ExistsNode) or isinstance(data, ForallNode) or \
-             isinstance(data, NegNode):
+        elif isinstance(data, ExistsNode) or isinstance(data, ForallNode):
             traverse(data.expr)
     
     traverse(data)
@@ -327,8 +326,6 @@ def find_common_subexpressions(root):
         elif isinstance(node, FnNode):
             for n in node.args:
                 traverse(n)
-        elif isinstance(node, NegNode):
-            traverse(node.expr)
         elif isinstance(node, ExistsNode) or isinstance(node, ForallNode):
             traverse(node.var)
             traverse(node.expr)

@@ -215,21 +215,22 @@ class DiffNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\setminus "+self.paren_repr(self.right)
 
-class NegNode:
+class NegNode(LRNode):
     def __init__(self, expr):
-        self.expr = expr
+        self.left = expr
+        self.right = None
 
     def __str__(self):
-        if not atomic(self.expr) and precedence[type(self.expr)] > precedence[type(self)]:
-            return "\u00ac"+'('+str(self.expr)+')'
+        if not atomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+            return "\u00ac"+'('+str(self.left)+')'
         else:
-            return "\u00ac"+str(self.expr)
+            return "\u00ac"+str(self.left)
 
     def __repr__(self):
-        if not atomic(self.expr) and precedence[type(self.expr)] > precedence[type(self)]:
-            return "\\neg"+'('+repr(self.expr)+')'
+        if not atomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+            return "\\neg"+'('+repr(self.left)+')'
         else:
-            return "\\neg"+repr(self.expr)
+            return "\\neg"+repr(self.left)
 
 class ExistsNode:
     def __init__(self, var, expr):
