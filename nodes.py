@@ -7,7 +7,12 @@ def isatomic(node):
         return False
     return True
 
-# Common class for all nodes with a left and right child
+# Common class for all leaf nodes, i.e. nodes containing no expr children
+
+class LeafNode:
+    pass 
+
+# Common class for all nodes with a left and right child (may be None)
 class LRNode:
     def __init__(self, left, right):
         self.left = left
@@ -26,7 +31,7 @@ class LRNode:
             return repr(child)
 
 # AST Nodes
-class VarNode:
+class VarNode(LeafNode):
     def __init__(self, name, var_type=None):
         self.name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
@@ -38,7 +43,7 @@ class VarNode:
     def __repr__(self):
         return self.name
 
-class ConstNode:
+class ConstNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
         self.type = NumberType('\\mathbb{N}')
@@ -261,7 +266,7 @@ class ElemNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\in "+self.paren_repr(self.right)
 
-class BoolNode:
+class BoolNode(LeafNode):
     def __init__(self, value):
         self.value = value
 
