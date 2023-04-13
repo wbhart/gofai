@@ -5,8 +5,8 @@ from nodes import AddNode, AndNode, ConstNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NegNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode, TypedVarNode
-from type_system import NumberType
+     SupseteqNode, UnionNode, VarNode, BoolNode
+from type import NumberType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -15,7 +15,7 @@ statement = Grammar(
     statement = existential / universal / neg_expression
     existential = "\\exists" space typed_var space statement
     universal = "\\forall" space typed_var space statement
-    typed_var = var space "\\in" space number_type
+    typed_var = var space ":" space number_type
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{R}" / "\\mathbb{C}"
     neg_expression = ("\\neg" space)? expression
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
@@ -89,7 +89,7 @@ class StatementVisitor(NodeVisitor):
     def visit_existential(self, node, visited_children):
         return ExistsNode(visited_children[2], visited_children[4])
     def visit_typed_var(self, node, visited_children):
-        return TypedVarNode(visited_children[0], visited_children[4])
+        return VarNode(visited_children[0], visited_children[4])
     def visit_number_type(self, node, visited_children):
         return NumberType(node.text)
     def visit_relation(self, node, visited_children):

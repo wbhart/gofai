@@ -1,6 +1,6 @@
 from nodes import ConstNode, AddNode, SubNode, MulNode, EqNode, \
                   BoolNode, ImpliesNode, FnNode, NegNode, ExistsNode, \
-                  ForallNode, VarNode, TypedVarNode, LRNode
+                  ForallNode, VarNode, LRNode
 
 from functools import reduce
 from operator import add
@@ -117,8 +117,7 @@ def conjecture_theorems(data, comsub):
                 var_type = nlist[0].type
                 new_var = get_new_var(var_type, varlist)
                 data = replace_constants(data, nlist, new_var)
-                new_bind = ForallNode(TypedVarNode(copy.deepcopy(new_var), \
-                           copy.deepcopy(var_type)), None)
+                new_bind = ForallNode(new_var, None)
                 binders.append(new_bind)
         
         # split into hypotheses and targets again

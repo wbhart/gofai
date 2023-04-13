@@ -1,4 +1,4 @@
-from type_system import NumberType
+from type import NumberType
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -30,7 +30,7 @@ class VarNode:
     def __init__(self, name, var_type=None):
         self.name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
-        self.var_type = var_type
+        self.type = var_type
 
     def __str__(self):
         return self.name
@@ -252,17 +252,6 @@ class ForallNode:
 
     def __repr__(self):
         return "\\forall "+repr(self.var)+" "+repr(self.expr)
-
-class TypedVarNode:
-    def __init__(self, var, var_type):
-        self.var = var
-        self.type = var_type
-
-    def __str__(self):
-        return str(self.var)+" \u2208 "+str(self.type)
-
-    def __repr__(self):
-        return repr(self.var)+" \\in "+repr(self.type)
 
 class ElemNode(LRNode):
     def __str__(self):
