@@ -1,11 +1,10 @@
 import curses # console library
 import curses.ascii # ascii classification
-from interface import Screen
+from interface import Screen, iswide_char, nchars_to_chars
 from curses import wrapper
 from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
-from interface import iswide_char, nchars_to_chars
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
