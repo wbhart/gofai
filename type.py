@@ -1,15 +1,18 @@
 type_name = {"\\mathbb{N}" : "Natural",
              "\\mathbb{Z}" : "Integer",
+             "\\mathbb{Q}" : "Rational",
              "\\mathbb{R}" : "Real",
              "\\mathbb{C}" : "Complex"}
 
 type_repr = {"Natural" : "\\mathbb{N}",
               "Integer" : "\\mathbb{Z}",
+              "Rational" : "\\mathbb{Q}",
               "Real"    : "\\mathbb{R}",
               "Complex" : "\\mathbb{C}"}
 
 type_str = {"Natural" : "\u2115",
               "Integer" : "\u2124",
+              "Rational" : "\u211a",
               "Real"    : "\u211d",
               "Complex" : "\u2102"}
 

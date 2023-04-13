@@ -7,7 +7,7 @@ EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
     if c == '\u22A4' or c == '\u2115' or c == '\u2124' or \
-       c == '\u2102' or c == '\u211d':
+       c == '\u2102' or c == '\u211a' or c == '\u211d':
         return False
     return ord(c) > 127
 
