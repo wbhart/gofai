@@ -66,12 +66,15 @@ class FnNode:
         self.name = name
         self.args = args
         self.dbr = -1 # debruijn indices (-1 = not set)
+        self.is_skolem = False # Whether this is a skolem function
 
     def __str__(self):
-        return self.name+"("+', '.join(str(e) for e in self.args)+")"
+        name = self.name+"\u0307" if self.is_skolem else self.name
+        return name+"("+', '.join(str(e) for e in self.args)+")"
 
     def __repr__(self):
-        return self.name+"("+', '.join(repr(e) for e in self.args)+")"
+        name = "\\dot{"+self.name+"}" if self.is_skolem else self.name
+        return name+"("+', '.join(repr(e) for e in self.args)+")"
 
 class AddNode(LRNode):
     def __str__(self):

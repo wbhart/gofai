@@ -3,7 +3,7 @@ class TList:
        contains a parsed statement.
     """
     def __init__(self):
-        self.data = [] # line text/AST pair array
+        self.data = [] # list of ASTs in window
         self.line = 0 # which line of text does cursor line correspond to
 
     def __setitem__(self, key, value):
