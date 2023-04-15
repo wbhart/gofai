@@ -287,7 +287,7 @@ def check_if_done(tl):
             return False
     return True
 
-def apply_hyp_move(t1, i, m):
+def apply_hyp_move(tl, i, m):
     return tl
 
 def apply_target_move(tl, i, m):

@@ -1,5 +1,5 @@
 from parsimonious.grammar import Grammar
-from parsimonious.nodes import NodeVisitor
+from parsimonious.nodes import NodeVisitor, Node
 from pprint import pprint
 from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
@@ -13,8 +13,8 @@ from type import NumberType
 statement = Grammar(
     r"""
     statement = existential / universal / neg_expression
-    existential = "\\exists" space typed_var space statement
-    universal = "\\forall" space typed_var space statement
+    existential = "\\exists" space typed_var space statement?
+    universal = "\\forall" space typed_var space statement?
     typed_var = var space ":" space number_type
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}"
     neg_expression = ("\\neg" space)? expression
@@ -38,7 +38,7 @@ statement = Grammar(
     bool = ("True" / "False")
     paren_expression = "(" neg_expression ")"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
-    natural = ~"[1-9][0-9]*"
+    natural = ~"[1-9][0-9]*" / ~"0"
     name = ~"[a-z][a-z0-9_]*"
     var = ~"[A-Za-z_][A-Za-z0-9_]*"
     space = ~"\s*"
@@ -85,9 +85,17 @@ class StatementVisitor(NodeVisitor):
     def visit_statement(self, node, visited_children):
         return visited_children[0]
     def visit_universal(self, node, visited_children):
-        return ForallNode(visited_children[2], visited_children[4])
+        expr = visited_children[4]
+        if expr:
+            return ForallNode(visited_children[2], expr[0])
+        else:
+            return ForallNode(visited_children[2], None)
     def visit_existential(self, node, visited_children):
-        return ExistsNode(visited_children[2], visited_children[4])
+        expr = visited_children[4]
+        if isinstance(expr, Node):
+            return ExistsNode(visited_children[2], None)
+        else:
+            return ExistsNode(visited_children[2], expr[0])
     def visit_typed_var(self, node, visited_children):
         visited_children[0].type = visited_children[4]
         return visited_children[0]
