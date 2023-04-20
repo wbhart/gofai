@@ -36,12 +36,13 @@ class VarNode(LeafNode):
         self.name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
         self.type = var_type
+        self.is_metavar = False # whether this is a metavariable
 
     def __str__(self):
-        return self.name
+        return self.name+"\u0307" if self.is_metavar else self.name
 
     def __repr__(self):
-        return self.name
+        return "\\dot{"+self.name+"}" if self.is_metavar else self.name
 
 class NaturalNode(LeafNode):
     def __init__(self, string):
@@ -67,13 +68,14 @@ class FnNode:
         self.args = args
         self.dbr = -1 # debruijn indices (-1 = not set)
         self.is_skolem = False # Whether this is a skolem function
+        self.is_metavar = False # Whether this is a metavariable
 
     def __str__(self):
-        name = self.name+"\u0307" if self.is_skolem else self.name
+        name = self.name+"\u0307" if self.is_metavar else self.name
         return name+"("+', '.join(str(e) for e in self.args)+")"
 
     def __repr__(self):
-        name = "\\dot{"+self.name+"}" if self.is_skolem else self.name
+        name = "\\dot{"+self.name+"}" if self.is_metavar else self.name
         return name+"("+', '.join(repr(e) for e in self.args)+")"
 
 class AddNode(LRNode):
