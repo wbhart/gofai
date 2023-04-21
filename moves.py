@@ -1,5 +1,55 @@
 from copy import deepcopy
-from nodes import ForallNode, ExistsNode, VarNode, FnNode, LRNode
+from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, FnNode, LRNode
+from unification import unify, subst
+
+def select_hypothesis(screen):
+    window = screen.win1
+    pad = screen.pad1
+    window.refresh()
+
+    while True:
+        c = screen.stdscr.getkey()
+        if c == 'KEY_UP':
+            pad.cursor_up()
+            pad.refresh()
+        elif c == 'KEY_DOWN':
+            pad.cursor_down()
+            pad.refresh()
+        elif c == '\x1b': # ESC = cancel
+            return -1
+        elif c == '\n':
+            return pad.scroll_line + pad.cursor_line
+
+def modus_ponens(screen, tl):
+    line1 = select_hypothesis(screen)
+    if line1 == -1: # Cancelled
+        return
+    line2 = select_hypothesis(screen)
+    if line2 == -1: # Cancelled
+        return
+    tlist1 = tl.tlist1
+    tlist2 = tl.tlist2
+    tree1 = tlist1.data[line1]
+    tree2 = tlist1.data[line2]
+    if not isinstance(tree2, ImpliesNode): # no implication after quantifiers
+        return 
+    qP1 = tree1
+    qP2 = tree2.left
+    unifies, assign = unify(qP1, qP2)
+    if not unifies:
+        return # does not unify, bogus selection
+    n = tlist1.len()
+    tlist1.data.append(substitute(tree2.right, assign))
+    screen.pad1[n] = str(tlist1.data[n])# make substitutions
+    # update windows
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus.refresh()
+
+def substitute(tree, assign):
+   for (var, val) in assign:
+       tree = subst(tree, var, val)
+   return tree
 
 def skolemize(screen, tl):
     tl0 = tl.tlist0.data # quantifier zone
@@ -121,7 +171,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
                 fn.is_metavar = True
             return fn
     elif isinstance(tree, FnNode):
-        for i in range(0, len(args)):
+        for i in range(0, len(tree.args)):
             tree.args[i] = skolemize_statement(tree.args[i], deps, sk, qz, mv, positive)
             rollback()
         return tree
