@@ -30,6 +30,32 @@ class LRNode:
         else:
             return repr(child)
 
+def univar(name):
+    unicode_dict = {"\\alpha" : "\u03b1",
+                    "\\beta" : "\u03b2",
+                    "\\gamma" : "\u03b3",
+                    "\\delta" : "\u03b4",
+                    "\\epsilon" : "\u03b5",
+                    "\\zeta" : "\u03b6",
+                    "\\eta" : "\u03b7",
+                    "\\theta" : "\u03b8",
+                    "\\kappa" : "\u03ba",
+                    "\\lambda" : "\u03bb",
+                    "\\mu" : "\u03bc",
+                    "\\nu" : "\u03bd",
+                    "\\xi" : "\u03be",
+                    "\\rho" : "\u03c1",
+                    "\\sigma" : "\u03c3",
+                    "\\tau" : "\u03c4",
+                    "\\phi" : "\u03c6",
+                    "\\chi" : "\u03c7",
+                    "\\psi" : "\u03c8",
+                    "\\omega" : "\u03c9"}
+    if name in unicode_dict:
+        return unicode_dict[name]
+    else:
+        return name
+
 # AST Nodes
 class VarNode(LeafNode):
     def __init__(self, name, var_type=None):
@@ -39,7 +65,7 @@ class VarNode(LeafNode):
         self.is_metavar = False # whether this is a metavariable
 
     def __str__(self):
-        return self.name+"\u0307" if self.is_metavar else self.name
+        return univar(self.name)+"\u0307" if self.is_metavar else univar(self.name)
 
     def __repr__(self):
         return "\\dot{"+self.name+"}" if self.is_metavar else self.name
@@ -164,14 +190,14 @@ class IffNode(LRNode):
 
 class AndNode(LRNode):
     def __str__(self):
-        return self.paren_str(self.left)+"\u2227"+self.paren_str(self.right)
+        return self.paren_str(self.left)+" \u2227 "+self.paren_str(self.right)
 
     def __repr__(self):
         return self.paren_repr(self.left)+" \\wedge "+self.paren_repr(self.right)
 
 class OrNode(LRNode):
     def __str__(self):
-        return self.paren_str(self.left)+"\u2228"+self.paren_str(self.right)
+        return self.paren_str(self.left)+" \u2228 "+self.paren_str(self.right)
 
     def __repr__(self):
         return self.paren_repr(self.left)+" \\vee "+self.paren_repr(self.right)
