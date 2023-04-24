@@ -71,8 +71,8 @@ def modus_ponens(screen, tl):
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
         return 
-    qP1 = tree2
-    qP2 = tree1.left if forward else tree1.right
+    qP1 = tree1.left if forward else tree1.right
+    qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
         return # does not unify, bogus selection
@@ -102,9 +102,9 @@ def modus_tollens(screen, tl):
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
         return 
-    qP1 = tree2
-    qP2 = complement_tree(tree1.right) if forward else \
+    qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
+    qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
         return # does not unify, bogus selection
@@ -210,6 +210,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
             deps.append(tree.var)
             qz.append(tree)
         else:
+            deps.append(tree.var)
             mv.append(tree.var.name)
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
         rollback()
