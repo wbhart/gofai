@@ -5,7 +5,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode
+     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode
 from type import NumberType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -34,9 +34,10 @@ statement = Grammar(
     mult_expression1 = natural mult_expression2
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
     exp_expression = terminal (space "^" space terminal)*
-    terminal = paren_expression / fn_application / natural / var
+    terminal = paren_expression / abs_expression / fn_application / natural / var
     bool = ("True" / "False")
     paren_expression = "(" neg_expression ")"
+    abs_expression = "|" neg_expression "|"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
     name = ~"[A-Za-z][a-z0-9_]*"
@@ -151,6 +152,8 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_paren_expression(self, node, visited_children):
         return visited_children[1]
+    def visit_abs_expression(self, node, visited_children):
+        return AbsNode(visited_children[1])
     def visit_fn_application(self, node, visited_children):
         args = []
         for v in visited_children[2]:
