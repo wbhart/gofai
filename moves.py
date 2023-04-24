@@ -30,23 +30,27 @@ def complement_tree(tree):
 
     return complement(deepcopy(tree))
 
-def select_hypothesis(screen, second):
+def select_hypothesis(screen, tl, second):
     window = screen.win1
     pad = screen.pad1
+    tlist = tl.tlist1
     window.refresh()
     forward = True
 
     while True:
         c = screen.stdscr.getkey()
         if c == 'KEY_UP':
-            pad.cursor_up()
-            pad.refresh()
+            if pad.scroll_line > 0 or pad.cursor_line > 0:
+                pad.cursor_up()
+                pad.refresh()
         elif c == 'KEY_DOWN':
-            pad.cursor_down()
-            pad.refresh()
+            if pad.scroll_line + pad.cursor_line < tlist.len():
+                pad.cursor_down()
+                pad.refresh()
         elif second and c == '\t': # TAB = switch hypotheses/targets, forward/backward
             pad = screen.pad2 if forward else screen.pad1
             window = screen.win2 if forward else screen.win1
+            tlist = tl.tlist2 if forward else tl.tlist1
             forward = not forward
             pad.refresh()
         elif c == '\x1b': # ESC = cancel
@@ -55,10 +59,10 @@ def select_hypothesis(screen, second):
             return forward, pad.scroll_line + pad.cursor_line
 
 def modus_ponens(screen, tl):
-    forward, line1 = select_hypothesis(screen, False)
+    forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
         return
-    forward, line2 = select_hypothesis(screen, True)
+    forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
         return
     tlist1 = tl.tlist1
@@ -86,10 +90,10 @@ def modus_ponens(screen, tl):
     screen.focus.refresh()
 
 def modus_tollens(screen, tl):
-    forward, line1 = select_hypothesis(screen, False)
+    forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
         return
-    forward, line2 = select_hypothesis(screen, True)
+    forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
         return
     tlist1 = tl.tlist1
