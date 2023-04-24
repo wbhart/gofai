@@ -30,7 +30,7 @@ def main(stdscr):
             automate(screen, tl, ad)
         elif c == 's': # skolemize
             skolemize(screen, tl)
-        elif c == 'p' : # modus ponens
+        elif c == 'p': # modus ponens
             modus_ponens(screen, tl)
         elif c == 'KEY_RIGHT':
             pad = screen.focus

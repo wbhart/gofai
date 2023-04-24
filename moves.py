@@ -2,10 +2,11 @@ from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, FnNode, LRNode
 from unification import unify, subst
 
-def select_hypothesis(screen):
+def select_hypothesis(screen, second):
     window = screen.win1
     pad = screen.pad1
     window.refresh()
+    forward = True
 
     while True:
         c = screen.stdscr.getkey()
@@ -15,32 +16,42 @@ def select_hypothesis(screen):
         elif c == 'KEY_DOWN':
             pad.cursor_down()
             pad.refresh()
+        elif second and c == '\t': # TAB = switch hypotheses/targets, forward/backward
+            pad = screen.pad2 if forward else screen.pad1
+            window = screen.win2 if forward else screen.win1
+            forward = not forward
+            pad.refresh()
         elif c == '\x1b': # ESC = cancel
             return -1
         elif c == '\n':
-            return pad.scroll_line + pad.cursor_line
+            return forward, pad.scroll_line + pad.cursor_line
 
 def modus_ponens(screen, tl):
-    line1 = select_hypothesis(screen)
+    forward, line1 = select_hypothesis(screen, False)
     if line1 == -1: # Cancelled
         return
-    line2 = select_hypothesis(screen)
+    forward, line2 = select_hypothesis(screen, True)
     if line2 == -1: # Cancelled
         return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
     tree1 = tlist1.data[line1]
-    tree2 = tlist1.data[line2]
-    if not isinstance(tree2, ImpliesNode): # no implication after quantifiers
+    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
+    if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
         return 
-    qP1 = tree1
-    qP2 = tree2.left
+    qP1 = tree2
+    qP2 = tree1.left if forward else tree1.right
     unifies, assign = unify(qP1, qP2)
     if not unifies:
         return # does not unify, bogus selection
-    n = tlist1.len()
-    tlist1.data.append(substitute(tree2.right, assign))
-    screen.pad1[n] = str(tlist1.data[n])# make substitutions
+    if forward:
+        n = tlist1.len()
+        tlist1.data.append(substitute(tree1.right, assign))
+        screen.pad1[n] = str(tlist1.data[n])# make substitutions
+    else:
+        n = tlist2.len()
+        tlist2.data.append(substitute(tree1.left, assign))
+        screen.pad2[n] = str(tlist2.data[n])
     # update windows
     screen.pad1.refresh()
     screen.pad2.refresh()
