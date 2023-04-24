@@ -1,6 +1,34 @@
 from copy import deepcopy
-from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, FnNode, LRNode
+from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
+     NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
+     FnNode, LRNode
 from unification import unify, subst
+
+def complement_tree(tree):
+    
+    def complement(tree):
+        if isinstance(tree, EqNode):
+            return NeqNode(tree.left, tree.right)
+        elif isinstance(tree, NeqNode):
+            return EqNode(tree.left, tree.right)
+        elif isinstance(tree, LtNode):
+            return GeqNode(tree.left, tree.right)
+        elif isinstance(tree, GtNode):
+            return LeqNode(tree.left, tree.right)
+        elif isinstance(tree, LeqNode):
+            return GtNode(tree.left, tree.right)
+        elif isinstance(tree, GeqNode):
+            return LtNode(tree.left, tree.right)
+        elif isinstance(tree, AndNode):
+            return OrNode(complement(tree.left), complement(tree.right))
+        elif isinstance(tree, OrNode):
+            return AndNode(complement(tree.left), complement(tree.right))
+        elif isinstance(tree, NotNode):
+            return tree.left
+        else:
+            return NotNode(tree)
+
+    return complement(deepcopy(tree))
 
 def select_hypothesis(screen, second):
     window = screen.win1
@@ -51,6 +79,38 @@ def modus_ponens(screen, tl):
     else:
         n = tlist2.len()
         tlist2.data.append(substitute(tree1.left, assign))
+        screen.pad2[n] = str(tlist2.data[n])
+    # update windows
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus.refresh()
+
+def modus_tollens(screen, tl):
+    forward, line1 = select_hypothesis(screen, False)
+    if line1 == -1: # Cancelled
+        return
+    forward, line2 = select_hypothesis(screen, True)
+    if line2 == -1: # Cancelled
+        return
+    tlist1 = tl.tlist1
+    tlist2 = tl.tlist2
+    tree1 = tlist1.data[line1]
+    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
+    if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+        return 
+    qP1 = tree2
+    qP2 = complement_tree(tree1.right) if forward else \
+          complement_tree(tree1.left)
+    unifies, assign = unify(qP1, qP2)
+    if not unifies:
+        return # does not unify, bogus selection
+    if forward:
+        n = tlist1.len()
+        tlist1.data.append(complement_tree(substitute(tree1.left, assign)))
+        screen.pad1[n] = str(tlist1.data[n])# make substitutions
+    else:
+        n = tlist2.len()
+        tlist2.data.append(complement_tree(substitute(tree1.right, assign)))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
     screen.pad1.refresh()

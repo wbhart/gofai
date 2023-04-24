@@ -5,7 +5,7 @@ from curses import wrapper
 from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
-from moves import skolemize, modus_ponens
+from moves import skolemize, modus_ponens, modus_tollens
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -32,6 +32,8 @@ def main(stdscr):
             skolemize(screen, tl)
         elif c == 'p': # modus ponens
             modus_ponens(screen, tl)
+        elif c == 't': # modus tollens
+            modus_tollens(screen, tl)
         elif c == 'KEY_RIGHT':
             pad = screen.focus
             pad.cursor_right()
