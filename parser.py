@@ -12,9 +12,11 @@ from type import NumberType
 
 statement = Grammar(
     r"""
-    statement = existential / universal / neg_expression
-    existential = "\\exists" space typed_var space statement?
-    universal = "\\forall" space typed_var space statement?
+    statement = existential / exists / universal / forall / neg_expression
+    existential = exists space statement
+    universal = forall space statement
+    exists = "\\exists" space typed_var
+    forall = "\\forall" space typed_var
     typed_var = var space ":" space number_type
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}"
     neg_expression = ("\\neg" space)? expression
@@ -86,17 +88,19 @@ class StatementVisitor(NodeVisitor):
     def visit_statement(self, node, visited_children):
         return visited_children[0]
     def visit_universal(self, node, visited_children):
-        expr = visited_children[4]
-        if expr:
-            return ForallNode(visited_children[2], expr[0])
-        else:
-            return ForallNode(visited_children[2], None)
+        expr = visited_children[2]
+        quantor = visited_children[0]
+        quantor.left = expr
+        return quantor
     def visit_existential(self, node, visited_children):
-        expr = visited_children[4]
-        if isinstance(expr, Node):
-            return ExistsNode(visited_children[2], None)
-        else:
-            return ExistsNode(visited_children[2], expr[0])
+        expr = visited_children[2]
+        quantor = visited_children[0]
+        quantor.left = expr
+        return quantor
+    def visit_forall(self, node, visited_children):
+        return ForallNode(visited_children[2], None)
+    def visit_exists(self, node, visited_children):
+        return ExistsNode(visited_children[2], None)
     def visit_typed_var(self, node, visited_children):
         visited_children[0].type = visited_children[4]
         return visited_children[0]
