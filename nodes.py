@@ -98,11 +98,13 @@ class FnNode:
 
     def __str__(self):
         name = self.name+"\u0307" if self.is_metavar else self.name
-        return name+"("+', '.join(str(e) for e in self.args)+")"
+        sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
+        return name+sig
 
     def __repr__(self):
         name = "\\dot{"+self.name+"}" if self.is_metavar else self.name
-        return name+"("+', '.join(repr(e) for e in self.args)+")"
+        sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
+        return name+sig
 
 class ConstNode(LRNode):
     def __init__(self, var, expr):
