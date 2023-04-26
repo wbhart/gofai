@@ -6,7 +6,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode
-from type import NumberType
+from type import NumberType, NamedType, FnType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -17,7 +17,11 @@ statement = Grammar(
     universal = forall space statement
     exists = "\\exists" space typed_var
     forall = "\\forall" space typed_var
-    typed_var = var space ":" space number_type
+    typed_var = var space ":" space type
+    type = fn_type / basic_type
+    basic_type = number_type / named_type
+    fn_type = basic_type space "\\to" space basic_type
+    named_type = "Set"
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}"
     neg_expression = ("\\neg" space)? expression
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
@@ -104,8 +108,16 @@ class StatementVisitor(NodeVisitor):
     def visit_typed_var(self, node, visited_children):
         visited_children[0].type = visited_children[4]
         return visited_children[0]
+    def visit_type(self, node, visited_children):
+        return visited_children[0]
+    def visit_basic_type(self, node, visited_children):
+        return visited_children[0]
+    def visit_named_type(self, node, visited_children):
+        return NamedType(node.text)
     def visit_number_type(self, node, visited_children):
         return NumberType(node.text)
+    def visit_fn_type(self, node, visited_children):
+        return FnType(visited_children[0], visited_children[4])
     def visit_relation(self, node, visited_children):
         return visited_children[0]
     def visit_subset_relation(self, node, visited_children):

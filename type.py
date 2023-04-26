@@ -25,3 +25,24 @@ class NumberType:
 
     def __str__(self):
         return type_str[self.name]
+
+class NamedType:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+         return self.name
+
+    def __str__(self):
+         return self.name
+
+class FnType:
+    def __init__(self, domain, codomain):
+         self.domain = domain
+         self.codomain = codomain
+
+    def __repr__(self):
+         return repr(self.domain)+" \\to "+repr(self.codomain)
+
+    def __str__(self):
+         return str(self.domain)+" \u2192 "+str(self.codomain)
