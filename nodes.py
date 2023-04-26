@@ -104,6 +104,20 @@ class FnNode:
         name = "\\dot{"+self.name+"}" if self.is_metavar else self.name
         return name+"("+', '.join(repr(e) for e in self.args)+")"
 
+class ConstNode(LRNode):
+    def __init__(self, var, expr):
+        self.var = var
+        self.left = expr
+        self.right = None
+
+    def __str__(self):
+        expr = " "+str(self.left) if self.left else ""
+        return str(self.var)+" : "+str(self.var.type)+expr
+
+    def __repr__(self):
+        expr = " "+repr(self.left) if self.left else ""
+        return repr(self.var)+" : "+repr(self.var.type)+expr
+
 class AddNode(LRNode):
     def __str__(self):
         return self.paren_str(self.left)+" + "+self.paren_str(self.right)

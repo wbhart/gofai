@@ -5,14 +5,15 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode
+     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode
 from type import NumberType, NamedType, FnType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
 statement = Grammar(
     r"""
-    statement = existential / exists / universal / forall / neg_expression
+    statement = typed_constant / existential / exists / universal / forall / neg_expression
+    typed_constant = typed_var space statement?
     existential = exists space statement
     universal = forall space statement
     exists = "\\exists" space typed_var
@@ -91,6 +92,11 @@ class StatementVisitor(NodeVisitor):
         return visited_children or node
     def visit_statement(self, node, visited_children):
         return visited_children[0]
+    def visit_typed_constant(self, node, visited_children):
+        if isinstance(visited_children[2], Node):
+            return ConstNode(visited_children[0], None)
+        else:
+            return ConstNode(visited_children[0], visited_children[2][0])
     def visit_universal(self, node, visited_children):
         expr = visited_children[2]
         quantor = visited_children[0]
