@@ -24,6 +24,7 @@ def library_export(screen, tl):
     for tar in tlist2:
         library.write(repr(tar)+"\n")
     library.close()
+    screen.focus.refresh()
 
 def complement_tree(tree):
     

@@ -1,6 +1,6 @@
-from nodes import NaturalNode, AddNode, SubNode, MulNode, EqNode, \
-                  BoolNode, ImpliesNode, FnNode, ExistsNode, \
-                  ForallNode, VarNode, LRNode
+from nodes import NaturalNode, AddNode, SubNode, MulNode, DivNode, \
+                  ExpNode, EqNode, BoolNode, ImpliesNode, FnNode, \
+                  ExistsNode, ForallNode, VarNode, LRNode
 
 from functools import reduce
 from operator import add

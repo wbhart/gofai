@@ -2,7 +2,12 @@ type_name = {"\\mathbb{N}" : "Natural",
              "\\mathbb{Z}" : "Integer",
              "\\mathbb{Q}" : "Rational",
              "\\mathbb{R}" : "Real",
-             "\\mathbb{C}" : "Complex"}
+             "\\mathbb{C}" : "Complex",
+             "\\N" : "Natural",
+             "\\Z" : "Integer",
+             "\\Q" : "Rational",
+             "\\R" : "Real",
+             "\\C" : "Complex"}
 
 type_repr = {"Natural" : "\\mathbb{N}",
               "Integer" : "\\mathbb{Z}",

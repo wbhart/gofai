@@ -14,3 +14,46 @@ Tags: #algebra #iff #\mathbb{R}
 a = b
 ------------------------------
 \forall c : \mathbb{R} a - c = b - c
+
+Title: Multiplication on both sides of an equality
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a = b
+------------------------------
+\forall c : \mathbb{R} a*c = b*c
+
+Title: Division on both sides of an equality
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a = b
+c \neq 0
+------------------------------
+a/c = b/c
+
+Title: Commutativity of equality
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a = b
+------------------------------
+b = a
+
+Title: Multiplication by zero
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} a*0 = 0
+
+Title: Multiplication by one
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} a*1 = a
+
+Title: Addition of zero
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} a + 0 = a
