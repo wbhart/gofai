@@ -79,3 +79,15 @@ Tags: #algebra #iff #\mathbb{R}
 a > 1
 ------------------------------
 1/a > 0 \wedge 1/a < 1
+
+Title: Commutativity of multiplication
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} \forall b : \mathbb{R} a*b = b*a
+
+Title: Distributivity of multiplication over addition
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R} a*(b + c) = a*b + a*c
