@@ -28,11 +28,58 @@ def new_result(screen, tl):
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
 
+def tags_to_list(tags):
+    return tags[6:].split(" ")
+
+def filter_titles(titles, c):
+    titles2 = []
+    for (line, v) in titles:
+        if v[0] == c or v[0] == c.upper():
+            titles2.append((line, v))
+    return titles2
+
+def library_import(screen, tl):
+    tags = edit(screen, "Tags: ", 6)
+    taglist = tags_to_list(tags)
+    library = open("library.dat", "r")
+    filtered_titles = []
+    title = library.readline()
+    line = 1 # current line number of file
+    while title: # check for EOF
+        libtaglist = tags_to_list(library.readline()[0:-1])
+        line += 1
+        if all(elem in libtaglist for elem in taglist):
+            filtered_titles.append((line, title[7:-1]))
+        while title != '\n':
+            title = library.readline()
+        title = library.readline()
+    filtered_titles2 = deepcopy(filtered_titles)
+    i = 0
+    if filtered_titles:
+        screen.status(filtered_titles2[i][1])
+        while True:
+            c = screen.stdscr.getkey()
+            if c == 'KEY_DOWN' and i < len(filtered_titles2) - 1:
+                i += 1
+                screen.status(filtered_titles2[i][1])
+            elif c == 'KEY_UP' and i > 0:
+                i -= 1
+                screen.status(filtered_titles2[i][1])
+            elif c.isalpha():
+                filtered_titles2 = filter_titles(filtered_titles, c)
+                i = 0
+                if filtered_titles2:
+                    screen.status(filtered_titles2[i][1])
+            elif c == '\n':
+                screen.status('')
+                screen.focus.refresh()
+                break     
+    library.close()
+
 def library_export(screen, tl):
     library = open("library.dat", "a")
     title = edit(screen, "Title: ", 7)
     tags = edit(screen, "Tags: ", 6)
-    library.write("\n")
     library.write(title+"\n")
     library.write(tags+"\n")
     tlist0 = tl.tlist0.data
@@ -46,6 +93,7 @@ def library_export(screen, tl):
     library.write("------------------------------\n")
     for tar in tlist2:
         library.write(repr(tar)+"\n")
+    library.write("\n")
     library.close()
     screen.focus.refresh()
 
