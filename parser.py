@@ -1,5 +1,6 @@
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
+from parsimonious import exceptions
 from pprint import pprint
 from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
@@ -194,3 +195,15 @@ class StatementVisitor(NodeVisitor):
     def visit_bool(self, node, visited_children):
         value = True if node.text == "True" else False
         return BoolNode(value)
+
+def to_ast(screen, string):
+    try:
+        ast = statement.parse(string) # parse input
+        visitor = StatementVisitor()
+        return visitor.visit(ast)
+    except exceptions.IncompleteParseError as inst:
+        index = inst.args[1]
+        screen.dialog("Extra characters on line, starting at column "+str(index + 1)+". Press ENTER to continue")
+    except exceptions.ParseError as inst:
+        index = inst.pos
+        screen.dialog("Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")

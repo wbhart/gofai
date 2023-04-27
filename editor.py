@@ -1,6 +1,5 @@
-from parser import statement, StatementVisitor
+from parser import statement, to_ast
 from interface import EditMode
-from parsimonious import exceptions
 
 def edit(screen, start_text, i):
     """This is the main editor, in the status bar at the bottom of the screen.
@@ -71,15 +70,6 @@ def get_text(screen, string):
     while True:
         pad.clear_line(0) # clean line 0
         string = edit(screen, string, index) # get string from window
-        try:
-            ast = statement.parse(string) # parse input
-            visitor = StatementVisitor()
-            return visitor.visit(ast)
-        except exceptions.IncompleteParseError as inst:
-            index = inst.args[1]
-            screen.dialog("Extra characters on line, starting at column "+str(index + 1)+". Press ENTER to continue")
-        except exceptions.ParseError as inst:
-            index = inst.pos
-            screen.dialog("Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
+        return to_ast(screen, string)
 
 

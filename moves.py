@@ -4,6 +4,7 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
      FnNode, LRNode
 from unification import unify, subst
 from editor import edit
+from parser import to_ast
 
 def new_result(screen, tl):
     tlist0 = tl.tlist0
@@ -44,12 +45,10 @@ def library_import(screen, tl):
     library = open("library.dat", "r")
     filtered_titles = []
     title = library.readline()
-    line = 1 # current line number of file
     while title: # check for EOF
         libtaglist = tags_to_list(library.readline()[0:-1])
-        line += 1
         if all(elem in libtaglist for elem in taglist):
-            filtered_titles.append((line, title[7:-1]))
+            filtered_titles.append((library.tell(), title[7:-1]))
         while title != '\n':
             title = library.readline()
         title = library.readline()
@@ -73,7 +72,43 @@ def library_import(screen, tl):
             elif c == '\n':
                 screen.status('')
                 screen.focus.refresh()
-                break     
+                break
+        filepos = filtered_titles2[i][0]
+        library.seek(filepos)
+        fstr = library.readline()
+        hyps = []
+        tars = []
+        if fstr != '------------------------------\n':
+            tree = to_ast(screen, fstr[0:-1])
+            t = tree
+            while t.left:
+                t = t.left
+            library.readline()
+            fstr = library.readline()
+            while fstr != '------------------------------\n':
+                hyps.append(to_ast(screen, fstr[0:-1]))
+                fstr = library.readline()
+            fstr = library.readline()
+            while fstr != '\n':
+                tars.append(to_ast(screen, fstr[0:-1]))
+                fstr = library.readline()
+            jhyps = hyps[0]
+            for node in hyps[1:-1]:
+                jhyps = AndNode(jhyps, node)
+            jtars = tars[0]
+            for i in tars[1:-1]:
+                jtars = AndNode(jtars, i)
+            t.left = ImpliesNode(hyps, tars)
+        else:
+            library.readline()
+            library.readline()
+            fstr = library.readline()
+            while fstr != '\n':
+                tars.append(to_ast(screen, fstr[0:-1]))
+                fstr = library.readline()
+            tree = tars[0]
+            for i in tars[1:-1]:
+                tree = AndNode(tree, i)
     library.close()
 
 def library_export(screen, tl):
