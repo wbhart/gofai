@@ -1,0 +1,16 @@
+
+Title: Addition on both sides of an equality
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a = b
+------------------------------
+\forall c : \mathbb{R} a + c = b + c
+
+Title: Subtraction on both sides of an equality
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a = b
+------------------------------
+\forall c : \mathbb{R} a - c = b - c

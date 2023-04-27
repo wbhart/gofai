@@ -3,6 +3,27 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode
 from unification import unify, subst
+from editor import edit
+
+def library_export(screen, tl):
+    library = open("library.dat", "a")
+    title = edit(screen, "Title: ", 7)
+    tags = edit(screen, "Tags: ", 6)
+    library.write("\n")
+    library.write(title+"\n")
+    library.write(tags+"\n")
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    if tlist0:
+        library.write(repr(tlist0[0])+"\n")
+    library.write("------------------------------\n")
+    for hyp in tlist1:
+        library.write(repr(hyp)+"\n")
+    library.write("------------------------------\n")
+    for tar in tlist2:
+        library.write(repr(tar)+"\n")
+    library.close()
 
 def complement_tree(tree):
     
