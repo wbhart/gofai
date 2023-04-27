@@ -57,3 +57,25 @@ Tags: #algebra #\mathbb{R}
 ------------------------------
 ------------------------------
 \forall a : \mathbb{R} a + 0 = a
+
+Title: Commutativity of addition
+Tags: #algebra #\mathbb{R}
+------------------------------
+------------------------------
+\forall a : \mathbb{R} \forall b : \mathbb{R} a + b = b + a
+
+Title: Reciprocal of positive value less than 1
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+a > 0 \wedge a < 1
+------------------------------
+1/a > 1
+
+Title: Reciprocal of value greater than 1
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+a > 1
+------------------------------
+1/a > 0 \wedge 1/a < 1

@@ -5,6 +5,29 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
 from unification import unify, subst
 from editor import edit
 
+def new_result(screen, tl):
+    tlist0 = tl.tlist0
+    tlist1 = tl.tlist1
+    tlist2 = tl.tlist2
+    pad0 = screen.pad0.pad
+    pad1 = screen.pad1.pad
+    pad2 = screen.pad2.pad
+    tlist0.data = []
+    pad0[0] = ''
+    n = len(tlist1.data)
+    for i in range(0, n):
+        del tlist1.data[n - i - 1]
+        pad1[i] = ''
+    n = len(tlist2.data)
+    for i in range(0, n):
+        del tlist2.data[n - i - 1]
+        pad2[i] = ''
+    screen.pad2.refresh()
+    screen.pad1.refresh()
+    screen.pad0.refresh()
+    screen.focus = screen.pad0
+    tl.focus = tl.tlist0
+
 def library_export(screen, tl):
     library = open("library.dat", "a")
     title = edit(screen, "Title: ", 7)

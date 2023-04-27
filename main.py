@@ -5,7 +5,8 @@ from curses import wrapper
 from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
-from moves import skolemize, modus_ponens, modus_tollens, library_export
+from moves import skolemize, modus_ponens, modus_tollens, library_export, \
+     new_result
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -36,6 +37,8 @@ def main(stdscr):
             modus_tollens(screen, tl)
         elif c == 'w': # write to library
             library_export(screen, tl)
+        elif c == 'n': # new result
+            new_result(screen, tl)
         elif c == 'KEY_RIGHT':
             pad = screen.focus
             pad.cursor_right()
