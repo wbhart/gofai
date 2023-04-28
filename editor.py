@@ -70,6 +70,10 @@ def get_text(screen, string):
     while True:
         pad.clear_line(0) # clean line 0
         string = edit(screen, string, index) # get string from window
-        return to_ast(screen, string)
+        res = to_ast(screen, string)
+        if isinstance(res, int):
+            index = res
+        else:
+            return res
 
 

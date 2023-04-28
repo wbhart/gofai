@@ -207,3 +207,4 @@ def to_ast(screen, string):
     except exceptions.ParseError as inst:
         index = inst.pos
         screen.dialog("Error in statement starting at column "+str(index + 1)+". Press ENTER to continue")
+    return index
