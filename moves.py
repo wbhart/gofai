@@ -92,13 +92,17 @@ def library_import(screen, tl):
             while fstr != '\n':
                 tars.append(to_ast(screen, fstr[0:-1]))
                 fstr = library.readline()
-            jhyps = hyps[0]
-            for node in hyps[1:-1]:
-                jhyps = AndNode(jhyps, node)
+            if hyps:
+                jhyps = hyps[0]
+                for node in hyps[1:-1]:
+                    jhyps = AndNode(jhyps, node)
             jtars = tars[0]
             for i in tars[1:-1]:
                 jtars = AndNode(jtars, i)
-            t.left = ImpliesNode(hyps, tars)
+            if hyps:
+                t.left = ImpliesNode(jhyps, jtars)
+            else:
+                t.left = jtars
         else:
             library.readline()
             library.readline()
@@ -109,6 +113,12 @@ def library_import(screen, tl):
             tree = tars[0]
             for i in tars[1:-1]:
                 tree = AndNode(tree, i)
+        tlist = tl.tlist1.data
+        n = len(tlist)
+        tlist.append(tree)
+        screen.pad1.pad[n] = str(tree)
+        screen.pad1.refresh()
+        screen.focus.refresh()
     library.close()
 
 def library_export(screen, tl):
