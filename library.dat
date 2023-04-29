@@ -98,3 +98,11 @@ Tags: #algebra #\mathbb{R}
 ------------------------------
 a*(b + c) = a*b + a*c
 
+Title: Less than equivalent to equality with addition of positive constant
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \exists \epsilon : \mathbb{R}
+------------------------------
+a < b
+------------------------------
+\epsilon > 0 \wedge b = a + \epsilon
+

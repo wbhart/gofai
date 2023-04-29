@@ -130,13 +130,45 @@ def library_export(screen, tl):
     tlist0 = tl.tlist0.data
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
+    qz_written = False
     if tlist0:
-        library.write(repr(tlist0[0])+"\n")
+        library.write(repr(tlist0[0]))
+        qz_written = True
+    for hyp in tlist1:
+        while isinstance(hyp, ExistsNode) or isinstance(hyp, ForallNode):
+            if isinstance(hyp, ExistsNode):
+                if qz_written:
+                    library.write(" ")
+                library.write(repr(ForallNode(hyp.var, None)))
+            elif isinstance(hyp, ForallNode):
+                if qz_written:
+                    library.write(" ")
+                library.write(repr(ExistsNode(hyp.var, None)))
+            hyp = hyp.left
+            qz_written = True
+    for tar in tlist2:
+        while isinstance(tar, ExistsNode) or isinstance(tar, ForallNode):
+            if isinstance(tar, ExistsNode):
+                if qz_written:
+                    library.write(" ")
+                library.write(repr(ExistsNode(tar.var, None)))
+            elif isinstance(tar, ForallNode):
+                if qz_written:
+                    library.write(" ")
+                library.write(repr(ForallNode(tar.var, None)))
+            tar = tar.left
+            qz_written = True
+    if qz_written:
+        library.write("\n")
     library.write("------------------------------\n")
     for hyp in tlist1:
+        while isinstance(hyp, ExistsNode) or isinstance(hyp, ForallNode):
+            hyp = hyp.left
         library.write(repr(hyp)+"\n")
     library.write("------------------------------\n")
     for tar in tlist2:
+        while isinstance(tar, ExistsNode) or isinstance(tar, ForallNode):
+            tar = tar.left
         library.write(repr(tar)+"\n")
     library.write("\n")
     library.close()
