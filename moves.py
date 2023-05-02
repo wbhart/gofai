@@ -41,6 +41,8 @@ def filter_titles(titles, c):
 
 def library_import(screen, tl):
     tags = edit(screen, "Tags: ", 6)
+    if tags == None:
+        return
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -73,6 +75,11 @@ def library_import(screen, tl):
                 screen.status('')
                 screen.focus.refresh()
                 break
+            else:
+                library.close()
+                screen.status('')
+                screen.focus.refresh()
+                return
         filepos = filtered_titles2[i][0]
         library.seek(filepos)
         fstr = library.readline()
@@ -122,9 +129,13 @@ def library_import(screen, tl):
     library.close()
 
 def library_export(screen, tl):
-    library = open("library.dat", "a")
     title = edit(screen, "Title: ", 7)
+    if title == None:
+        return
     tags = edit(screen, "Tags: ", 6)
+    if tags == None:
+        return
+    library = open("library.dat", "a")
     library.write(title+"\n")
     library.write(tags+"\n")
     tlist0 = tl.tlist0.data
@@ -224,27 +235,40 @@ def select_hypothesis(screen, tl, second):
             forward = not forward
             pad.refresh()
         elif c == '\x1b': # ESC = cancel
-            return -1
+            return True, -1
         elif c == '\n':
             return forward, pad.scroll_line + pad.cursor_line
+        else:
+            return True, -1
 
 def modus_ponens(screen, tl):
+    scroll_line = screen.pad1.scroll_line
+    cursor_line = screen.pad1.cursor_line
+
+    def restore_cursor():
+        screen.pad1.scroll_line = scroll_line
+        screen.pad1.cursor_line = cursor_line
+
     forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
+        restore_cursor()
         return
     forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
+        restore_cursor()
         return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
     tree1 = tlist1.data[line1]
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+        restore_cursor()
         return 
     qP1 = tree1.left if forward else tree1.right
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
+        restore_cursor()
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
@@ -255,28 +279,40 @@ def modus_ponens(screen, tl):
         tlist2.data.append(substitute(tree1.left, assign))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
+    restore_cursor()
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
 
 def modus_tollens(screen, tl):
+    scroll_line = screen.pad1.scroll_line
+    cursor_line = screen.pad1.cursor_line
+
+    def restore_cursor():
+        screen.pad1.scroll_line = scroll_line
+        screen.pad1.cursor_line = cursor_line
+
     forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
+        restore_cursor()
         return
     forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
+        restore_cursor()
         return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
     tree1 = tlist1.data[line1]
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+        restore_cursor()
         return 
     qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
+        restore_cursor()
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
@@ -287,6 +323,7 @@ def modus_tollens(screen, tl):
         tlist2.data.append(complement_tree(substitute(tree1.right, assign)))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
+    restore_cursor()
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()

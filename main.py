@@ -18,7 +18,7 @@ def main(stdscr):
         if c == '\t': # TAB = switch window focus (and associated pad)
             screen.switch_window()
             tl.switch_list()
-        elif c == 'q': # q = quit
+        elif c == '\x1b' or c == 'q': # ESC or q = quit
             break
         elif c == 'e': # e = edit
             line = tl.focus.line
