@@ -473,3 +473,17 @@ Tags: #inequalities #min #\mathbb{R}
 min(a, b) \leq a
 min(a, b) \leq b
 
+Title: Maximum is equal to one of its arguments
+Tags: #inequalities #algebra #max #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+max(a, b) = a \vee max(a, b) = b
+
+Title: Minimum is equal to one of its arguments
+Tags: #inequalities #algebra #min #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+min(a, b) = a \vee min(a, b) = b
+
