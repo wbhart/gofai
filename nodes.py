@@ -295,6 +295,23 @@ class NotNode(LRNode):
         else:
             return "\\neg"+repr(self.left)
 
+class NegNode(LRNode):
+    def __init__(self, expr):
+        self.left = expr
+        self.right = None
+
+    def __str__(self):
+        if not isatomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+            return "-("+str(self.left)+")"
+        else:
+            return "-"+str(self.left)
+
+    def __repr__(self):
+        if not isatomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+            return "-("+repr(self.left)+")"
+        else:
+            return "-"+repr(self.left)
+
 class ExistsNode(LRNode):
     def __init__(self, var, expr):
         self.var = var
@@ -342,21 +359,22 @@ class BoolNode(LeafNode):
 
 
 
-precedence = {ExistsNode:8, ForallNode:8,
-              ImpliesNode:7, IffNode:7,
-              AndNode:6, OrNode:6,
-              BoolNode:5,
+precedence = {ExistsNode:9, ForallNode:9,
+              ImpliesNode:8, IffNode:8,
+              AndNode:7, OrNode:7,
+              BoolNode:6,
               # Set nodes
-              SubsetNode:5, SubseteqNode:5,
-              SupsetNode:5, SupseteqNode:5, ElemNode:5,
-              DiffNode:4,
-              UnionNode:3, IntersectNode:3,
+              SubsetNode:6, SubseteqNode:6,
+              SupsetNode:6, SupseteqNode:6, ElemNode:6,
+              DiffNode:5,
+              UnionNode:4, IntersectNode:4,
               # Arithmetic nodes
-              LeqNode:5, LtNode:5,
-              GeqNode:5, GtNode:5,
-              EqNode:5, NeqNode:5,
-              AddNode:4, SubNode:4,
-              NotNode:3,
-              MulNode:2, DivNode:2,
+              LeqNode:6, LtNode:6,
+              GeqNode:6, GtNode:6,
+              EqNode:6, NeqNode:6,
+              AddNode:5, SubNode:5,
+              NotNode:4,
+              MulNode:3, DivNode:3,
+              NegNode:2,
               ExpNode:1,
               NaturalNode:0, VarNode:0, FnNode:0, AbsNode:0}

@@ -353,3 +353,58 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 ------------------------------
 |a + b| \leq |a| + |b|
 
+Title: Absolute value is independent of sign
+Tags: #algebra #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+------------------------------
+|-a| = |a|
+
+Title: Absolute value less than or equal inequality split into two inequalities
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+|a| \leq b
+------------------------------
+-b \leq a
+a \leq b
+
+Title: Less than or equal inequalities for absolute value
+Tags: #inequalities #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+------------------------------
+-|a| \leq a
+a \leq |a|
+
+Title: Absolute value less than inequality split into two inequalities
+Tags: #inequalities #iff #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+|a| < b
+------------------------------
+-b < a
+a < b
+
+Title: Negation of both sides of an equality
+Tags: #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a = b
+------------------------------
+-a = -b
+
+Title: Multiplication by minus one negates a value
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+------------------------------
+a*-1 = -a
+
+Title: Addition of negated value equal to difference of values
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+a + -b = a - b
+

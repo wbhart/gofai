@@ -6,7 +6,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode
+     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode
 from type import NumberType, NamedType, FnType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -38,9 +38,10 @@ statement = Grammar(
     set_paren = "(" set_expression ")"
     alg_relation = (add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space)? add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
-    mult_expression = mult_expression1 / mult_expression2
+    mult_expression = mult_expression1 / mult_expression2 / minus_expression
     mult_expression1 = natural mult_expression2
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
+    minus_expression = "-" mult_expression
     exp_expression = terminal (space "^" space terminal)*
     terminal = paren_expression / abs_expression / fn_application / natural / var
     bool = ("True" / "False")
@@ -169,6 +170,8 @@ class StatementVisitor(NodeVisitor):
     def visit_mult_expression2(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
+    def visit_minus_expression(self, node, visited_children):
+        return NegNode(visited_children[1])
     def visit_var(self, node, visited_children):
         return VarNode(node.text)
     def visit_terminal(self, node, visited_children):
