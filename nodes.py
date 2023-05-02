@@ -164,7 +164,7 @@ class GtNode(LRNode):
 
 class LeqNode(LRNode):
     def __str__(self):
-        return self.paren_str(self.left)+" \u2264 "+paren_str(self.right)
+        return self.paren_str(self.left)+" \u2264 "+self.paren_str(self.right)
 
     def __repr__(self):
         return self.paren_repr(self.left)+" \\leq "+self.paren_repr(self.right)
