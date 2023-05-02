@@ -514,3 +514,41 @@ is_bounded(S, l, s)
 ------------------------------
 x \in S \implies x \leq u \wedge x \geq l
 
+Title: Definition of supremum
+Tags: #inequalities #definition #\mathbb{R}
+\forall U : Set \forall u : \mathbb{R} \exists v : \mathbb{R} \forall w : \mathbb{R}
+------------------------------
+U \subseteq \mathbb{R}
+is_supremum(U, u)
+------------------------------
+is_upper_bound(U, v)
+is_upper_bound(U, w) \implies u \leq w
+
+Title: Definition of infimum
+Tags: #inequalities #definition #\mathbb{R}
+\forall U : Set \forall l : \mathbb{R} \exists v : \mathbb{R} \forall w : \mathbb{R}
+------------------------------
+U \subseteq \mathbb{R}
+is_infimum(U, l)
+------------------------------
+is_lower_bound(U, v)
+is_lower_bound(U, w) \implies l \geq w
+
+Title: Every subset of the reals with an upper bound has a supremum
+Tags: #inequalities #iff #\mathbb{R}
+\forall U : Set \forall u : \mathbb{R} \exists v : \mathbb{R}
+------------------------------
+U \subseteq \mathbb{R}
+is_upper_bound(U, u)
+------------------------------
+is_supremum(U, v)
+
+Title: Every subset of the reals with a lower bound has an infimum
+Tags: #inequalities #iff \mathbb{R}
+\forall U : Set \forall l : \mathbb{R} \exists v : \mathbb{R}
+------------------------------
+U \subseteq \mathbb{R}
+is_lower_bound(U, l)
+------------------------------
+is_infimum(U, v)
+
