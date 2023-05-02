@@ -408,3 +408,52 @@ Tags: #algebra #\mathbb{R}
 ------------------------------
 a + -b = a - b
 
+Title: Reverse triangle inequality
+Tags: #inequalities #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+||a| - |b|| \leq |a - b|
+
+Title: Triangle inequality variant with subtraction
+Tags: #inequalities #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+|a - b| \leq |a| + |b|
+
+Title: Expansion of negated sum
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+-(a + b) = -a - b
+
+Title: Expansion of negated difference
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+-(a - b) = -a + b
+
+Title: Expansion of negated difference, variant
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+-(-a + b) = a - b
+
+Title: Simplification of double negation
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+------------------------------
+--a = a
+
+Title: Expansion of negated difference, variant
+Tags: #algebra #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+-(-a - b) = a + b
+
