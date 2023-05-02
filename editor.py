@@ -53,6 +53,10 @@ def edit(screen, start_text, i):
             window.clear() # clear edit window now that text is complete
             window.refresh() # update display
             return ''.join(screen.edit_text) # concat chars together into string
+        elif not c.isprintable():
+            window.clear() # clear edit window now that text is complete
+            window.refresh() # update display
+            return None
         elif len(c) == 1: # otherwise presumably character is printable
             # TODO: ignore nonprintable chars
             screen.process_char(i, mode, c)
@@ -70,6 +74,8 @@ def get_text(screen, string):
     while True:
         pad.clear_line(0) # clean line 0
         string = edit(screen, string, index) # get string from window
+        if not string:
+             return None
         res = to_ast(screen, string)
         if isinstance(res, int):
             index = res

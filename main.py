@@ -24,11 +24,12 @@ def main(stdscr):
             line = tl.focus.line
             data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
             tree = get_text(screen, data) # parse text from user
-            tl.focus[line] = tree # insert tree in treelist
-            screen.focus[line] = str(tree) # insert unicode string into pad
+            if tree:
+                tl.focus[line] = tree # insert tree in treelist
+                screen.focus[line] = str(tree) # insert unicode string into pad
             screen.focus.refresh()
-        elif c == 'a': # a = automate
-            automate(screen, tl, ad)
+        # elif c == 'a': # a = automate
+        #    automate(screen, tl, ad)
         elif c == 's': # skolemize
             skolemize(screen, tl)
         elif c == 'p': # modus ponens
