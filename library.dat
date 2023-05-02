@@ -457,3 +457,19 @@ Tags: #algebra #\mathbb{R}
 ------------------------------
 -(-a - b) = a + b
 
+Title: Maximum is greater than or equal to its arguments
+Tags: #inequalities #max #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+max(a, b) \geq a
+max(a, b) \geq b
+
+Title: Minimum is less than or equal to its arguments
+Tags: #inequalities #min #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+min(a, b) \leq a
+min(a, b) \leq b
+
