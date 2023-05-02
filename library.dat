@@ -487,3 +487,30 @@ Tags: #inequalities #algebra #min #\mathbb{R}
 ------------------------------
 min(a, b) = a \vee min(a, b) = b
 
+Title: Definition of upper bound
+Tags: #inequalities #definition #\mathbb{R}
+\forall S : Set \forall u : \mathbb{R} \forall x : \mathbb{R}
+------------------------------
+S \subseteq \mathbb{R}
+is_upper_bound(S, u)
+------------------------------
+x \in S \implies x \leq u
+
+Title: Definition of lower bound
+Tags: #inequalities #definition #\mathbb{R}
+\forall S : Set \forall l : \mathbb{R} \forall x : \mathbb{R}
+------------------------------
+S \subseteq \mathbb{R}
+is_lower_bound(S, l)
+------------------------------
+x \in S \implies x \geq l
+
+Title: Definition of bounded
+Tags: #inequalities #\mathbb{R}
+\forall S : Set \forall l : \mathbb{R} \forall u : \mathbb{R} \forall x : \mathbb{R}
+------------------------------
+S \subseteq \mathbb{R}
+is_bounded(S, l, s)
+------------------------------
+x \in S \implies x \leq u \wedge x \geq l
+

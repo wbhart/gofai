@@ -34,7 +34,7 @@ statement = Grammar(
     set_expression = set_diff / set_union
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set space ("\\cup" / "\\cap") space)* set
-    set = set_paren / var
+    set = set_paren / var / number_type
     set_paren = "(" set_expression ")"
     alg_relation = (add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space)? add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
