@@ -106,3 +106,250 @@ a < b
 ------------------------------
 \epsilon > 0 \wedge b = a + \epsilon
 
+Title: Less than or equal split into cases
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a \leq b
+------------------------------
+a < b \vee a = b
+
+Title: Not less than is greater than or equal
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+\neg(a < b)
+------------------------------
+a \geq b
+
+Title: Not less than or equal is greater than
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+\neg(a \leq b)
+------------------------------
+a > b
+
+Title: Value is less than itself plus a positive value
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall \epsilon : \mathbb{R}
+------------------------------
+\epsilon > 0
+------------------------------
+a < a + \epsilon
+
+Title: Addition of value to both sides of a less than
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+------------------------------
+a + c < b + c
+
+Title: Subtraction of a value from both sides of a less than
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+------------------------------
+a - c < b - c
+
+Title: Multiplication of both sides of a less than by a positive value
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+c > 0
+------------------------------
+a*c < b*c
+
+Title: Multiplication of both sides of a less than by a negative value
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+c < 0
+------------------------------
+a*c > b*c
+
+Title: Division of both sides of a less than by a positive value
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+c > 0
+------------------------------
+a/c < b/c
+
+Title: Dividing both sides of a less than by a negative value
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+c < 0
+------------------------------
+a/c > b/c
+
+Title: Less than reversed is greater than
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a < b
+------------------------------
+b > a
+
+Title: Less than or equal reversed is greater than or equal
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a \leq b
+------------------------------
+b \geq a
+
+Title: Transitivity of less than
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+b < c
+------------------------------
+a < c
+
+Title: Relaxed transitivity of less than on first inequality
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a \leq b
+b < c
+------------------------------
+a < c
+
+Title: Relaxed transitivity of less than on second inequality
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a < b
+b \leq c
+------------------------------
+a < c
+
+Title: Transitivity of less than or equal
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+------------------------------
+a \leq b
+b \leq c
+------------------------------
+a \leq c
+
+Title: Antisymmetry of less than or equal
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a \leq b
+b \leq a
+------------------------------
+a = b
+
+Title: Trichotomy of less than equals and greater than
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+a < b \vee a = b \vee a > b
+
+Title: Exclusivity of less than, equals and greater than
+Tags: #inequalities #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+\neg(a < b \wedge a = b)
+\neg(a < b \wedge a > b)
+
+Title: Value squared is zero iff value is zero
+Tags: #inequalities #algebra #iff #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+a^2 = 0
+------------------------------
+a = 0
+
+Title: Value squared is positive iff value is nonzero
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+a^2 > 0
+------------------------------
+a \neq 0
+
+Title: Product is positive iff values have same sign
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a*b > 0
+------------------------------
+a > 0 \wedge b > 0 \vee a < 0 \wedge b < 0
+
+Title: Value less than or equal to all positive values is nonpositive
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \exists \epsilon : \mathbb{R}
+------------------------------
+\epsilon > 0 \implies a \leq \epsilon
+------------------------------
+a \leq 0
+
+Title: Value less than all positive values is nonpositive
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \exists \epsilon : \mathbb{R}
+------------------------------
+\epsilon > 0 \implies a < \epsilon
+------------------------------
+a \leq 0
+
+Title: Average of values is between values
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a \leq b
+------------------------------
+a \leq (a + b)/2
+(a + b)/2 \leq b
+
+Title: Average of two values is strictly between values if they are not equal
+Tags: #inequalities #iff #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+a < b
+------------------------------
+a < (a + b)/2
+(a + b)/2 < b
+
+Title: Absolute value of a value is greater than or equal to zero
+Tags: #inequalities #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+------------------------------
+|a| \geq 0
+
+Title: Absolute value is zero iff value is zero
+Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R}
+------------------------------
+|a| = 0
+------------------------------
+a = 0
+
+Title: Absolute value of product is product of absolute values
+Tags: #algebra #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+|ab| = |a|*|b|
+
+Title: Triangle inequality
+Tags: #inequalities #absolutevalue #\mathbb{R}
+\forall a : \mathbb{R} \forall b : \mathbb{R}
+------------------------------
+------------------------------
+|a + b| \leq |a| + |b|
+

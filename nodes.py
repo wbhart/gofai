@@ -284,13 +284,13 @@ class NotNode(LRNode):
         self.right = None
 
     def __str__(self):
-        if not atomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+        if not isatomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
             return "\u00ac"+'('+str(self.left)+')'
         else:
             return "\u00ac"+str(self.left)
 
     def __repr__(self):
-        if not atomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
+        if not isatomic(self.left) and precedence[type(self.left)] > precedence[type(self)]:
             return "\\neg"+'('+repr(self.left)+')'
         else:
             return "\\neg"+repr(self.left)
