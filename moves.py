@@ -242,33 +242,31 @@ def select_hypothesis(screen, tl, second):
             return True, -1
 
 def modus_ponens(screen, tl):
-    scroll_line = screen.pad1.scroll_line
-    cursor_line = screen.pad1.cursor_line
-
-    def restore_cursor():
-        screen.pad1.scroll_line = scroll_line
-        screen.pad1.cursor_line = cursor_line
-
+    screen.save_state()
     forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return
     forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
     tree1 = tlist1.data[line1]
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return 
     qP1 = tree1.left if forward else tree1.right
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
@@ -279,40 +277,39 @@ def modus_ponens(screen, tl):
         tlist2.data.append(substitute(tree1.left, assign))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
-    restore_cursor()
+    tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
+    tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
 
 def modus_tollens(screen, tl):
-    scroll_line = screen.pad1.scroll_line
-    cursor_line = screen.pad1.cursor_line
-
-    def restore_cursor():
-        screen.pad1.scroll_line = scroll_line
-        screen.pad1.cursor_line = cursor_line
-
+    screen.save_state()
     forward, line1 = select_hypothesis(screen, tl, False)
     if line1 == -1: # Cancelled
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return
     forward, line2 = select_hypothesis(screen, tl, True)
     if line2 == -1: # Cancelled
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
     tree1 = tlist1.data[line1]
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return 
     qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
-        restore_cursor()
+        screen.restore_state()
+        screen.focus.refresh()
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
@@ -323,7 +320,8 @@ def modus_tollens(screen, tl):
         tlist2.data.append(complement_tree(substitute(tree1.right, assign)))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
-    restore_cursor()
+    tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
+    tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()

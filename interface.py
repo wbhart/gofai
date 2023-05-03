@@ -77,6 +77,8 @@ class Pad:
         self.cursor_line = 0 # which line of the window is the cursor on
         self.cursor_char = 0 # which nchar position is the cursor on
         
+        self.save = [0, 0, 0, 0] # to save and restore state
+
         self.window = window
         self.pad = ['' for i in range(0, lines)] # blank pad with given number of lines
         self.x = x # absolute screen position of upper left corner of pad
@@ -88,6 +90,18 @@ class Pad:
         self.border = border # whether the pad window has a border
 
         self.refresh()
+
+    def save_state(self):
+        self.save[0] = self.scroll_line
+        self.save[1] = self.scroll_char
+        self.save[2] = self.cursor_line
+        self.save[3] = self.cursor_char
+
+    def restore_state(self):
+        self.scroll_line = self.save[0]
+        self.scroll_char = self.save[1]
+        self.cursor_line = self.save[2]
+        self.cursor_char = self.save[3]
 
     def inch(self, y, x):
         return self.pad[y][x]
@@ -265,6 +279,14 @@ class Screen:
 
         self.edit_text = [] # text entered at the edit/status bar as chars
 
+    def save_state(self):
+        self.pad1.save_state()
+        self.pad2.save_state()
+
+    def restore_state(self):
+        self.pad1.restore_state()
+        self.pad2.restore_state()
+        
     def exit(self):
         """Return control of the console from curses back to Python,
         """
