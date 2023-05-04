@@ -36,9 +36,23 @@ def new_result(screen, tl):
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
 
+canonical_numtypes = { "\\N" : "\\mathbb{N}",
+                       "\\Z" : "\\mathbb{Z}",
+                       "\\Q" : "\\mathbb{Q}",
+                       "\\R" : "\\mathbb{R}",
+                       "\\C" : "\\mathbb{C}"}
+
 def tags_to_list(tags):
     return tags[6:].split(" ")
 
+def canonicalise_tags(tags):
+    taglist = tags_to_list(tags)
+    for i in range(0, len(taglist)):
+        tag = taglist[i][1:]
+        if tag in canonical_numtypes:
+            taglist[i] = "#"+canonical_numtypes[tag]
+    return "Tags: "+' '.join(taglist)
+    
 def filter_titles(titles, c):
     titles2 = []
     for (line, v) in titles:
@@ -50,6 +64,7 @@ def library_import(screen, tl):
     tags = edit(screen, "Tags: ", 6)
     if tags == None:
         return
+    tags = canonicalise_tags(tags) # deal with type shorthands
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -142,6 +157,7 @@ def library_export(screen, tl):
     tags = edit(screen, "Tags: ", 6)
     if tags == None:
         return
+    tags = canonicalise_tags(tags) # deal with type shorthands
     library = open("library.dat", "a")
     library.write(title+"\n")
     library.write(tags+"\n")
