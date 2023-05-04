@@ -52,7 +52,7 @@ def canonicalise_tags(tags):
         if tag in canonical_numtypes:
             taglist[i] = "#"+canonical_numtypes[tag]
     return "Tags: "+' '.join(taglist)
-    
+
 def filter_titles(titles, c):
     titles2 = []
     for (line, v) in titles:
@@ -266,28 +266,35 @@ def select_hypothesis(screen, tl, second):
 
 def modus_ponens(screen, tl):
     screen.save_state()
-    forward, line1 = select_hypothesis(screen, tl, False)
-    if line1 == -1: # Cancelled
-        screen.restore_state()
-        screen.focus.refresh()
-        return
-    forward, line2 = select_hypothesis(screen, tl, True)
-    if line2 == -1: # Cancelled
-        screen.restore_state()
-        screen.focus.refresh()
-        return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
+    screen.status("Select implication")
+    forward, line1 = select_hypothesis(screen, tl, False)
+    if line1 == -1: # Cancelled
+        screen.status("")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
     tree1 = tlist1.data[line1]
-    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+        screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return 
+    screen.status("Select predicate")
+    forward, line2 = select_hypothesis(screen, tl, True)
+    screen.status("")
+    if line2 == -1: # Cancelled
+        screen.status("")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
+    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     qP1 = tree1.left if forward else tree1.right
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
+        screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection
@@ -308,29 +315,36 @@ def modus_ponens(screen, tl):
 
 def modus_tollens(screen, tl):
     screen.save_state()
-    forward, line1 = select_hypothesis(screen, tl, False)
-    if line1 == -1: # Cancelled
-        screen.restore_state()
-        screen.focus.refresh()
-        return
-    forward, line2 = select_hypothesis(screen, tl, True)
-    if line2 == -1: # Cancelled
-        screen.restore_state()
-        screen.focus.refresh()
-        return
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
+    screen.status("Select implication")
+    forward, line1 = select_hypothesis(screen, tl, False)
+    if line1 == -1: # Cancelled
+        screen.status("")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
     tree1 = tlist1.data[line1]
-    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+        screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return 
+    screen.status("Select predicate")
+    forward, line2 = select_hypothesis(screen, tl, True)
+    screen.status("")
+    if line2 == -1: # Cancelled
+        screen.status("")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
+    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
+        screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection

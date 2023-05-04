@@ -198,7 +198,7 @@ class Pad:
             start += 1
             line += 1
         self.window.addstr(line, start, ' '*(width - 1))
-
+    
     def refresh(self):
         """Redraw the pad in position on screen. Due to bugs in python curses
            when working with unicode on WSL, this needs to be done by hand.
@@ -317,7 +317,7 @@ class Screen:
         """
         self.status(string)
         self.wait_key("\n")
-        self.pad3.clear_line(0)
+        self.status("")
 
     def switch_window(self):
         """Switch focus to next pad (0-2).
