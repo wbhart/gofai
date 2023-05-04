@@ -5,7 +5,7 @@ from pprint import pprint
 from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
-     NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
+     NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode
 from type import NumberType, NamedType, FnType, TupleType
 
@@ -31,7 +31,7 @@ statement = Grammar(
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = bool / elem_relation / subset_relation / alg_relation
-    subset_relation = (set_expression space ("\\subseteq" / "\\subset" / "\\supseteq" / "\\supset") space)+ set_expression
+    subset_relation = (set_expression space ("\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
     set_diff = set_union space "\\setminus" space set_union
@@ -73,9 +73,9 @@ node_dict = {
     "\\leftrightarrow" : IffNode,
     "\\cup" : UnionNode,
     "\\cap" : IntersectNode,
-    "\\subset" : SubsetNode,
+    "\\subsetneq" : SubsetneqNode,
     "\\subseteq" : SubseteqNode,
-    "\\supset" : SupsetNode,
+    "\\supsetneq" : SupsetneqNode,
     "\\supseteq" : SupseteqNode
 }
 

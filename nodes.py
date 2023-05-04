@@ -246,12 +246,12 @@ class UnionNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\cup "+self.paren_repr(self.right)
 
-class SubsetNode(LRNode):
+class SubsetneqNode(LRNode):
     def __str__(self):
         return self.paren_str(self.left)+" \u2282 "+self.paren_str(self.right)
 
     def __repr__(self):
-        return self.paren_repr(self.left)+" \\subset "+self.paren_repr(self.right)
+        return self.paren_repr(self.left)+" \\subsetneq "+self.paren_repr(self.right)
 
 class SubseteqNode(LRNode):
     def __str__(self):
@@ -260,12 +260,12 @@ class SubseteqNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\subseteq "+self.paren_repr(self.right)
 
-class SupsetNode(LRNode):
+class SupsetneqNode(LRNode):
     def __str__(self):
         return self.paren_str(self.left)+" \u2283 "+self.paren_str(self.right)
 
     def __repr__(self):
-        return self.paren_repr(self.left)+" \\supset "+self.paren_repr(self.right)
+        return self.paren_repr(self.left)+" \\supsetneq "+self.paren_repr(self.right)
 
 class SupseteqNode(LRNode):
     def __str__(self):
@@ -406,8 +406,8 @@ precedence = {ExistsNode:9, ForallNode:9,
               AndNode:7, OrNode:7,
               BoolNode:6,
               # Set nodes
-              SubsetNode:6, SubseteqNode:6,
-              SupsetNode:6, SupseteqNode:6, ElemNode:6,
+              SubsetneqNode:6, SubseteqNode:6,
+              SupsetneqNode:6, SupseteqNode:6, ElemNode:6,
               DiffNode:5,
               UnionNode:4, IntersectNode:4,
               # Arithmetic nodes
