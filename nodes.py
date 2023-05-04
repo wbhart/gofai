@@ -97,7 +97,7 @@ class FnNode:
         self.is_metavar = False # Whether this is a metavariable
 
     def __str__(self):
-        name = self.name+"\u0307" if self.is_metavar else self.name
+        name = univar(self.name)+"\u0307" if self.is_metavar else univar(self.name)
         sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
         return name+sig
 

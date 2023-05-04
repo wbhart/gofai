@@ -552,11 +552,3 @@ is_lower_bound(U, l)
 ------------------------------
 is_infimum(U, v)
 
-Title: Definition of set containment
-Tags: #sets #iff #Set
-\forall X : Set \forall Y : Set \forall x : Set
-------------------------------
-X \subseteq Y
-------------------------------
-x \in X \implies x \in Y
-
