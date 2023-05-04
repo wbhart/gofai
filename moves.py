@@ -11,22 +11,28 @@ def new_result(screen, tl):
     tlist0 = tl.tlist0
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
-    pad0 = screen.pad0.pad
-    pad1 = screen.pad1.pad
-    pad2 = screen.pad2.pad
+    pad0 = screen.pad0
+    pad1 = screen.pad1
+    pad2 = screen.pad2
     tlist0.data = []
-    pad0[0] = ''
+    pad0.pad[0] = ''
     n = len(tlist1.data)
     for i in range(0, n):
         del tlist1.data[n - i - 1]
-        pad1[i] = ''
+        pad1.pad[i] = ''
+    tlist1.line = 0
     n = len(tlist2.data)
     for i in range(0, n):
         del tlist2.data[n - i - 1]
-        pad2[i] = ''
-    screen.pad2.refresh()
-    screen.pad1.refresh()
-    screen.pad0.refresh()
+        pad2.pad[i] = ''
+    tlist2.line = 0
+    pad1.scoll_line = 0
+    pad1.cursor_line = 0
+    pad2.scroll_line = 0
+    pad2.cursor_line = 0
+    pad2.refresh()
+    pad1.refresh()
+    pad0.refresh()
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
 
