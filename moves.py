@@ -1,7 +1,8 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode
+     FnNode, LRNode, ConstNode
+from type import FnType, TupleType
 from unification import unify, subst
 from editor import edit
 from parser import to_ast
@@ -415,18 +416,30 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
             deps.append(tree.var)
             qz.append(tree)
         else:
+            tree.var.is_metavar = True
             deps.append(tree.var)
             mv.append(tree.var.name)
+            qz.append(ConstNode(tree.var, None))
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
         rollback()
         return tree.left
     elif isinstance(tree, ExistsNode):
         sk.append((tree.var.name, len(deps)))
+        domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
+        if len(domain_types) > 1:
+            fn_type = FnType(TupleType(domain_types), tree.var.type)
+        elif len(domain_types) == 1:
+            fn_type = FnType(domain_types[0], tree.var.type)
+        else:
+            fn_type = FnType(None, tree.var.type)
         if positive:
+            tree.var.is_metavar = True
             mv.append(tree.var.name)
+            domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
+            qz.append(ConstNode(VarNode(tree.var.name, fn_type, True), None))
         else:
             deps.append(tree.var)
-            qz.append(ForallNode(tree.var, None))
+            qz.append(ForallNode(VarNode(tree.var.name, fn_type, False), None))
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
         rollback()
         return tree.left
@@ -444,7 +457,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
         if n == -1: # not a skolem variable
             return tree
         else:
-            fn_args = [VarNode(deps[i].name, deps[i].type) \
+            fn_args = [VarNode(deps[i].name, deps[i].type, deps[i].is_metavar) \
                     for i in range(0, n)]
             fn = FnNode(tree.name, fn_args)
             fn.is_skolem = True

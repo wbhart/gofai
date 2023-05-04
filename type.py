@@ -47,7 +47,23 @@ class FnType:
          self.codomain = codomain
 
     def __repr__(self):
-         return repr(self.domain)+" \\to "+repr(self.codomain)
+         if self.domain == None:
+             return repr(self.codomain)
+         else:
+             return repr(self.domain)+" \\to "+repr(self.codomain)
 
     def __str__(self):
-         return str(self.domain)+" \u2192 "+str(self.codomain)
+         if self.domain == None:
+             return str(self.codomain)
+         else:
+             return str(self.domain)+" \u2192 "+str(self.codomain)
+
+class TupleType:
+    def __init__(self, types):
+         self.types = types
+
+    def __repr__(self):
+         return "("+''.join([repr(self.types[i])+", " for i in range(0, len(self.types) - 1)])+")"
+   
+    def __str__(self):
+         return "("+''.join([str(self.types[i])+", " for i in range(0, len(self.types) - 1)])+")"

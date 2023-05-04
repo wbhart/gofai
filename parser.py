@@ -7,22 +7,24 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetNode, SubseteqNode, SupsetNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode
-from type import NumberType, NamedType, FnType
+from type import NumberType, NamedType, FnType, TupleType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
 statement = Grammar(
     r"""
     statement = typed_constant / existential / exists / universal / forall / neg_expression
-    typed_constant = typed_var space statement?
-    existential = exists space statement
-    universal = forall space statement
+    typed_constant = typed_var space ","? space statement?
+    existential = exists space ","? space statement
+    universal = forall space ","? space statement
     exists = "\\exists" space typed_var
     forall = "\\forall" space typed_var
     typed_var = var space ":" space type
     type = fn_type / basic_type
     basic_type = number_type / named_type
-    fn_type = basic_type space "\\to" space basic_type
+    fn_type = domain_type space "\\to" space basic_type
+    domain_type = tuple_type / basic_type
+    tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
     named_type = "Set"
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     neg_expression = ("\\neg" space)? expression
@@ -95,17 +97,17 @@ class StatementVisitor(NodeVisitor):
     def visit_statement(self, node, visited_children):
         return visited_children[0]
     def visit_typed_constant(self, node, visited_children):
-        if isinstance(visited_children[2], Node):
+        if isinstance(visited_children[4], Node):
             return ConstNode(visited_children[0], None)
         else:
-            return ConstNode(visited_children[0], visited_children[2][0])
+            return ConstNode(visited_children[0], visited_children[4][0])
     def visit_universal(self, node, visited_children):
-        expr = visited_children[2]
+        expr = visited_children[4]
         quantor = visited_children[0]
         quantor.left = expr
         return quantor
     def visit_existential(self, node, visited_children):
-        expr = visited_children[2]
+        expr = visited_children[4]
         quantor = visited_children[0]
         quantor.left = expr
         return quantor
@@ -120,6 +122,11 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_basic_type(self, node, visited_children):
         return visited_children[0]
+    def visit_domain_type(self, node, visited_children):
+        return visited_children[0]
+    def visit_tuple_type(self, node, visited_children):
+        types = [v[0] for v in visited_children[2]].push(visited_children[3])
+        return TupleType(types)
     def visit_named_type(self, node, visited_children):
         return NamedType(node.text)
     def visit_number_type(self, node, visited_children):

@@ -58,11 +58,11 @@ def univar(name):
 
 # AST Nodes
 class VarNode(LeafNode):
-    def __init__(self, name, var_type=None):
+    def __init__(self, name, var_type=None, is_metavar=False):
         self.name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
         self.type = var_type
-        self.is_metavar = False # whether this is a metavariable
+        self.is_metavar = is_metavar # whether this is a metavariable
 
     def __str__(self):
         return univar(self.name)+"\u0307" if self.is_metavar else univar(self.name)
@@ -113,11 +113,25 @@ class ConstNode(LRNode):
         self.right = None
 
     def __str__(self):
-        expr = " "+str(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+str(self.left)
+            else:
+               expr = " "+str(self.left)
+        else:
+            expr = ""
         return str(self.var)+" : "+str(self.var.type)+expr
 
     def __repr__(self):
-        expr = " "+repr(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+repr(self.left)
+            else:
+               expr = " "+repr(self.left)
+        else:
+            expr = ""
         return repr(self.var)+" : "+repr(self.var.type)+expr
 
 class AddNode(LRNode):
@@ -319,11 +333,25 @@ class ExistsNode(LRNode):
         self.right = None
 
     def __str__(self):
-        expr = " "+str(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+str(self.left)
+            else:
+               expr = " "+str(self.left)
+        else:
+            expr = ""
         return "\u2203"+str(self.var)+" : "+str(self.var.type)+expr
 
     def __repr__(self):
-        expr = " "+repr(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+repr(self.left)
+            else:
+               expr = " "+repr(self.left)
+        else:
+            expr = ""
         return "\\exists "+repr(self.var)+" : "+repr(self.var.type)+expr
 
 class ForallNode(LRNode):
@@ -333,11 +361,25 @@ class ForallNode(LRNode):
         self.right = None
 
     def __str__(self):
-        expr = " "+str(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+str(self.left)
+            else:
+               expr = " "+str(self.left)
+        else:
+            expr = ""
         return "\u2200"+str(self.var)+" : "+str(self.var.type)+expr
 
     def __repr__(self):
-        expr = " "+repr(self.left) if self.left else ""
+        if self.left:
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
+               isinstance(self.left, ConstNode):
+                  expr = ", "+repr(self.left)
+            else:
+               expr = " "+repr(self.left)
+        else:
+            expr = ""
         return "\\forall "+repr(self.var)+" : "+repr(self.var.type)+expr
 
 class ElemNode(LRNode):
