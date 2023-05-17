@@ -11,9 +11,10 @@ def iswide_char(c):
         return False
     return ord(c) > 127
 
-def redraw_line(window, line, string, i, width, border=False):
+def redraw_line_with_reverse(window, line, string, i, width, rev1, rev2, border=False):
     """Write the given unicode string starting at character i to the given
        window of the given width, adjusting for the border if it exists.
+       Characters in the range [rev1, rev2) will be reversed
     """
     start = 1 if border else 0
     # clear line
@@ -27,12 +28,18 @@ def redraw_line(window, line, string, i, width, border=False):
     while j < width - 2*start - 1:
         if i + k < len(string):
             c = string[i + k]
-            window.addch(c)
+            if i + k >= rev1 and i + k < rev2:
+                window.addch(c, curses.A_REVERSE)
+            else:
+                window.addch(c)
             j += 2 if iswide_char(c) else 1
         else:
             window.addch(' ')
             j += 1
         k += 1
+
+def redraw_line(window, line, string, i, width, border=False):
+    redraw_line_with_reverse(window, line, string, i, width, 0, 0, border)
 
 def adjust_nchars(string, scroll_chars, nchars):
     """Given a unicode string which we have scrolled the given number of chars
@@ -76,6 +83,8 @@ class Pad:
         self.scroll_char = 0 # how many chars is the pad scrolled from the left
         self.cursor_line = 0 # which line of the window is the cursor on
         self.cursor_char = 0 # which nchar position is the cursor on
+        self.rev1 = 0        # start of reverse attribute of string
+        self.rev2 = 0        # stop of reverse attribute of string
         
         self.save = [0, 0, 0, 0] # to save and restore state
 
@@ -206,7 +215,10 @@ class Pad:
         for y in range(0, self.height):
             line = y + self.scroll_line
             if line < len(self.pad):
-                redraw_line(self.window, y, self.pad[line], self.scroll_char, self.width, border=self.border)
+                if line == self.cursor_line:
+                    redraw_line_with_reverse(self.window, y, self.pad[line], self.scroll_char, self.width, self.rev1, self.rev2, border=self.border)
+                else:
+                    redraw_line(self.window, y, self.pad[line], self.scroll_char, self.width, border=self.border)
 
         start = 1 if self.border else 0
         self.window.move(self.cursor_line + start, self.cursor_char + start)

@@ -6,7 +6,7 @@ from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
 from moves import skolemize, modus_ponens, modus_tollens, library_export, \
-     library_import, new_result
+     library_import, new_result, equality
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -30,6 +30,8 @@ def main(stdscr):
             screen.focus.refresh()
         # elif c == 'a': # a = automate
         #    automate(screen, tl, ad)
+        elif c == 'v': # equivalence
+            equality(screen, tl)
         elif c == 's': # skolemize
             skolemize(screen, tl)
         elif c == 'p': # modus ponens

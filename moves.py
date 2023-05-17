@@ -1,12 +1,185 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, ConstNode
+     FnNode, LRNode, ConstNode, LeafNode
 from type import FnType, TupleType
 from unification import unify, subst
 from editor import edit
 from parser import to_ast
+from interface import nchars_to_chars
 
+def select_substring(screen, tl):
+    window = screen.win1
+    pad = screen.pad1
+    tlist = tl.tlist1
+    window.refresh()
+    hyp = True
+
+    screen.status("Select start of substring to apply equality to and press Enter")
+    window.refresh()
+
+    while True:
+        c = screen.stdscr.getkey()
+        if c == 'KEY_UP':
+            if pad.scroll_line > 0 or pad.cursor_line > 0:
+                pad.cursor_up()
+                pad.refresh()
+        elif c == 'KEY_DOWN':
+            if pad.scroll_line + pad.cursor_line < tlist.len():
+                pad.cursor_down()
+                pad.refresh()
+        elif c == 'KEY_RIGHT':
+            pad.cursor_right()
+            pad.refresh()
+        elif c == 'KEY_LEFT':
+            pad.cursor_left()
+            pad.refresh()
+        elif c == '\t': # TAB = switch hypotheses/targets, forward/backward
+            pad = screen.pad2 if pad == screen.pad1 else screen.pad1
+            window = screen.win2 if window == screen.win1 else screen.win1
+            tlist = tl.tlist2 if tlist == tl.tlist1 else tl.tlist1
+            hyp = not hyp
+            pad.refresh()
+        elif c == '\x1b': # ESC = cancel
+            screen.status("")
+            return True, 0, 0, 0
+        elif c == '\n':
+            line = pad.cursor_line + pad.cursor_line
+            pad.rev1 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
+                              pad.scroll_char, pad.cursor_char)
+            pad.rev2 = pad.rev1
+            break
+        else:
+            screen.status("")
+            return True, 0, 0, 0
+    screen.status("Select end of substring to apply equality to and press Enter")
+    window.refresh()
+    while True:
+        c = screen.stdscr.getkey()
+        if c == 'KEY_RIGHT':
+            pad.cursor_right()
+            line = pad.scroll_line + pad.cursor_line
+            pad.rev2 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
+                              pad.scroll_char, pad.cursor_char)
+            pad.refresh()
+        elif c == 'KEY_LEFT':
+            pad.cursor_left()
+            line = pad.scroll_line + pad.cursor_line
+            char = pad.scroll_char + nchars_to_chars(pad.pad[line], \
+                              pad.scroll_char, pad.cursor_char)
+            pad.rev2 = max(char, pad.rev1)
+            pad.refresh()
+        elif c == '\x1b': # ESC = cancel
+            pad.rev1 = 0
+            pad.rev2 = 0
+            pad.refresh()
+            screen.status("")
+            return True, 0, 0, 0
+        elif c == '\n':
+            rev1 = pad.rev1
+            rev2 = pad.rev2
+            pad.rev1 = 0
+            pad.rev2 = 0
+            pad.refresh()
+            screen.status("")
+            return hyp, pad.cursor_line + pad.scroll_line, rev1, rev2
+        else:
+            pad.rev1 = 0
+            pad.rev2 = 0
+            pad.refresh()
+            screen.status("")
+            return True, 0, 0, 0 
+
+def trim_spaces(string, start, end):
+    while start <= end and string[start] == ' ':
+        start += 1
+    while end > start and string[end - 1] == ' ':
+        end -= 1
+    return start, string[start:end]
+
+def find_all(string, substring):
+    start = 0
+    res = []
+    n = len(substring)
+    while True:
+        start = string.find(substring, start)
+        if start == -1:
+            return res
+        res.append(start)
+        start += n
+
+def apply_equality(screen, tree, string, n, subst, occur=-1):
+    found = False
+    if tree == None:
+        return False, None, occur
+    if str(tree) == string: # we found an occurrence
+        occur += 1
+        if occur == n: # we found the right occurrence
+            unifies, assign = unify(subst.left, tree)
+            if not unifies:
+                return False, tree, n # does not unify, bogus selection
+            return True, substitute(subst.right, assign), n
+    if isinstance(tree, LRNode):
+        found, tree.left, occur = apply_equality(screen, tree.left, string, n, subst, occur)
+        if not found:
+            found, tree.right, occur = apply_equality(screen, tree.right, string, n, subst, occur)
+        return found, tree, occur
+    elif isinstance(tree, LeafNode):
+        return found, tree, occur
+    # TODO : deal with FnNode and friends
+    raise Exception("Node not dealt with")
+
+def equality(screen, tl):
+    screen.save_state()
+    tlist1 = tl.tlist1
+    tlist2 = tl.tlist2
+    screen.status("Select equality")
+    hyp1, line1 = select_hypothesis(screen, tl, False)
+    if line1 == -1: # Cancelled
+        screen.status("")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
+    tree1 = tlist1.data[line1]
+    if not isinstance(tree1, EqNode): # not an equality
+        screen.dialog("Not an equality. Press Enter to continue.")
+        screen.restore_state()
+        screen.focus.refresh()
+        return 
+    hyp2, line2, start, end = select_substring(screen, tl)
+    screen.status("")
+    if start == end: # canceled
+        screen.restore_state()
+        screen.focus.refresh()
+        return 
+    if hyp2:
+        sub_pad = screen.pad1
+        sub_tlist = tlist1
+    else:
+        sub_pad = screen.pad2
+        sub_tlist = tlist2
+    string = sub_pad.pad[line2]
+    start, sub_string = trim_spaces(string, start, end)
+    if sub_string == '':
+        screen.dialog("Empty subexpression. Press Enter to continue.")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
+    idx = find_all(string, sub_string)
+    n = idx.index(start) # which occurence of substring do we want (0-indexed)
+    found, tree, occur = apply_equality(screen, sub_tlist.data[line2], sub_string, n, tree1)
+    if not found:
+        screen.dialog("Equality cannot be applied. Press Enter to continue")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
+    else:
+        sub_tlist.data[line2] = tree
+        sub_pad.pad[line2] = str(sub_tlist.data[line2])
+        sub_pad.refresh()
+    screen.restore_state()
+    screen.focus.refresh()
+    
 def new_result(screen, tl):
     tlist0 = tl.tlist0
     tlist1 = tl.tlist1
