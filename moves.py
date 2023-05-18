@@ -454,16 +454,6 @@ def modus_ponens(screen, tl):
         screen.restore_state()
         screen.focus.refresh()
         return
-    t1 = tree1.left
-    hconj = 1 # number of hypotheses in conjunction
-    while isinstance(t1, AndNode):
-        t1 = t1.left
-        hconj += 1
-    t2 = tree1.right
-    tconj = 1 # number of targets in conjunction
-    while isinstance(t2, AndNode):
-        t2 = t2.left
-        tconj += 1
     screen.status("Select predicate")
     forward, line2 = select_hypothesis(screen, tl, True)
     screen.status("")
@@ -472,12 +462,13 @@ def modus_ponens(screen, tl):
         screen.restore_state()
         screen.focus.refresh()
         return
-    if forward:
-        tree2 = tlist1.data[line2]
-        n = hconj
-    else:
-        tree2 = tlist2.data[line2]
-        n = tconj
+    qP1 = tree1.left if forward else tree1.right
+    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
+    t = qP1
+    n = 1
+    while isinstance(t, AndNode):
+        t = t.left
+        n += 1
     for i in range(1, n): # get remaining predicates
         screen.status("Select predicate "+str(i+1))
         forward2, line2 = select_hypothesis(screen, tl, True)
@@ -494,7 +485,6 @@ def modus_ponens(screen, tl):
             return
         new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
         tree2 = AndNode(tree2, new_tree2)
-    qP1 = tree1.left if forward else tree1.right
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
@@ -545,6 +535,27 @@ def modus_tollens(screen, tl):
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
+    t1 = qP1
+    n = 1 # number of hypotheses/targets in conjunction
+    while isinstance(t1, AndNode):
+        t1 = t1.left
+        n += 1
+    for i in range(1, n): # get remaining predicates
+        screen.status("Select predicate "+str(i+1))
+        forward2, line2 = select_hypothesis(screen, tl, True)
+        screen.status("")
+        if line2 == -1: # Cancelled
+            screen.status("")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
+        if forward2 != forward:
+            screen.dialog("Predicates must be all hypotheses or all targets. Press Enter to continue.")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
+        new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
+        tree2 = AndNode(tree2, new_tree2)
     qP2 = tree2
     unifies, assign = unify(qP1, qP2)
     if not unifies:
