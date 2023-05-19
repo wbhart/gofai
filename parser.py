@@ -13,7 +13,7 @@ from type import NumberType, NamedType, FnType, TupleType
 
 statement = Grammar(
     r"""
-    statement = typed_constant / existential / exists / universal / forall / neg_expression
+    statement = typed_constant / existential / exists / universal / forall / expression
     typed_constant = typed_var space ","? space statement?
     existential = exists space ","? space statement
     universal = forall space ","? space statement
@@ -27,10 +27,11 @@ statement = Grammar(
     tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
     named_type = "Set"
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
-    neg_expression = ("\\neg" space)? expression
     expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
-    relation = bool / elem_relation / subset_relation / alg_relation
+    relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
+    pred_paren = "(" expression ")"
+    neg_expression = "\\neg" space (paren_expression / pred_fn / bool)
     subset_relation = (set_expression space ("\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
@@ -38,7 +39,7 @@ statement = Grammar(
     set_union = (set space ("\\cup" / "\\cap") space)* set
     set = set_paren / var / number_type
     set_paren = "(" set_expression ")"
-    alg_relation = (add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space)? add_expression
+    alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2 / minus_expression
     mult_expression1 = natural mult_expression2
@@ -47,10 +48,12 @@ statement = Grammar(
     exp_expression = terminal (space "^" space terminal)*
     terminal = paren_expression / abs_expression / fn_application / natural / var
     bool = ("True" / "False")
-    paren_expression = "(" neg_expression ")"
-    abs_expression = "|" neg_expression "|"
+    paren_expression = "(" expression ")"
+    abs_expression = "|" add_expression "|"
+    pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
+    pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     name = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     space = ~"\s*"
@@ -133,6 +136,10 @@ class StatementVisitor(NodeVisitor):
         return NumberType(node.text)
     def visit_fn_type(self, node, visited_children):
         return FnType(visited_children[0], visited_children[4])
+    def visit_predicate(self, node, visited_children):
+        return visited_children[0]
+    def visit_pred_paren(self, node, visited_children):
+        return visited_children[1]
     def visit_relation(self, node, visited_children):
         return visited_children[0]
     def visit_subset_relation(self, node, visited_children):
@@ -152,12 +159,7 @@ class StatementVisitor(NodeVisitor):
     def visit_set_paren(self, node, visited_children):
         return visited_children[1]
     def visit_neg_expression(self, node, visited_children):
-        L = visited_children[0]
-        expr = visited_children[1]
-        if hasattr(L, '__getitem__'):
-            return NotNode(expr)
-        else:
-            return expr
+        return NotNode(visited_children[2][0])
     def visit_expression(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
@@ -165,8 +167,9 @@ class StatementVisitor(NodeVisitor):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
     def visit_alg_relation(self, node, visited_children):
-        expr = visited_children[1]
-        return left_rec(visited_children[0], expr)
+        expr = visited_children[4]
+        Node = node_dict[visited_children[2][0].text]
+        return Node(visited_children[0], expr)
     def visit_add_expression(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
@@ -193,7 +196,15 @@ class StatementVisitor(NodeVisitor):
             args.append(v[0])
         args.append(visited_children[3])
         return FnNode(visited_children[0], args)
+    def visit_pred_fn(self, node, visited_children):
+        args = []
+        for v in visited_children[2]:
+            args.append(v[0])
+        args.append(visited_children[3])
+        return FnNode(visited_children[0], args)
     def visit_name(self, node, visited_children):
+        return node.text
+    def visit_pred_name(self, node, visited_children):
         return node.text
     def visit_exp_expression(self, node, visited_children):
         res = visited_children[0]
