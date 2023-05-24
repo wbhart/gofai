@@ -27,10 +27,10 @@ statement = Grammar(
     tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
     named_type = "Set"
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
-    expression = (and_expression space ("\\implies" / "\\leftrightarrow") space)* and_expression
+    expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
-    pred_paren = "(" expression ")"
+    pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (paren_expression / pred_fn / bool)
     subset_relation = (set_expression space ("\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
@@ -73,7 +73,7 @@ node_dict = {
     "\\wedge" : AndNode,
     "\\vee" : OrNode,
     "\\implies" : ImpliesNode,
-    "\\leftrightarrow" : IffNode,
+    "\\iff" : IffNode,
     "\\cup" : UnionNode,
     "\\cap" : IntersectNode,
     "\\subsetneq" : SubsetneqNode,

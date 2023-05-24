@@ -1,5 +1,5 @@
 from copy import deepcopy
-from nodes import ForallNode, ExistsNode, ImpliesNode, VarNode, EqNode, \
+from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode, ConstNode, LeafNode
 from type import FnType, TupleType
@@ -108,7 +108,8 @@ def find_all(string, substring):
         res.append(start)
         start += n
 
-def apply_equality(screen, tree, string, n, subst, occur=-1):
+def apply_equality(screen, tree, string, n, subst, occurred=-1):
+    occur = occurred
     found = False
     if tree == None:
         return False, None, occur
@@ -449,7 +450,7 @@ def modus_ponens(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+    if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -494,11 +495,11 @@ def modus_ponens(screen, tl):
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
-        tlist1.data.append(substitute(tree1.right, assign))
+        tlist1.data.append(substitute(deepcopy(tree1.right), assign))
         screen.pad1[n] = str(tlist1.data[n])# make substitutions
     else:
         n = tlist2.len()
-        tlist2.data.append(substitute(tree1.left, assign))
+        tlist2.data.append(substitute(deepcopy(tree1.left), assign))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
@@ -519,7 +520,7 @@ def modus_tollens(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    if not isinstance(tree1, ImpliesNode): # no implication after quantifiers
+    if not isinstance(tree1, ImpliesNode) and not isinstance(tree, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -565,11 +566,11 @@ def modus_tollens(screen, tl):
         return # does not unify, bogus selection
     if forward:
         n = tlist1.len()
-        tlist1.data.append(complement_tree(substitute(tree1.left, assign)))
+        tlist1.data.append(complement_tree(substitute(deepcopy(tree1.left), assign)))
         screen.pad1[n] = str(tlist1.data[n])# make substitutions
     else:
         n = tlist2.len()
-        tlist2.data.append(complement_tree(substitute(tree1.right, assign)))
+        tlist2.data.append(complement_tree(substitute(deepcopy(tree1.right), assign)))
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
@@ -609,13 +610,26 @@ def skolemize(screen, tl):
         while len(sk) > s:
             sk.pop()
 
-    for i in range(0, len(tl1)):
+    i = 0
+    while i < len(tl1):
         tl1[i] = skolemize_statement(tl1[i], deps, sk, qz, mv, False)
         rollback()
+        if isinstance(tl1[i], IffNode):
+            n = len(tl1)
+            tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
+            tl1.append(ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left)))
+            screen.pad1[n] = str(tl1[n])
         screen.pad1[i] = str(tl1[i])
+        i += 1
     for i in range(0, len(tl2)):
         tl2[i] = skolemize_statement(tl2[i], deps, sk, qz, mv, True)
         rollback()
+        if isinstance(tl2[i], ImpliesNode):
+            n = len(tl1)
+            tl1.append(tl2[i].left)
+            screen.pad1[n] = str(tl1[n])
+            tl2[i] = tl2[i].right
+            screen.pad2[i] = str(tl2[i])
         screen.pad2[i] = str(tl2[i])
     
     if qz:
@@ -694,6 +708,20 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
         rollback()
         return tree.left
+    elif isinstance(tree, IffNode) or isinstance(tree, ImpliesNode):
+        t = tree
+        while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
+            t = t.left
+        t.left = skolemize_statement(t.left, deps, sk, qz, mv, not positive)
+        if not isinstance(tree.right, ForallNode) and not isinstance(tree.right, ExistsNode):
+            tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive)
+        else:
+            t = tree.right
+            while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
+                t = t.left
+            t.left = skolemize_statement(t.left, deps, sk, qz, mv, positive)
+        rollback()
+        return tree
     elif isinstance(tree, LRNode):
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
         tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive)

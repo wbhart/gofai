@@ -14,7 +14,8 @@ def is_expression(tree):
     else:
         return True
 
-def trees_unify(tree1, tree2, assign=[]):
+def trees_unify(tree1, tree2, assigned=[]):
+    assign = deepcopy(assigned) # default params are mutable
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
         if is_expression(tree2):
@@ -48,10 +49,11 @@ def trees_unify(tree1, tree2, assign=[]):
             if not unified:
                 return False, []
     # if any case falls through, unification occurred successfully
-    return True, assign      
-  
-def unify(tree1, tree2, assign=[]):
-    unified, assign = trees_unify(tree1, tree2)
+    return True, assign
+
+def unify(tree1, tree2, assigned=[]):
+    assign = deepcopy(assigned) # default params are mutable
+    unified, assign = trees_unify(tree1, tree2, assign)
     if not unified:
         return False, []
     i = 0
@@ -61,7 +63,7 @@ def unify(tree1, tree2, assign=[]):
         j = i + 1
         while j < len(assign):
             if assign[i][0].name == assign[j][0].name:
-                unified, assign = trees_unify(assign[i][1], assign[j][1])
+                unified, assign = trees_unify(assign[i][1], assign[j][1], assign)
                 if not unified:
                     return False, []
                 del assign[j]

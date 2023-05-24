@@ -552,3 +552,10 @@ is_lower_bound(U, l)
 ------------------------------
 is_infimum(U, v)
 
+Title: Definition of set inclusion
+Tags: #sets #definition
+\forall A : Set \forall B : Set
+------------------------------
+------------------------------
+A \subseteq B \iff (\forall x : Set x \in A \implies x \in B)
+

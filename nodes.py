@@ -216,7 +216,7 @@ class IffNode(LRNode):
         return self.paren_str(self.left)+" \u21d4 "+self.paren_str(self.right)
 
     def __repr__(self):
-        return self.paren_repr(self.left)+" \\leftrightarrow "+self.paren_repr(self.right)
+        return self.paren_repr(self.left)+" \\iff "+self.paren_repr(self.right)
 
 class AndNode(LRNode):
     def __str__(self):
