@@ -8,6 +8,39 @@ from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
 
+def relabel_varname(name, var_dict):
+    if name in var_dict:
+        subscript = var_dict[name] + 1
+    else:
+        subscript = 0
+    var_dict[name] = subscript
+    return name+'_'+chr(48+subscript)
+
+def relabel(tlist, i, tldict):
+    tree = tlist[i]
+    vars_dict = dict()
+    
+    def process(tree):
+        if tree == None:
+            return
+        elif isinstance(tree, VarNode):
+            if tree.name in vars_dict:
+                tree.name = vars_dict[tree.name]
+        elif isinstance(tree, LRNode):
+            process(tree.left)
+            process(tree.right)
+        
+    t = tree
+    while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
+        name = t.var.name
+        new_name = relabel_varname(name, tldict)
+        vars_dict[name] = new_name
+        t.var.name = new_name
+        t = t.left
+
+    process(t)
+    tlist[i] = tree
+
 def select_substring(screen, tl):
     window = screen.win1
     pad = screen.pad1
@@ -319,6 +352,7 @@ def library_import(screen, tl):
         tlist = tl.tlist1.data
         n = len(tlist)
         tlist.append(tree)
+        relabel(tlist, n, tl.vars)
         screen.pad1.pad[n] = str(tree)
         screen.pad1.refresh()
         screen.focus.refresh()
@@ -496,10 +530,12 @@ def modus_ponens(screen, tl):
     if forward:
         n = tlist1.len()
         tlist1.data.append(substitute(deepcopy(tree1.right), assign))
+        relabel(tlist1.data, n, tl.vars)
         screen.pad1[n] = str(tlist1.data[n])# make substitutions
     else:
         n = tlist2.len()
         tlist2.data.append(substitute(deepcopy(tree1.left), assign))
+        relabel(tlist2.data, n, tl.vars)
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
@@ -567,10 +603,12 @@ def modus_tollens(screen, tl):
     if forward:
         n = tlist1.len()
         tlist1.data.append(complement_tree(substitute(deepcopy(tree1.left), assign)))
+        relabel(tlist1.data, n, tl.vars)
         screen.pad1[n] = str(tlist1.data[n])# make substitutions
     else:
         n = tlist2.len()
         tlist2.data.append(complement_tree(substitute(deepcopy(tree1.right), assign)))
+        relabel(tlist2.data, n, tl.vars)
         screen.pad2[n] = str(tlist2.data[n])
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
@@ -634,8 +672,10 @@ def cleanup(screen, tl):
         if isinstance(tl2[i], ImpliesNode):
             n = len(tl1)
             tl1.append(tl2[i].left)
+            relabel(tl1, n, tl.vars)
             screen.pad1[n] = str(tl1[n])
             tl2[i] = tl2[i].right
+            relabel(tl2, i, tl.vars)
             screen.pad2[i] = str(tl2[i])
         while isinstance(tl2[i], AndNode):
             n = len(tl2)

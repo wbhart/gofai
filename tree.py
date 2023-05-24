@@ -28,7 +28,8 @@ class TreeList:
         self.tlist1 = TList()
         self.tlist2 = TList()
         self.focus = self.tlist0
-
+        self.vars = dict()
+        
     def switch_list(self):
         if self.focus == self.tlist0:
             self.focus = self.tlist1
