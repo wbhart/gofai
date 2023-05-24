@@ -619,9 +619,16 @@ def skolemize(screen, tl):
             tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
             tl1.append(ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left)))
             screen.pad1[n] = str(tl1[n])
+        while isinstance(tl1[i], AndNode):
+            n = len(tl1)
+            tl1.append(tl1[i].right)
+            screen.pad1[n] = str(tl1[n])
+            tl1[i] = tl1[i].left
+            screen.pad1[i] = str(tl1[i])
         screen.pad1[i] = str(tl1[i])
         i += 1
-    for i in range(0, len(tl2)):
+    i = 0
+    while i < len(tl2):
         tl2[i] = skolemize_statement(tl2[i], deps, sk, qz, mv, True)
         rollback()
         if isinstance(tl2[i], ImpliesNode):
@@ -630,7 +637,14 @@ def skolemize(screen, tl):
             screen.pad1[n] = str(tl1[n])
             tl2[i] = tl2[i].right
             screen.pad2[i] = str(tl2[i])
+        while isinstance(tl2[i], AndNode):
+            n = len(tl2)
+            tl2.append(tl2[i].right)
+            screen.pad2[n] = str(tl2[n])
+            tl2[i] = tl2[i].left
+            screen.pad2[i] = str(tl2[i])
         screen.pad2[i] = str(tl2[i])
+        i += 1
     
     if qz:
         if tl0:

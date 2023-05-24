@@ -559,3 +559,10 @@ Tags: #sets #definition
 ------------------------------
 A \subseteq B \iff (\forall x : Set x \in A \implies x \in B)
 
+Title: Definition of set equality
+Tags: #sets #definition
+\forall A : Set \forall B : Set
+------------------------------
+------------------------------
+A = B \iff A \subseteq B \wedge B \subseteq A
+
