@@ -31,6 +31,11 @@ class LRNode:
             return repr(child)
 
 def univar(name):
+    if len(name) > 2 and name[-2] == '_' and name[-1].isdigit():
+        suffix = chr(8320+int(name[-1]))
+        name = name[0:-2]
+    else:
+        suffix = ''
     unicode_dict = {"\\alpha" : "\u03b1",
                     "\\beta" : "\u03b2",
                     "\\gamma" : "\u03b3",
@@ -52,9 +57,9 @@ def univar(name):
                     "\\psi" : "\u03c8",
                     "\\omega" : "\u03c9"}
     if name in unicode_dict:
-        return unicode_dict[name]
+        return unicode_dict[name]+suffix
     else:
-        return name
+        return name+suffix
 
 # AST Nodes
 class VarNode(LeafNode):
