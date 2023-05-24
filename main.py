@@ -5,13 +5,14 @@ from curses import wrapper
 from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
-from moves import skolemize, modus_ponens, modus_tollens, library_export, \
+from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, new_result, equality
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
     tl = TreeList() # object representing lists of parsed statements
     ad = AutoDict() # get initial automation dictionary containing basic axioms
+    started = False # whether automated cleanup is started
 
     while True:
         c = stdscr.getkey()
@@ -32,14 +33,15 @@ def main(stdscr):
         #    automate(screen, tl, ad)
         elif c == 'v': # equivalence
             equality(screen, tl)
-        elif c == 's': # skolemize
-            skolemize(screen, tl)
+        elif c == 's': # start automated cleanup
+            started = True
         elif c == 'p': # modus ponens
             modus_ponens(screen, tl)
         elif c == 't': # modus tollens
             modus_tollens(screen, tl)
         elif c == 'w': # write to library
-            library_export(screen, tl)
+            if not started:
+                library_export(screen, tl)
         elif c == 'r': # read from library
             library_import(screen, tl)
         elif c == 'n': # new result
@@ -64,6 +66,8 @@ def main(stdscr):
                 pad.cursor_up()
                 pad.refresh()
                 tl.focus.line -= 1
+        if started: # automated cleanup
+            cleanup(screen, tl)
 
     screen.exit()
 

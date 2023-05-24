@@ -584,7 +584,7 @@ def substitute(tree, assign):
        tree = subst(tree, var, val)
    return tree
 
-def skolemize(screen, tl):
+def cleanup(screen, tl):
     tl0 = tl.tlist0.data # quantifier zone
     tl1 = tl.tlist1.data # hypotheses
     tl2 = tl.tlist2.data # targets
