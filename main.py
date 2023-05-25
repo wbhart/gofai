@@ -46,6 +46,7 @@ def main(stdscr):
             library_import(screen, tl)
         elif c == 'n': # new result
             new_result(screen, tl)
+            started = False
         elif c == 'KEY_RIGHT':
             pad = screen.focus
             pad.cursor_right()

@@ -63,7 +63,15 @@ class TupleType:
          self.types = types
 
     def __repr__(self):
-         return "("+''.join([repr(self.types[i])+", " for i in range(0, len(self.types) - 1)])+")"
+         n = len(self.types)
+         if n == 0:
+             return "()"
+         else:
+             return "("+', '.join([repr(self.types[i]) for i in range(0, n)])+")"
    
     def __str__(self):
-         return "("+''.join([str(self.types[i])+", " for i in range(0, len(self.types) - 1)])+")"
+         n = len(self.types)
+         if n == 0:
+             return "()"
+         else:
+             return "("+', '.join([str(self.types[i]) for i in range(0, n)])+")"
