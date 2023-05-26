@@ -16,8 +16,7 @@ def relabel_varname(name, var_dict):
     var_dict[name] = subscript
     return name+'_'+chr(48+subscript)
 
-def relabel(tlist, i, tldict):
-    tree = tlist[i]
+def relabel(tree, tldict):
     vars_dict = dict()
     
     def process(tree):
@@ -39,7 +38,7 @@ def relabel(tlist, i, tldict):
         t = t.left
 
     process(t)
-    tlist[i] = tree
+    return tree
 
 def select_substring(screen, tl):
     window = screen.win1
@@ -349,11 +348,10 @@ def library_import(screen, tl):
             tree = tars[0]
             for i in tars[1:-1]:
                 tree = AndNode(tree, i)
-        tlist = tl.tlist1.data
-        n = len(tlist)
-        tlist.append(tree)
-        relabel(tlist, n, tl.vars)
-        screen.pad1.pad[n] = str(tree)
+        tlist1 = tl.tlist1.data
+        pad1 = screen.pad1.pad
+        stmt = relabel(tree, tl.vars)
+        append_tree(pad1, tlist1, stmt)
         screen.pad1.refresh()
         screen.focus.refresh()
     library.close()
@@ -419,7 +417,11 @@ def library_export(screen, tl):
 def complement_tree(tree):
     
     def complement(tree):
-        if isinstance(tree, EqNode):
+        if isinstance(tree, ForallNode):
+            return ExistsNode(tree.var, complement(tree.left))
+        elif isinstance(tree, ExistsNode):
+            return ForallNode(tree.var, complement(tree.left))
+        elif isinstance(tree, EqNode):
             return NeqNode(tree.left, tree.right)
         elif isinstance(tree, NeqNode):
             return EqNode(tree.left, tree.right)
@@ -528,15 +530,13 @@ def modus_ponens(screen, tl):
         screen.focus.refresh()
         return # does not unify, bogus selection
     if forward:
-        n = tlist1.len()
-        tlist1.data.append(substitute(deepcopy(tree1.right), assign))
-        relabel(tlist1.data, n, tl.vars)
-        screen.pad1[n] = str(tlist1.data[n])# make substitutions
+        stmt = substitute(deepcopy(tree1.right), assign)
+        stmt = relabel(stmt, tl.vars)
+        append_tree(screen.pad1, tlist1.data, stmt)
     else:
-        n = tlist2.len()
-        tlist2.data.append(substitute(deepcopy(tree1.left), assign))
-        relabel(tlist2.data, n, tl.vars)
-        screen.pad2[n] = str(tlist2.data[n])
+        stmt = substitute(deepcopy(tree1.left), assign)
+        stmt = relabel(stmt, tl.vars)
+        append_tree(screen.pad2, tlist2.data, stmt)
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -556,7 +556,7 @@ def modus_tollens(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    if not isinstance(tree1, ImpliesNode) and not isinstance(tree, IffNode): # no implication after quantifiers
+    if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -601,15 +601,13 @@ def modus_tollens(screen, tl):
         screen.focus.refresh()
         return # does not unify, bogus selection
     if forward:
-        n = tlist1.len()
-        tlist1.data.append(complement_tree(substitute(deepcopy(tree1.left), assign)))
-        relabel(tlist1.data, n, tl.vars)
-        screen.pad1[n] = str(tlist1.data[n])# make substitutions
+        stmt = complement_tree(substitute(deepcopy(tree1.left), assign))
+        stmt = relabel(stmt, tl.vars)
+        append_tree(screen.pad1, tlist1.data, stmt)
     else:
-        n = tlist2.len()
-        tlist2.data.append(complement_tree(substitute(deepcopy(tree1.right), assign)))
-        relabel(tlist2.data, n, tl.vars)
-        screen.pad2[n] = str(tlist2.data[n])
+        stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
+        stmt = relabel(stmt, tl.vars)
+        append_tree(screen.pad2, tlist2.data, stmt)
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -621,6 +619,15 @@ def substitute(tree, assign):
    for (var, val) in assign:
        tree = subst(tree, var, val)
    return tree
+
+def append_tree(pad, tl, stmt):
+    n = len(tl)
+    tl.append(stmt)
+    pad[n] = str(tl[n])
+            
+def replace_tree(pad, tl, i, stmt):
+    tl[i] = stmt
+    pad[i] = str(tl[i])
 
 def cleanup(screen, tl):
     tl0 = tl.tlist0.data # quantifier zone
@@ -648,43 +655,69 @@ def cleanup(screen, tl):
         while len(sk) > s:
             sk.pop()
 
+    hyps_done = False
+    tars_done = False
     i = 0
-    while i < len(tl1):
-        tl1[i] = skolemize_statement(tl1[i], deps, sk, qz, mv, False)
-        rollback()
-        if isinstance(tl1[i], IffNode):
-            n = len(tl1)
-            tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
-            tl1.append(ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left)))
-            screen.pad1[n] = str(tl1[n])
-        while isinstance(tl1[i], AndNode):
-            n = len(tl1)
-            tl1.append(tl1[i].right)
-            screen.pad1[n] = str(tl1[n])
-            tl1[i] = tl1[i].left
-            screen.pad1[i] = str(tl1[i])
-        screen.pad1[i] = str(tl1[i])
-        i += 1
-    i = 0
-    while i < len(tl2):
-        tl2[i] = skolemize_statement(tl2[i], deps, sk, qz, mv, True)
-        rollback()
-        if isinstance(tl2[i], ImpliesNode):
-            n = len(tl1)
-            tl1.append(tl2[i].left)
-            relabel(tl1, n, tl.vars)
-            screen.pad1[n] = str(tl1[n])
-            tl2[i] = tl2[i].right
-            relabel(tl2, i, tl.vars)
-            screen.pad2[i] = str(tl2[i])
-        while isinstance(tl2[i], AndNode):
-            n = len(tl2)
-            tl2.append(tl2[i].right)
-            screen.pad2[n] = str(tl2[n])
-            tl2[i] = tl2[i].left
-            screen.pad2[i] = str(tl2[i])
-        screen.pad2[i] = str(tl2[i])
-        i += 1
+    j = 0
+    while not hyps_done or not tars_done:
+        if not hyps_done:
+            hyps_done = True
+            while i < len(tl1):
+                tl1[i] = skolemize_statement(tl1[i], deps, sk, qz, mv, False)
+                rollback()
+                t = tl1[i]
+                while isinstance(t, ExistsNode) or isinstance(t, ForallNode) \
+                     and not isinstance(t.left, OrNode):
+                    t = t.left
+                if isinstance(t.left, OrNode):
+                    t.left = ImpliesNode(complement_tree(t.left.left), t.left.right)
+                    if isinstance(t.left.left, NotNode) and isinstance(t.left.right, NotNode):
+                        temp = t.left.left.left
+                        t.left.left = t.left.right.left
+                        t.left.right = temp
+                    screen.pad1[i] = str(tl1[i])
+                if isinstance(tl1[i], OrNode):
+                    stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
+                    if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
+                        temp = stmt.left.left
+                        stmt.left = stmt.right.left
+                        stmt.right = temp
+                    replace_tree(screen.pad1, tl1, i, stmt)
+                if isinstance(tl1[i], IffNode):
+                    tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
+                    impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
+                    append_tree(screen.pad1, tl1, impl)
+                while isinstance(tl1[i], AndNode):
+                    append_tree(screen.pad1, tl1, tl1[i].right)
+                    replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
+                    append_tree(screen.pad1, tl1, complement_tree(tl1[i].left.right))
+                    replace_tree(screen.pad1, tl1, i, tl1[i].left.left)
+                screen.pad1[i] = str(tl1[i])
+                i += 1
+        if not tars_done:
+            tars_done = True
+            while j < len(tl2):
+                tl2[j] = skolemize_statement(tl2[j], deps, sk, qz, mv, True)
+                rollback()
+                if isinstance(tl2[j], OrNode):
+                    append_tree(screen.pad1, tl1, complement_tree(tl2[j].left))
+                    hyps_done = False
+                    replace_tree(screen.pad2, tl2, j, tl2[j].right)
+                if isinstance(tl2[j], ImpliesNode):
+                    left = relabel(tl2[j].left, tl.vars)
+                    append_tree(screen.pad1, tl1, left)
+                    hyps_done = False
+                    right = relabel(tl2[j].right, tl.vars)
+                    replace_tree(screen.pad2, tl2, j, right)
+                while isinstance(tl2[j], AndNode):
+                    append_tree(screen.pad2, tl2, tl2[j].right)
+                    replace_tree(screen.pad2, tl2, j, tl2[j].left)
+                if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
+                    append_tree(screen.pad2, tl2, complement_tree(tl2[j].left.right))
+                    replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
+                screen.pad2[j] = str(tl2[j])
+                j += 1
     
     if qz:
         if tl0:
@@ -720,7 +753,7 @@ def skolemize_quantifiers(tree, deps, sk):
     else:
         return tree, deps, sk
 
-def skolemize_statement(tree, deps, sk, qz, mv, positive):
+def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
     d = len(deps)
     s = len(sk)
 
@@ -730,55 +763,69 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
         while len(sk) > s:
             sk.pop()
  
-    if isinstance(tree, ForallNode):
-        if positive:
-            deps.append(tree.var)
-            qz.append(tree)
-        else:
-            tree.var.is_metavar = True
-            deps.append(tree.var)
-            mv.append(tree.var.name)
-            qz.append(ConstNode(tree.var, None))
-        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
+    if isinstance(tree, OrNode):
+        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, True)
+        tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive, True)
+        return tree
+    elif isinstance(tree, ForallNode):
+        is_blocked = blocked
+        if not blocked:
+            if positive:
+                deps.append(tree.var)
+                qz.append(tree)
+            else:
+                if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
+                    tree.var.is_metavar = True
+                    deps.append(tree.var)
+                    mv.append(tree.var.name)
+                    qz.append(ConstNode(tree.var, None))
+                else:
+                    is_blocked = True
         rollback()
-        return tree.left
+        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked)
+        return tree.left if not is_blocked else tree    
     elif isinstance(tree, ExistsNode):
-        sk.append((tree.var.name, len(deps)))
-        domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
-        if len(domain_types) > 1:
-            fn_type = FnType(TupleType(domain_types), tree.var.type)
-        elif len(domain_types) == 1:
-            fn_type = FnType(domain_types[0], tree.var.type)
-        else:
-            fn_type = FnType(None, tree.var.type)
-        if positive:
-            tree.var.is_metavar = True
-            mv.append(tree.var.name)
+        is_blocked = blocked
+        if not blocked:
+            sk.append((tree.var.name, len(deps)))
             domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
-            qz.append(ConstNode(VarNode(tree.var.name, fn_type, True), None))
-        else:
-            deps.append(tree.var)
-            qz.append(ForallNode(VarNode(tree.var.name, fn_type, False), None))
-        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
+            if len(domain_types) > 1:
+                fn_type = FnType(TupleType(domain_types), tree.var.type)
+            elif len(domain_types) == 1:
+                fn_type = FnType(domain_types[0], tree.var.type)
+            else:
+                fn_type = FnType(None, tree.var.type)
+            if positive:
+                if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
+                    tree.var.is_metavar = True
+                    mv.append(tree.var.name)
+                    domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
+                    qz.append(ConstNode(VarNode(tree.var.name, fn_type, True), None))
+                else:
+                    is_blocked = True
+            else:
+                deps.append(tree.var)
+                qz.append(ForallNode(VarNode(tree.var.name, fn_type, False), None))
+        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked)
         rollback()
-        return tree.left
+        return tree.left if not is_blocked else tree
     elif isinstance(tree, IffNode) or isinstance(tree, ImpliesNode):
         t = tree
         while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
             t = t.left
-        t.left = skolemize_statement(t.left, deps, sk, qz, mv, not positive)
+        t.left = skolemize_statement(t.left, deps, sk, qz, mv, not positive, blocked)
         if not isinstance(tree.right, ForallNode) and not isinstance(tree.right, ExistsNode):
             tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive)
         else:
             t = tree.right
             while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
                 t = t.left
-            t.left = skolemize_statement(t.left, deps, sk, qz, mv, positive)
+            t.left = skolemize_statement(t.left, deps, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     elif isinstance(tree, LRNode):
-        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive)
-        tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive)
+        tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, blocked)
+        tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     elif isinstance(tree, VarNode):
@@ -799,7 +846,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive):
             return fn
     elif isinstance(tree, FnNode):
         for i in range(0, len(tree.args)):
-            tree.args[i] = skolemize_statement(tree.args[i], deps, sk, qz, mv, positive)
+            tree.args[i] = skolemize_statement(tree.args[i], deps, sk, qz, mv, positive, blocked)
             rollback()
         return tree
     else:
