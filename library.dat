@@ -566,3 +566,74 @@ Tags: #sets #definition
 ------------------------------
 A = B \iff A \subseteq B \wedge B \subseteq A
 
+Title: Definition of strict subset relation
+Tags: #sets #definition
+\forall A : Set, \forall B : Set
+------------------------------
+------------------------------
+A \subsetneq B \iff A \subseteq B \wedge A \neq B
+
+Title: Transitivity of set containment
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subseteq C
+------------------------------
+A \subseteq C
+
+Title: Mixed transitivity of containment (right strict)
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subsetneq C
+------------------------------
+A \subsetneq C
+
+Title: Mixed transitivity of set containment (left strict)
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subsetneq B
+B \subseteq C
+------------------------------
+A \subsetneq C
+
+Title: Transitivity of strict containment
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subsetneq B
+B \subsetneq C
+------------------------------
+A \subsetneq C
+
+Title: An element of a set is an element of a superset
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall x : Set
+------------------------------
+A \subseteq B
+x \in A
+------------------------------
+x \in B
+
+Title: An element of a set is an element of a strict superset
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall x : Set
+------------------------------
+A \subsetneq B
+x \in A
+------------------------------
+x \in B
+
+Title: A cycle of set containments means equality of those sets
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subseteq C
+C \subseteq A
+------------------------------
+A = B
+

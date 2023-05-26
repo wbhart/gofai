@@ -76,7 +76,7 @@ def select_substring(screen, tl):
             screen.status("")
             return True, 0, 0, 0
         elif c == '\n':
-            line = pad.cursor_line + pad.cursor_line
+            line = pad.scroll_line + pad.cursor_line
             pad.rev1 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
                               pad.scroll_char, pad.cursor_char)
             pad.rev2 = pad.rev1
@@ -329,10 +329,10 @@ def library_import(screen, tl):
                 fstr = library.readline()
             if hyps:
                 jhyps = hyps[0]
-                for node in hyps[1:-1]:
+                for node in hyps[1:]:
                     jhyps = AndNode(jhyps, node)
             jtars = tars[0]
-            for i in tars[1:-1]:
+            for i in tars[1:]:
                 jtars = AndNode(jtars, i)
             if hyps:
                 t.left = ImpliesNode(jhyps, jtars)
@@ -346,7 +346,7 @@ def library_import(screen, tl):
                 tars.append(to_ast(screen, fstr[0:-1]))
                 fstr = library.readline()
             tree = tars[0]
-            for i in tars[1:-1]:
+            for i in tars[1:]:
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
         pad1 = screen.pad1.pad
@@ -474,6 +474,13 @@ def select_hypothesis(screen, tl, second):
         else:
             return True, -1
 
+def unquantify(tree):
+    mv = []
+    while isinstance(tree, ForallNode):
+        mv.append(tree.var.name)
+        tree = tree.left
+    return skolemize_statement(tree, [], [], [], mv, False)
+    
 def modus_ponens(screen, tl):
     screen.save_state()
     tlist1 = tl.tlist1
@@ -486,6 +493,7 @@ def modus_ponens(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
+    tree1 = unquantify(deepcopy(tree1)) # remove quantifiers by taking temporary metavars
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
@@ -556,6 +564,7 @@ def modus_tollens(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
+    tree1 = unquantify(deepcopy(tree1))
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
