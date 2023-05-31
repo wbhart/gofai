@@ -36,6 +36,7 @@ def univar(name):
         name = name[0:-2]
     else:
         suffix = ''
+
     unicode_dict = {"\\alpha" : "\u03b1",
                     "\\beta" : "\u03b2",
                     "\\gamma" : "\u03b3",
@@ -55,7 +56,9 @@ def univar(name):
                     "\\phi" : "\u03c6",
                     "\\chi" : "\u03c7",
                     "\\psi" : "\u03c8",
-                    "\\omega" : "\u03c9"}
+                    "\\omega" : "\u03c9",
+                    "\\emptyset" : "\u2205"}
+
     if name in unicode_dict:
         return unicode_dict[name]+suffix
     else:
@@ -404,7 +407,16 @@ class BoolNode(LeafNode):
     def __repr__(self):
         return "True" if self.value else "False"
 
+class SymbolNode(LeafNode):
+    def __init__(self, name, const_type):
+        self.name = name
+        self.type = const_type
+    
+    def __str__(self):
+        return univar(self.name)
 
+    def __repr__(self):
+        return self.name
 
 precedence = {ExistsNode:9, ForallNode:9,
               ImpliesNode:8, IffNode:8,

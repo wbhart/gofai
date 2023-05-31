@@ -6,7 +6,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode
+     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
+     SymbolNode
 from type import NumberType, NamedType, FnType, TupleType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -32,12 +33,12 @@ statement = Grammar(
     relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
     pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (paren_expression / pred_fn / bool)
-    subset_relation = (set_expression space ("\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
+    subset_relation = (set_expression space ("=" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set space ("\\cup" / "\\cap") space)* set
-    set = set_paren / var / number_type
+    set = set_paren / var / number_type / empty_set
     set_paren = "(" set_expression ")"
     alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
@@ -56,6 +57,7 @@ statement = Grammar(
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     name = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
+    empty_set = "\\emptyset"
     space = ~"\s*"
     """)
 
@@ -216,6 +218,8 @@ class StatementVisitor(NodeVisitor):
     def visit_bool(self, node, visited_children):
         value = True if node.text == "True" else False
         return BoolNode(value)
+    def visit_empty_set(self, node, visited_children):
+        return SymbolNode("\\emptyset", NamedType("Set"))
 
 def to_ast(screen, string):
     try:
