@@ -644,3 +644,10 @@ Tags: #sets
 ------------------------------
 \neg(x \in \emptyset)
 
+Title: Definition of set union
+Tags: #sets #definition
+\forall S : Set \forall T : Set \forall x : Set
+------------------------------
+------------------------------
+x \in S \cup T \iff x \in S \vee x \in T
+

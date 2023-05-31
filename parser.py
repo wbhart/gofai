@@ -33,7 +33,7 @@ statement = Grammar(
     relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
     pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (paren_expression / pred_fn / bool)
-    subset_relation = (set_expression space ("=" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
+    subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
     set_expression = set_diff / set_union
     set_diff = set_union space "\\setminus" space set_union
