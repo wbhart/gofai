@@ -22,27 +22,30 @@ def targets_proved(screen, tl, ttree):
     def check(ttree):
         if ttree.proved:
             return True
-        for Q in ttree.andlist:
-            ttree.proved = ttree.proved and check(Q)
-        if not ttree.proved and ttree.andlist:
-            S = set(ttree.andlist[0].deps)
-            for i in range(1, len(ttree.andlist)):
-                S = S.intersection(ttree.andlist[i].deps)
-            ttree.deps = list(S)
-        if ttree.num in ttree.deps:
-            ttree.proved = True
-        if not ttree.proved:
-            for i in range(0, len(hyps)):
-                P = hyps[i]
-                dep = tl.tlist1.dependency(i)
-                if dep not in ttree.deps:
-                     unifies, assign = unify(P, tars[ttree.num])
-                     if unifies:
-                         if dep == -1:
-                             ttree.proved = True
-                             break
-                         else:
-                             ttree.deps.append(dep)
+        if ttree.andlist:
+            proved = True
+            for Q in ttree.andlist:
+                proved = proved and check(Q)
+            ttree.proved = proved
+            if not ttree.proved:
+                S = set(ttree.andlist[0].deps)
+                for i in range(1, len(ttree.andlist)):
+                    S = S.intersection(ttree.andlist[i].deps)
+                ttree.deps = list(S)
+            if ttree.num in ttree.deps:
+                ttree.proved = True
+            if not ttree.proved:
+                for i in range(0, len(hyps)):
+                    P = hyps[i]
+                    dep = tl.tlist1.dependency(i)
+                    if dep not in ttree.deps:
+                        unifies, assign = unify(P, tars[ttree.num])
+                        if unifies:
+                            if dep == -1:
+                                ttree.proved = True
+                                break
+                            else:
+                                ttree.deps.append(dep)
         return ttree.proved
 
     return check(ttree)
