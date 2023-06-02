@@ -5,6 +5,7 @@ class TList:
     def __init__(self):
         self.data = [] # list of ASTs in window
         self.line = 0 # which line of text does cursor line correspond to
+        self.dep = dict() # dependency on target
 
     def __setitem__(self, key, value):
         """Overload array notation so lines can be added.
@@ -19,6 +20,11 @@ class TList:
         """
         return len(self.data)
 
+    def dependency(self, i):
+        if i in self.dep:
+            return self.dep[i]
+        return -1 
+
 class TreeList:
     """Structure containing TreeLists for each of the windows 0-2 and which one
        has focus.
@@ -28,8 +34,8 @@ class TreeList:
         self.tlist1 = TList()
         self.tlist2 = TList()
         self.focus = self.tlist0
-        self.vars = dict()
-        
+        self.vars = dict() # variables used
+
     def switch_list(self):
         if self.focus == self.tlist0:
             self.focus = self.tlist1

@@ -8,6 +8,42 @@ from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
 
+class TargetNode:
+    def __init__(self, num, andlist=[]):
+        self.num = num
+        self.proved = False
+        self.andlist = andlist
+
+def targets_proved(screen, tl, ttree):
+    hyps = tl.tlist1.data
+    tars = tl.tlist2.data
+    
+    def check(ttree, n):
+        found = False
+        if ttree.num == n: # this is the right node
+            found = True
+            if not ttree.proved:
+                for P in hyps:
+                    unifies, assign = unify(P, tars[n])
+                    if unifies:
+                        ttree.proved = True
+                        break
+        else:
+            for Q in ttree.andlist:
+                found, proved = check(Q, n)
+                if found:
+                    break
+        proved = True
+        for Q in ttree.andlist:
+            proved = proved and Q.proved
+        return found, proved
+
+    for i in range(0, len(tars)):
+        found, proved = check(ttree, i)
+        if proved:
+            return True
+    return False
+
 def relabel_varname(name, var_dict):
     if name in var_dict:
         subscript = var_dict[name] + 1
@@ -481,7 +517,7 @@ def unquantify(tree):
         tree = tree.left
     return skolemize_statement(tree, [], [], [], mv, False)
     
-def modus_ponens(screen, tl):
+def modus_ponens(screen, tl, ttree):
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -545,6 +581,7 @@ def modus_ponens(screen, tl):
         stmt = substitute(deepcopy(tree1.left), assign)
         stmt = relabel(stmt, tl.vars)
         append_tree(screen.pad2, tlist2.data, stmt)
+        add_descendant(ttree, line2, len(tlist2.data) - 1)
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -552,7 +589,7 @@ def modus_ponens(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def modus_tollens(screen, tl):
+def modus_tollens(screen, tl, ttree):
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -617,6 +654,7 @@ def modus_tollens(screen, tl):
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         stmt = relabel(stmt, tl.vars)
         append_tree(screen.pad2, tlist2.data, stmt)
+        add_descendant(ttree, line2, len(tlist2.data) - 1)
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -638,7 +676,26 @@ def replace_tree(pad, tl, i, stmt):
     tl[i] = stmt
     pad[i] = str(tl[i])
 
-def cleanup(screen, tl):
+def add_sibling(ttree, i, j):
+    for P in ttree.andlist:
+        if P.num == i:
+            ttree.andlist.append(TargetNode(j))
+            return True
+    for P in ttree.andlist:
+        if add_sibling(P, i, j):
+            return True
+    return False
+
+def add_descendant(ttree, i, j):
+    if ttree.num == i:
+        ttree.andlist = [TargetNode(j)]
+        return True
+    for P in ttree.andlist:
+        if add_descendant(P, i, j):
+            return True
+    return False
+
+def cleanup(screen, tl, ttree):
     tl0 = tl.tlist0.data # quantifier zone
     tl1 = tl.tlist1.data # hypotheses
     tl2 = tl.tlist2.data # targets
@@ -720,18 +777,22 @@ def cleanup(screen, tl):
                     append_tree(screen.pad1, tl1, complement_tree(tl2[j].left))
                     hyps_done = False
                     replace_tree(screen.pad2, tl2, j, tl2[j].right)
+                    tl.tlist1.dep[len(tl1) - 1] = j
                 if isinstance(tl2[j], ImpliesNode):
                     left = relabel(tl2[j].left, tl.vars)
                     append_tree(screen.pad1, tl1, left)
                     hyps_done = False
                     right = relabel(tl2[j].right, tl.vars)
                     replace_tree(screen.pad2, tl2, j, right)
+                    tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
                     append_tree(screen.pad2, tl2, tl2[j].right)
                     replace_tree(screen.pad2, tl2, j, tl2[j].left)
+                    add_sibling(ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(screen.pad2, tl2, complement_tree(tl2[j].left.right))
                     replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
+                    add_sibling(ttree, j, len(tl2) - 1)
                 screen.pad2[j] = str(tl2[j])
                 j += 1
     

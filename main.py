@@ -6,13 +6,14 @@ from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
-     library_import, new_result, equality
+     library_import, new_result, equality, targets_proved, TargetNode
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
     tl = TreeList() # object representing lists of parsed statements
     ad = AutoDict() # get initial automation dictionary containing basic axioms
     started = False # whether automated cleanup is started
+    ttree = None # track which targets have been proved
 
     while True:
         c = stdscr.getkey()
@@ -35,10 +36,11 @@ def main(stdscr):
             equality(screen, tl)
         elif c == 's': # start automated cleanup
             started = True
+            ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
-            modus_ponens(screen, tl)
+            modus_ponens(screen, tl, ttree)
         elif c == 't': # modus tollens
-            modus_tollens(screen, tl)
+            modus_tollens(screen, tl, ttree)
         elif c == 'w': # write to library
             if not started:
                 library_export(screen, tl)
@@ -68,8 +70,10 @@ def main(stdscr):
                 pad.refresh()
                 tl.focus.line -= 1
         if started: # automated cleanup
-            cleanup(screen, tl)
-
+            cleanup(screen, tl, ttree)
+            if targets_proved(screen, tl, ttree):
+                screen.dialog("All targets proved")
+                started = False
     screen.exit()
 
 wrapper(main) # curses wrapper handles exceptions
