@@ -29,6 +29,8 @@ def trees_unify(tree1, tree2, assigned=[]):
         else:
             return False, []
     elif isinstance(tree1, VarNode) or isinstance(tree2, VarNode):
+        if not isinstance(tree1, VarNode) or not isinstance(tree2, VarNode):
+            return False, []
         if tree1.name != tree2.name: # if not metavars check names
             return False, []
     elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):

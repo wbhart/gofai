@@ -6,7 +6,8 @@ from editor import get_text
 from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
-     library_import, new_result, equality, targets_proved, TargetNode
+     library_import, new_result, equality, targets_proved, TargetNode, \
+     check_contradictions
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -14,8 +15,11 @@ def main(stdscr):
     ad = AutoDict() # get initial automation dictionary containing basic axioms
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
-
+    num_checked = 0 # number of hypotheses that have been checked for contradictions
+    
     while True:
+        if not started:
+            num_checked = 0
         c = stdscr.getkey()
         if c == '\t': # TAB = switch window focus (and associated pad)
             screen.switch_window()
@@ -71,6 +75,7 @@ def main(stdscr):
                 tl.focus.line -= 1
         if started: # automated cleanup
             cleanup(screen, tl, ttree)
+            num_checked = check_contradictions(screen, tl, num_checked, ttree)
             if targets_proved(screen, tl, ttree):
                 screen.dialog("All targets proved")
                 started = False

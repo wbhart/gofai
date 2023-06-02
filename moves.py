@@ -10,39 +10,68 @@ from interface import nchars_to_chars
 
 class TargetNode:
     def __init__(self, num, andlist=[]):
-        self.num = num
-        self.proved = False
-        self.andlist = andlist
+        self.num = num # which target this node corresponds to
+        self.proved = False # start in unproved state
+        self.andlist = andlist # a list of targets that would prove this target
+        self.deps = [] # other targets that the current proofs of this one depends on
 
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
     
-    def check(ttree, n):
-        found = False
-        if ttree.num == n: # this is the right node
-            found = True
-            if not ttree.proved:
-                for P in hyps:
-                    unifies, assign = unify(P, tars[n])
-                    if unifies:
-                        ttree.proved = True
-                        break
-        else:
-            for Q in ttree.andlist:
-                found, proved = check(Q, n)
-                if found:
-                    break
-        proved = True
+    def check(ttree):
+        if ttree.proved:
+            return True
         for Q in ttree.andlist:
-            proved = proved and Q.proved
-        return found, proved
+            ttree.proved = ttree.proved and check(Q)
+        if not ttree.proved and ttree.andlist:
+            S = set(ttree.andlist[0].deps)
+            for i in range(1, len(ttree.andlist)):
+                S = S.intersection(ttree.andlist[i].deps)
+            ttree.deps = list(S)
+        if ttree.num in ttree.deps:
+            ttree.proved = True
+        if not ttree.proved:
+            for i in range(0, len(hyps)):
+                P = hyps[i]
+                dep = tl.tlist1.dependency(i)
+                if dep not in ttree.deps:
+                     unifies, assign = unify(P, tars[ttree.num])
+                     if unifies:
+                         if dep == -1:
+                             ttree.proved = True
+                             break
+                         else:
+                             ttree.deps.append(dep)
+        return ttree.proved
 
-    for i in range(0, len(tars)):
-        found, proved = check(ttree, i)
-        if proved:
+    return check(ttree)
+
+def mark_proved(ttree, n):
+    if ttree.num == n:
+        ttree.proved = True
+        return True
+    for P in ttree.andlist:
+        if mark_proved(P, n):
             return True
     return False
+
+def check_contradictions(screen, tl, n, ttree):
+    tlist1 = tl.tlist1.data
+    for i in range(n, len(tlist1)):
+        d1 = tl.tlist1.dependency(i)
+        tree1 = complement_tree(tlist1[i])
+        for j in range(0, i):
+            d2 = tl.tlist1.dependency(j)
+            if (d1 < 0 and d2 >= 0) or (d1 >= 0 and d2 < 0):
+                tree2 = tlist1[j]
+                unifies, assign = unify(tree1, tree2)
+                if unifies: # we found a contradiction
+                    if d1 >= 0:
+                        mark_proved(ttree, d1)
+                    else:
+                        mark_proved(ttree, d2)
+    return len(tlist1)
 
 def relabel_varname(name, var_dict):
     if name in var_dict:
@@ -851,17 +880,16 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                 deps.append(tree.var)
                 qz.append(tree)
             else:
-                if not blocked:
+                if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
                     tree.var.is_metavar = True
                     deps.append(tree.var)
                     mv.append(tree.var.name)
-                if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
                     qz.append(ConstNode(tree.var, None))
                 else:
                     is_blocked = True
         rollback()
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked)
-        return tree.left if not blocked else tree    
+        return tree.left if not is_blocked else tree    
     elif isinstance(tree, ExistsNode):
         is_blocked = blocked
         if not blocked:
