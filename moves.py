@@ -15,6 +15,38 @@ class TargetNode:
         self.andlist = andlist # a list of targets that would prove this target
         self.deps = [] # other targets that the current proofs of this one depends on
 
+    def __str__(self):
+        if not self.andlist:
+            return "("+str(self.num)+")"
+        else:
+            return "("+str(self.num)+", ["+", ".join([str(j) for j in self.andlist])+"])"
+
+def metavars_used(tree):
+    used = []
+
+    def search(tree):
+        if tree == None:
+            return
+        elif isinstance(tree, LRNode):
+            search(tree.left)
+            search(tree.right)
+        elif isinstance(tree, VarNode):
+            if tree.is_metavar:
+                name = tree.name
+                if name not in used:
+                    used.append(name)
+        elif isinstanced(tree, FnNode):
+            if tree.is_metavar:
+                name = tree.name
+                if name not in used:
+                    used.append(name)
+            for v in tree.args:
+                search(v)
+        return
+
+    search(tree)
+    return used
+
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
@@ -34,18 +66,18 @@ def targets_proved(screen, tl, ttree):
                 ttree.deps = list(S)
             if ttree.num in ttree.deps:
                 ttree.proved = True
-            if not ttree.proved:
-                for i in range(0, len(hyps)):
-                    P = hyps[i]
-                    dep = tl.tlist1.dependency(i)
-                    if dep not in ttree.deps:
-                        unifies, assign = unify(P, tars[ttree.num])
-                        if unifies:
-                            if dep == -1:
-                                ttree.proved = True
-                                break
-                            else:
-                                ttree.deps.append(dep)
+        if not ttree.proved and ttree.num != -1:
+            for i in range(0, len(hyps)):
+                P = hyps[i]
+                dep = tl.tlist1.dependency(i)
+                if dep not in ttree.deps:
+                    unifies, assign = unify(P, tars[ttree.num])
+                    if unifies:
+                        if dep == -1:
+                            ttree.proved = True
+                            break
+                        else:
+                            ttree.deps.append(dep)
         return ttree.proved
 
     return check(ttree)
@@ -793,11 +825,16 @@ def cleanup(screen, tl, ttree):
                     append_tree(screen.pad1, tl1, complement_tree(tl1[i].left.right))
                     replace_tree(screen.pad1, tl1, i, tl1[i].left.left)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
-                    P = tl1[i].left.left
-                    Q = tl1[i].left.right
-                    R = tl1[i].right
-                    append_tree(screen.pad1, tl1, ImpliesNode(Q, R))
-                    replace_tree(screen.pad1, tl1, i, ImpliesNode(P, R))
+                    var1 = metavars_used(tl1[i].left.left)
+                    var2 = metavars_used(tl1[i].left.right)
+                    var = metavars_used(tl1[i].right)
+                    # make sure no additional metavars are introduces
+                    if set(var).issubset(var1) and set(var).issubset(var2):
+                        P = tl1[i].left.left
+                        Q = tl1[i].left.right
+                        R = tl1[i].right
+                        append_tree(screen.pad1, tl1, ImpliesNode(Q, R))
+                        replace_tree(screen.pad1, tl1, i, ImpliesNode(P, R))
                 screen.pad1[i] = str(tl1[i])
                 i += 1
         if not tars_done:
