@@ -64,8 +64,8 @@ def targets_proved(screen, tl, ttree):
                 for i in range(1, len(ttree.andlist)):
                     S = S.intersection(ttree.andlist[i].deps)
                 ttree.deps = list(S)
-            if ttree.num in ttree.deps:
-                ttree.proved = True
+                if ttree.num in ttree.deps:
+                    ttree.proved = True
         if not ttree.proved and ttree.num != -1:
             for i in range(0, len(hyps)):
                 P = hyps[i]
