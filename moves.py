@@ -98,7 +98,7 @@ def check_contradictions(screen, tl, n, ttree):
         tree1 = complement_tree(tlist1[i])
         for j in range(0, i):
             d2 = tl.tlist1.dependency(j)
-            if (d1 < 0 and d2 >= 0) or (d1 >= 0 and d2 < 0):
+            if d1 < 0 or d2 < 0:
                 tree2 = tlist1[j]
                 unifies, assign = unify(tree1, tree2)
                 if unifies: # we found a contradiction
