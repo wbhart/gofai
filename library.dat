@@ -1054,3 +1054,17 @@ Tags: #sets #tests
 ------------------------------
 S \cap (T \cup U) = S \cap T \cup (S \cap U)
 
+Title: Union distributes over intersection
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+------------------------------
+S \cup (T \cap U) = S \cup T \cap (S \cup U)
+
+Title: Problem : Union distributes over intersection
+Tags: #sets #tests
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+------------------------------
+S \cup (T \cap U) = S \cup T \cap (S \cup U)
+
