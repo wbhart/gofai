@@ -931,3 +931,126 @@ S \cup T = \emptyset
 ------------------------------
 S = \emptyset \vee T = \emptyset
 
+Title: Definition of set intersection
+Tags: #sets #definition
+\forall S : Set, \forall T : Set, \forall x : Set
+------------------------------
+------------------------------
+x \in S \cap T \iff x \in S \wedge x \in T
+
+Title: Commutativity of set intersection
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cap T = T \cap S
+
+Title: Problem : Commutativity of set intersection
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cap T = T \cap S
+
+Title: An intersection of sets is contained in the sets
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cap T \subseteq S
+
+Title: Problem : An intersection of sets is contained in the sets
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cap T \subseteq S
+
+Title: Intersection with the empty set is trivial
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \cap \emptyset = S
+
+Title: Problem : Intersection with the empty set is trivial
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+------------------------------
+S \cap \emptyset = S
+
+Title: Problem : An element in one set of an empty intersection is not in the other
+Tags: #sets #tests 
+\forall S : Set, \forall T : Set, \forall s : Set
+------------------------------
+S \cap T = \emptyset
+s \in S
+------------------------------
+\neg(s \in T)
+
+Title: The intersection of a set with itself is itself
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \cap S = S
+
+Title: Problem : The intersection of a set with itself is itself
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+------------------------------
+S \cap S = S
+
+Title: A set contained in an intersection with another is contained in the other
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+S \subseteq S \cap T
+------------------------------
+S \subseteq T
+
+Title: Problem : Set contained in intersection with another is contained in other
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S \subseteq S \cap T
+------------------------------
+S \subseteq T
+
+Title: Set contained in two others is contained in their intersection
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall C : Set
+------------------------------
+\forall c : Set c \in C \implies c \in S \wedge c \in T
+------------------------------
+C \subseteq S \cap T
+
+Title: Problem : Set contained in two others is contained in their intersection
+Tags: #sets #tests
+\forall S : Set, \forall T : Set, \forall C : Set
+------------------------------
+\forall c : Set c \in C \implies c \in S \wedge c \in T
+------------------------------
+C \subseteq S \cap T
+
+Title: Intersection distributes over union
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+------------------------------
+Title: Intersection distributes over union
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+------------------------------
+S \cap (T \cup U) = S \cap T \cup (S \cap U)
+
+Title: Problem : Intersection distributes over union
+Tags: #sets #tests
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+------------------------------
+S \cap (T \cup U) = S \cap T \cup (S \cap U)
+

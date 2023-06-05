@@ -70,7 +70,7 @@ def targets_proved(screen, tl, ttree):
             for i in range(0, len(hyps)):
                 P = hyps[i]
                 dep = tl.tlist1.dependency(i)
-                if dep not in ttree.deps:
+                if dep not in ttree.deps: # if we didn't already prove with this dep
                     unifies, assign = unify(P, tars[ttree.num])
                     if unifies:
                         if dep == -1:
@@ -582,15 +582,10 @@ def library_export(screen, tl):
         library.write(repr(tlist0[0]))
         qz_written = True
     for hyp in tlist1:
-        while isinstance(hyp, ExistsNode) or isinstance(hyp, ForallNode):
-            if isinstance(hyp, ExistsNode):
-                if qz_written:
-                    library.write(" ")
-                library.write(repr(ForallNode(hyp.var, None)))
-            elif isinstance(hyp, ForallNode):
-                if qz_written:
-                    library.write(" ")
-                library.write(repr(ExistsNode(hyp.var, None)))
+        while isinstance(hyp, ExistsNode):
+            if qz_written:
+                library.write(" ")
+            library.write(repr(ExistsNode(hyp.var, None)))
             hyp = hyp.left
             qz_written = True
     for tar in tlist2:
@@ -604,7 +599,7 @@ def library_export(screen, tl):
         library.write("\n")
     library.write("------------------------------\n")
     for hyp in tlist1:
-        while isinstance(hyp, ExistsNode) or isinstance(hyp, ForallNode):
+        while isinstance(hyp, ExistsNode):
             hyp = hyp.left
         library.write(repr(hyp)+"\n")
     library.write("------------------------------\n")
@@ -925,23 +920,38 @@ def cleanup(screen, tl, ttree):
                     tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
                     impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
                     append_tree(screen.pad1, tl1, impl)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 while isinstance(tl1[i], AndNode):
-                    append_tree(screen.pad1, tl1, tl1[i].right)
-                    replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                    # First check we don't have P \vee P
+                    unifies, assign = unify(tl1[i].left, tl1[i].right)
+                    if unifies and not assign:
+                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                    else:
+                        append_tree(screen.pad1, tl1, tl1[i].right)
+                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(screen.pad1, tl1, complement_tree(tl1[i].left.right))
                     replace_tree(screen.pad1, tl1, i, tl1[i].left.left)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
                     var2 = metavars_used(tl1[i].left.right)
                     var = metavars_used(tl1[i].right)
-                    # make sure no additional metavars are introduces
+                    # make sure no additional metavars are introduced
                     if set(var).issubset(var1) and set(var).issubset(var2):
                         P = tl1[i].left.left
                         Q = tl1[i].left.right
                         R = tl1[i].right
                         append_tree(screen.pad1, tl1, ImpliesNode(Q, R))
                         replace_tree(screen.pad1, tl1, i, ImpliesNode(P, R))
+                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
+                    stmt = ImpliesNode(deepcopy(tl1[i].left), tl1[i].right.left)
+                    append_tree(screen.pad1, tl1, stmt)
+                    stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
+                    replace_tree(screen.pad1, tl1, i, stmt)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 screen.pad1[i] = str(tl1[i])
                 i += 1
         if not tars_done:
@@ -962,9 +972,14 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad2, tl2, j, right)
                     tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
-                    append_tree(screen.pad2, tl2, tl2[j].right)
-                    replace_tree(screen.pad2, tl2, j, tl2[j].left)
-                    add_sibling(ttree, j, len(tl2) - 1)
+                    # First check we don't have P \wedge P
+                    unifies, assign = unify(tl2[j].left, tl2[j].right)
+                    if unifies and not assign:
+                        replace_tree(screen.pad1, tl2, j, tl2[j].left)
+                    else:
+                        append_tree(screen.pad2, tl2, tl2[j].right)
+                        replace_tree(screen.pad2, tl2, j, tl2[j].left)
+                        add_sibling(ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(screen.pad2, tl2, complement_tree(tl2[j].left.right))
                     replace_tree(screen.pad2, tl2, j, tl2[j].left.left)

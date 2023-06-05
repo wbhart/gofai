@@ -7,6 +7,26 @@ def isatomic(node):
         return False
     return True
 
+def needs_paren_right(tree, child):
+    # Do we need to check
+    if isatomic(child):
+        return False
+    if precedence[type(child)] < precedence[type(tree)]:
+        return False
+    if child == tree.left:
+        return False
+    if type(tree) not in associative:
+        return False
+    # Now check
+    if not associative[type(tree)]:
+        return True
+    # Anything left to check
+    if type(child) == type(tree):
+        return False
+    if not dual_associative[type(tree)]:
+        return True
+    return False
+
 # Common class for all leaf nodes, i.e. nodes containing no expr children
 
 class LeafNode:
@@ -21,11 +41,15 @@ class LRNode:
     def paren_str(self, child):
         if not isatomic(child) and precedence[type(child)] > precedence[type(self)]:
             return '('+str(child)+')'
+        elif needs_paren_right(self, child):
+            return '('+str(child)+')'
         else:
             return str(child)
 
     def paren_repr(self, child):
         if not isatomic(child) and precedence[type(child)] > precedence[type(self)]:
+            return '('+repr(child)+')'
+        elif needs_paren_right(self, child):
             return '('+repr(child)+')'
         else:
             return repr(child)
@@ -437,3 +461,13 @@ precedence = {ExistsNode:9, ForallNode:9,
               NegNode:2,
               ExpNode:1,
               NaturalNode:0, VarNode:0, FnNode:0, AbsNode:0}
+
+# whether it is self associative
+associative = {AddNode:True, SubNode:False, MulNode:True,
+                 DivNode:False, ExpNode:False,
+                 UnionNode:True, IntersectNode:True}
+
+# whether it associates with its dual
+dual_associative = {AndNode:True, SubNode:False, MulNode:True,
+                 DivNode:False, ExpNode:False,
+                 UnionNode:False, IntersectNode:False}
