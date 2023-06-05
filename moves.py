@@ -91,6 +91,22 @@ def mark_proved(ttree, n):
             return True
     return False
 
+def deps_compatible(ttree, d1, d2):
+    def find(ttree, d1):
+        if ttree.num == d1:
+            return ttree
+        for P in ttree.andlist:
+            t = find(P, d1)
+            if t:
+                return t
+        return None
+
+    root = find(ttree, d2)
+    if find(root, d1):
+        return True
+    else:
+        return False
+
 def check_contradictions(screen, tl, n, ttree):
     tlist1 = tl.tlist1.data
     for i in range(n, len(tlist1)):
@@ -105,6 +121,17 @@ def check_contradictions(screen, tl, n, ttree):
                     if d1 >= 0:
                         mark_proved(ttree, d1)
                     else:
+                        mark_proved(ttree, d2)
+            elif d1 >= 0 and d2 >= 0:
+                if deps_compatible(ttree, d1, d2):
+                    tree2 = tlist1[j]
+                    unifies, assign = unify(tree1, tree2)
+                    if unifies: # we found a contradiction
+                        mark_proved(ttree, d1)
+                elif deps_compatible(ttree, d2, d1):
+                    tree2 = tlist1[j]
+                    unifies, assign = unify(tree1, tree2)
+                    if unifies: # we found a contradiction
                         mark_proved(ttree, d2)
     return len(tlist1)
 
@@ -251,7 +278,7 @@ def apply_equality(screen, tree, string, n, subst, occurred=-1):
             unifies, assign = unify(subst.left, tree)
             if not unifies:
                 return False, tree, n # does not unify, bogus selection
-            return True, substitute(subst.right, assign), n
+            return True, substitute(deepcopy(subst.right), assign), n
     if isinstance(tree, LRNode):
         found, tree.left, occur = apply_equality(screen, tree.left, string, n, subst, occur)
         if not found:
@@ -456,6 +483,86 @@ def library_import(screen, tl):
         screen.focus.refresh()
     library.close()
 
+def library_load(screen, tl):
+    tags = edit(screen, "Tags: ", 6)
+    if tags == None:
+        return
+    tags = canonicalise_tags(tags) # deal with type shorthands
+    taglist = tags_to_list(tags)
+    library = open("library.dat", "r")
+    filtered_titles = []
+    title = library.readline()
+    while title: # check for EOF
+        libtaglist = tags_to_list(library.readline()[0:-1])
+        if all(elem in libtaglist for elem in taglist):
+            filtered_titles.append((library.tell(), title[7:-1]))
+        while title != '\n':
+            title = library.readline()
+        title = library.readline()
+    filtered_titles2 = deepcopy(filtered_titles)
+    i = 0
+    if filtered_titles:
+        screen.status(filtered_titles2[i][1])
+        while True:
+            c = screen.stdscr.getkey()
+            if c == 'KEY_DOWN' and i < len(filtered_titles2) - 1:
+                i += 1
+                screen.status(filtered_titles2[i][1])
+            elif c == 'KEY_UP' and i > 0:
+                i -= 1
+                screen.status(filtered_titles2[i][1])
+            elif c.isalpha():
+                filtered_titles2 = filter_titles(filtered_titles, c)
+                i = 0
+                if filtered_titles2:
+                    screen.status(filtered_titles2[i][1])
+            elif c == '\n':
+                screen.status('')
+                screen.focus.refresh()
+                break
+            else:
+                library.close()
+                screen.status('')
+                screen.focus.refresh()
+                return
+        filepos = filtered_titles2[i][0]
+        library.seek(filepos)
+        tlist0 = tl.tlist0.data
+        pad0 = screen.pad0.pad
+        tlist1 = tl.tlist1.data
+        pad1 = screen.pad1.pad
+        tlist2 = tl.tlist2.data
+        pad2 = screen.pad2.pad
+        fstr = library.readline()
+        if fstr != '------------------------------\n':
+            stmt = to_ast(screen, fstr[0:-1])
+            append_tree(pad0, tlist0, stmt)
+            screen.pad0.refresh()
+            library.readline()
+            fstr = library.readline()
+            while fstr != '------------------------------\n':
+                stmt = to_ast(screen, fstr[0:-1])
+                append_tree(pad1, tlist1, stmt)
+                screen.pad1.refresh()
+                fstr = library.readline()
+            fstr = library.readline()
+            while fstr != '\n':
+                stmt = to_ast(screen, fstr[0:-1])
+                append_tree(pad2, tlist2, stmt)
+                screen.pad2.refresh()
+                fstr = library.readline()
+        else:
+            library.readline()
+            library.readline()
+            fstr = library.readline()
+            while fstr != '\n':
+                stmt = to_ast(screen, fstr[0:-1])
+                append_tree(pad2, tlist2, stmt)
+                screen.pad2.refresh()
+                fstr = library.readline()
+        screen.focus.refresh()
+    library.close()
+
 def library_export(screen, tl):
     title = edit(screen, "Title: ", 7)
     if title == None:
@@ -487,15 +594,10 @@ def library_export(screen, tl):
             hyp = hyp.left
             qz_written = True
     for tar in tlist2:
-        while isinstance(tar, ExistsNode) or isinstance(tar, ForallNode):
-            if isinstance(tar, ExistsNode):
-                if qz_written:
-                    library.write(" ")
-                library.write(repr(ExistsNode(tar.var, None)))
-            elif isinstance(tar, ForallNode):
-                if qz_written:
-                    library.write(" ")
-                library.write(repr(ForallNode(tar.var, None)))
+        while isinstance(tar, ForallNode):
+            if qz_written:
+                library.write(" ")
+            library.write(repr(ForallNode(tar.var, None)))
             tar = tar.left
             qz_written = True
     if qz_written:
@@ -507,7 +609,7 @@ def library_export(screen, tl):
         library.write(repr(hyp)+"\n")
     library.write("------------------------------\n")
     for tar in tlist2:
-        while isinstance(tar, ExistsNode) or isinstance(tar, ForallNode):
+        while isinstance(tar, ForallNode):
             tar = tar.left
         library.write(repr(tar)+"\n")
     library.write("\n")
@@ -808,12 +910,17 @@ def cleanup(screen, tl, ttree):
                             t.left.right = temp
                         screen.pad1[i] = str(tl1[i])
                 if isinstance(tl1[i], OrNode):
-                    stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
-                    if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
-                        temp = stmt.left.left
-                        stmt.left = stmt.right.left
-                        stmt.right = temp
-                    replace_tree(screen.pad1, tl1, i, stmt)
+                    # First check we don't have P \vee P
+                    unifies, assign = unify(tl1[i].left, tl1[i].right)
+                    if unifies and not assign:
+                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                    else:
+                        stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
+                        if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
+                            temp = stmt.left.left
+                            stmt.left = stmt.right.left
+                            stmt.right = temp
+                        replace_tree(screen.pad1, tl1, i, stmt)
                 if isinstance(tl1[i], IffNode):
                     tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
                     impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))

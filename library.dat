@@ -651,3 +651,283 @@ Tags: #sets #definition
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
 
+Title: Problem : Transitivity of set inclusion
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subseteq C
+------------------------------
+A \subseteq C
+
+Title: Problem : Commutativity of set equality
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S = T
+------------------------------
+T = S
+
+Title: Problem : Unequal sets have an element not in both
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S \neq T
+------------------------------
+(\exists x : Set x \in S \wedge \neg(x \in T)) \vee (\exists y : Set \neg(y \in S) \wedge y \in T)
+
+Title: Problem : Mixed transitivity of containment (right strict)
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subsetneq C
+------------------------------
+A \subsetneq C
+
+Title: Problem : Mixed transitivity of containment (left strict)
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subsetneq B
+B \subseteq C
+------------------------------
+A \subsetneq C
+
+Title: Problem : Mixed transitivity of containment
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subsetneq B
+B \subsetneq C
+------------------------------
+A \subsetneq C
+
+Title: Problem : An element of a set is an element of a superset
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall x : Set
+------------------------------
+A \subseteq B
+x \in A
+------------------------------
+x \in B
+
+Title: Problem : A cycle of containments implies equality
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+B \subseteq C
+C \subseteq A
+------------------------------
+A = B
+
+Title: Problem : An element of a set is an element of a strict superset
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall x : Set
+------------------------------
+A \subsetneq B
+x \in A
+------------------------------
+x \in B
+
+Title: Problem : Set equality applied to containment
+Tags: #sets #tests
+\forall S : Set, \forall T : Set, \forall U : Set
+------------------------------
+S \subseteq T
+T = U
+------------------------------
+S \subseteq U
+
+Title: Problem : Set equality applied to membership
+Tags: #sets #tests
+\forall S : Set, \forall T : Set, \forall s : Set
+------------------------------
+s \in S
+S = T
+------------------------------
+s \in T
+
+Title: All sets contain the empty set
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+\emptyset \subseteq S
+
+Title: Problem : All sets contain the empty set
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+------------------------------
+\emptyset \subseteq S
+
+Title: Problem : Element of S or empty set is element of S
+Tags: #sets #tests
+\forall S : Set, \forall s : Set
+------------------------------
+s \in S \vee s \in \emptyset
+------------------------------
+s \in S
+
+Title: #sets
+Tags: If S is contained in the empty set it is empty
+\forall S : Set
+------------------------------
+S \subseteq \emptyset
+------------------------------
+S = \emptyset
+
+Title: Problem : If S is contained in the empty set it is empty
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+S \subseteq \emptyset
+------------------------------
+S = \emptyset
+
+Title: Problem : A set strictly containing the empty set contains an element
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+\emptyset \subsetneq S
+------------------------------
+\exists s : Set s \in S
+
+Title: A set strictly containing the empty set contains an element
+Tags: #sets
+\forall S : Set
+------------------------------
+\emptyset \subsetneq S
+------------------------------
+\exists s : Set s \in S
+
+Title: Problem : A set containing an element strictly contains the empty set
+Tags: #sets #tests
+\forall S : Set \forall s : Set
+------------------------------
+s \in S
+------------------------------
+\emptyset \subsetneq S
+
+Title: Commutativity of union
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cup T = T \cup S
+
+Title: Problem : Commutativity of union
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \cup T = T \cup S
+
+Title: A union of sets contains the sets individually
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \subseteq S \cup T
+
+Title: Problem : A union of sets contains the sets individually
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S \subseteq S \cup T
+
+Title: If a union contains one of the sets, the other is contained in it
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T = S
+------------------------------
+T \subseteq S
+
+Title: Problem : If a union contains one of the sets, the other is contained in it
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T = S
+------------------------------
+T \subseteq S
+
+Title: If a set is contained in one of two then it is contained in their union
+Tags: #sets
+\forall C : Set, \forall S : Set, \forall T : Set
+------------------------------
+\forall c : Set c \in C \implies c \in S \vee c \in T
+------------------------------
+C \subseteq S \cup T
+
+Title: Problem : If a set is contained in one of two then it is in their union
+Tags: #sets #tests
+\forall C : Set, \forall S : Set, \forall T : Set
+------------------------------
+\forall c : Set c \in C \implies c \in S \vee c \in T
+------------------------------
+C \subseteq S \cup T
+
+Title: Union with the empty set is trivial
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \cup \emptyset = S
+
+Title: Problem : Union with the empty set is trivial
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+------------------------------
+S \cup \emptyset = S
+
+Title: A union of a set with itself is trivial
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \cup S = S
+
+Title: Problem : A union of a set with itself is trivial
+Tags: #sets #tests
+\forall S : Set
+------------------------------
+------------------------------
+S \cup S = S
+
+Title: If a union is nonempty one of the sets has an element
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T \neq \emptyset
+------------------------------
+\exists x : Set x \in S \vee x \in T
+
+Title: Problem : If a union of sets is nonempty one of the sets has an element
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T \neq \emptyset
+------------------------------
+\exists x : Set x \in S \vee x \in T
+
+Title: If a union is empty the sets are empty
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T = \emptyset
+------------------------------
+S = \emptyset \vee T = \emptyset
+
+Title: Problem : If a union is empty the sets are empty
+Tags: #sets #tests
+\forall S : Set, \forall T : Set
+------------------------------
+S \cup T = \emptyset
+------------------------------
+S = \emptyset \vee T = \emptyset
+

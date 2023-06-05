@@ -7,7 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, new_result, equality, targets_proved, TargetNode, \
-     check_contradictions
+     check_contradictions, library_load
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -50,6 +50,12 @@ def main(stdscr):
                 library_export(screen, tl)
         elif c == 'r': # read from library
             library_import(screen, tl)
+        elif c == 'l': # load from library as tableau
+            # check tableau is currently empty
+            if not tl.tlist0.data and not tl.tlist1.data and not tl.tlist2.data:
+                library_load(screen, tl)
+            else:
+                screen.dialog("Tableau must be empty before loading problem")
         elif c == 'n': # new result
             new_result(screen, tl)
             started = False
