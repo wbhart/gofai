@@ -280,7 +280,7 @@ class CartesianNode(LRNode):
         return self.paren_str(self.left)+"\u00d7"+self.paren_str(self.right)
 
     def __repr__(self):
-        return self.paren_repr(self.left)+"\\times"+self.paren_repr(self.right)
+        return self.paren_repr(self.left)+" \\times "+self.paren_repr(self.right)
 
 class IntersectNode(LRNode):
     def __str__(self):

@@ -1,7 +1,7 @@
 from copy import deepcopy
 from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   SubNode, MulNode, DivNode, IntersectNode, UnionNode, \
-                  DiffNode, SymbolNode
+                  DiffNode, SymbolNode, TupleNode
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -43,9 +43,16 @@ def trees_unify(tree1, tree2, assigned=[]):
     else: # we didn't hit a variable, or a pair of functions
         if type(tree1) != type(tree2):
             return False, []
-        elif isinstance(tree1, SymbolNode) and isinstance(tree2, SymbolNode):
+        elif isinstance(tree1, SymbolNode):
             if tree1.name != tree2.name:
                 return False, []
+        elif isinstance(tree1, TupleNode):
+            if len(tree1.args) != len(tree2.args):
+                return False, []
+            for i in range(0, len(tree1.args)):
+                unified, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
+                if not unified:
+                    return False, []
         elif isinstance(tree1, LRNode):
             unified, assign = trees_unify(tree1.left, tree2.left, assign)
             if not unified:

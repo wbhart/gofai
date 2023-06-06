@@ -1068,3 +1068,32 @@ Tags: #sets #tests
 ------------------------------
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
+Title: Definition of cartesian product
+Tags: #sets #definition
+\forall S : Set, \forall T : Set, \forall x : Set
+------------------------------
+------------------------------
+x \in S \times T \iff (\exists c : Set, \exists d : Set x = (c, d) \wedge c \in S \wedge d \in T)
+
+Title: The cartesian product with the empty set is empty (right)
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \times \emptyset = \emptyset
+
+Title: The cartesian product with the empty set is empty (left)
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+\emptyset \times S = \emptyset
+
+Title: Cartesian product on the right preserves subset relation
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+A \subseteq B
+------------------------------
+A \times C \subseteq B \times C
+

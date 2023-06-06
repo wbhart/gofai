@@ -57,7 +57,7 @@ def targets_proved(screen, tl, ttree):
         if ttree.andlist:
             proved = True
             for Q in ttree.andlist:
-                proved = proved and check(Q)
+                proved = check(Q) and proved # and is short circuiting
             ttree.proved = proved
             if not ttree.proved:
                 S = set(ttree.andlist[0].deps)
@@ -1115,7 +1115,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                 else:
                     is_blocked = True
             else:
-                deps.append(tree.var)
+                #deps.append(tree.var) # not needed? depends on all same things?
                 qz.append(ForallNode(VarNode(tree.var.name, fn_type, False), None))
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked)
         rollback()
