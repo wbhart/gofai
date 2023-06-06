@@ -7,7 +7,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
-     SymbolNode
+     SymbolNode, CartesianNode, TupleNode
 from type import NumberType, NamedType, FnType, TupleType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -32,12 +32,13 @@ statement = Grammar(
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
     pred_paren = "(" statement ")"
-    neg_expression = "\\neg" space (paren_expression / pred_fn / bool)
+    neg_expression = "\\neg" space (pred_paren / pred_fn / bool)
     subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = add_expression space "\\in" space set_expression
-    set_expression = set_diff / set_union
+    set_expression = set_diff / set_union / set_cartesian
     set_diff = set_union space "\\setminus" space set_union
-    set_union = (set space ("\\cup" / "\\cap") space)* set
+    set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
+    set_cartesian = (set space "\\times" space)* set
     set = set_paren / var / number_type / empty_set
     set_paren = "(" set_expression ")"
     alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
@@ -49,7 +50,7 @@ statement = Grammar(
     exp_expression = terminal (space "^" space terminal)*
     terminal = paren_expression / abs_expression / fn_application / natural / var
     bool = ("True" / "False")
-    paren_expression = "(" add_expression ")"
+    paren_expression = "(" (add_expression space "," space)* add_expression ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = name "(" (add_expression space "," space)* add_expression ")"
@@ -81,7 +82,8 @@ node_dict = {
     "\\subsetneq" : SubsetneqNode,
     "\\subseteq" : SubseteqNode,
     "\\supsetneq" : SupsetneqNode,
-    "\\supseteq" : SupseteqNode
+    "\\supseteq" : SupseteqNode,
+    "\\times" : CartesianNode
 }
 
 def left_rec(L, v):
@@ -130,7 +132,8 @@ class StatementVisitor(NodeVisitor):
     def visit_domain_type(self, node, visited_children):
         return visited_children[0]
     def visit_tuple_type(self, node, visited_children):
-        types = [v[0] for v in visited_children[2]].push(visited_children[3])
+        types = [v[0] for v in visited_children[2]]
+        types.append(visited_children[3])
         return TupleType(types)
     def visit_named_type(self, node, visited_children):
         return NamedType(node.text)
@@ -147,6 +150,13 @@ class StatementVisitor(NodeVisitor):
     def visit_subset_relation(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
+    def visit_set_cartesian(self, node, visited_children):
+        sets = [v[0] for v in visited_children[0]]
+        sets.append(visited_children[1])
+        expr = sets[0]
+        for v in sets[1:]:
+            expr = CartesianNode(expr, v)
+        return expr
     def visit_set_expression(self, node, visited_children):
         return visited_children[0]
     def visit_elem_relation(self, node, visited_children):
@@ -189,7 +199,11 @@ class StatementVisitor(NodeVisitor):
     def visit_terminal(self, node, visited_children):
         return visited_children[0]
     def visit_paren_expression(self, node, visited_children):
-        return visited_children[1]
+        entries = [v[0] for v in visited_children[1]]
+        entries.append(visited_children[2])
+        if len(entries) == 1:
+            return visited_children[2]
+        return TupleNode(entries)
     def visit_abs_expression(self, node, visited_children):
         return AbsNode(visited_children[1])
     def visit_fn_application(self, node, visited_children):

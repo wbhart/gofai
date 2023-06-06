@@ -1,7 +1,7 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, ConstNode, LeafNode
+     FnNode, LRNode, ConstNode, LeafNode, TupleNode
 from type import FnType, TupleType
 from unification import unify, subst
 from editor import edit
@@ -155,6 +155,9 @@ def relabel(tree, tldict):
         elif isinstance(tree, LRNode):
             process(tree.left)
             process(tree.right)
+        elif isinstance(tree, FnNode) or isinstance(tree, TupleNode):
+            for v in tree.args:
+                process(v)
         
     t = tree
     while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
@@ -677,7 +680,18 @@ def unquantify(tree):
         mv.append(tree.var.name)
         tree = tree.left
     return skolemize_statement(tree, [], [], [], mv, False)
-    
+
+def target_compatible(ttree, tlist1, d1, j, forward):
+    if forward:
+        d2 = tlist1.dependency(j)
+    else:
+        d2 = j
+    if d1 < d2:
+        d1, d2 = d2, d1
+    if d1 >= 0 and d2 >= 0 and not deps_compatible(ttree, d1, d2):
+       return None
+    return d1
+
 def modus_ponens(screen, tl, ttree):
     screen.save_state()
     tlist1 = tl.tlist1
@@ -704,6 +718,13 @@ def modus_ponens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
+    dep = tlist1.dependency(line1)
+    dep = target_compatible(ttree, tlist1, dep, line2, forward)
+    if dep == None:
+        screen.dialog("Not target compatible. Press Enter to continue.")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
     qP1 = tree1.left if forward else tree1.right
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     t = qP1
@@ -725,6 +746,12 @@ def modus_ponens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
+        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        if dep == None:
+            screen.dialog("Not target compatible. Press Enter to continue.")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
         new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
         tree2 = AndNode(tree2, new_tree2)
     qP2 = tree2
@@ -738,6 +765,7 @@ def modus_ponens(screen, tl, ttree):
         stmt = substitute(deepcopy(tree1.right), assign)
         stmt = relabel(stmt, tl.vars)
         append_tree(screen.pad1, tlist1.data, stmt)
+        tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         stmt = substitute(deepcopy(tree1.left), assign)
         stmt = relabel(stmt, tl.vars)
@@ -776,6 +804,13 @@ def modus_tollens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
+    dep = tlist1.dependency(line1)
+    dep = target_compatible(ttree, tlist1, dep, line2, forward)
+    if dep == None:
+        screen.dialog("Not target compatible. Press Enter to continue.")
+        screen.restore_state()
+        screen.focus.refresh()
+        return
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     qP1 = complement_tree(tree1.right) if forward else \
           complement_tree(tree1.left)
@@ -798,6 +833,12 @@ def modus_tollens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
+        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        if dep == None:
+            screen.dialog("Not target compatible. Press Enter to continue.")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
         new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
         tree2 = AndNode(tree2, new_tree2)
     qP2 = tree2
@@ -811,6 +852,7 @@ def modus_tollens(screen, tl, ttree):
         stmt = complement_tree(substitute(deepcopy(tree1.left), assign))
         stmt = relabel(stmt, tl.vars)
         append_tree(screen.pad1, tlist1.data, stmt)
+        tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         stmt = relabel(stmt, tl.vars)
@@ -1113,7 +1155,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
             if is_meta:
                 fn.is_metavar = True
             return fn
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnNode) or isinstance(tree, TupleNode):
         for i in range(0, len(tree.args)):
             tree.args[i] = skolemize_statement(tree.args[i], deps, sk, qz, mv, positive, blocked)
             rollback()

@@ -138,6 +138,17 @@ class FnNode:
         sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
+class TupleNode:
+    def __init__(self, args):
+        self.name = '_'
+        self.args = args
+
+    def __str__(self):
+        return "("+', '.join([str(s) for s in self.args])+")"
+
+    def __repr__(self):
+        return "("+', '.join([repr(s) for s in self.args])+")"
+
 class ConstNode(LRNode):
     def __init__(self, var, expr):
         self.var = var
@@ -263,6 +274,13 @@ class OrNode(LRNode):
 
     def __repr__(self):
         return self.paren_repr(self.left)+" \\vee "+self.paren_repr(self.right)
+
+class CartesianNode(LRNode):
+    def __str__(self):
+        return self.paren_str(self.left)+"\u00d7"+self.paren_str(self.right)
+
+    def __repr__(self):
+        return self.paren_repr(self.left)+"\\times"+self.paren_repr(self.right)
 
 class IntersectNode(LRNode):
     def __str__(self):
@@ -451,6 +469,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               SupsetneqNode:6, SupseteqNode:6, ElemNode:6,
               DiffNode:5,
               UnionNode:4, IntersectNode:4,
+              CartesianNode:3,
               # Arithmetic nodes
               LeqNode:6, LtNode:6,
               GeqNode:6, GtNode:6,
