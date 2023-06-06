@@ -96,6 +96,9 @@ def subst(tree1, var, tree2):
     elif isinstance(tree1, FnNode):
         args = [subst(t, var, tree2) for t in tree1.args]
         return FnNode(tree1.name, args)
+    elif isinstance(tree1, TupleNode):
+        args = [subst(t, var, tree2) for t in tree1.args]
+        return TupleNode(args)
     elif isinstance(tree1, LRNode):
         tree1.left = subst(tree1.left, var, tree2)
         tree1.right = subst(tree1.right, var, tree2)

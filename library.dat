@@ -1070,10 +1070,10 @@ S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
 Title: Definition of cartesian product
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x : Set
+\forall S : Set, \forall T : Set, \forall c : Set, \forall d : Set
 ------------------------------
 ------------------------------
-x \in S \times T \iff (\exists c : Set, \exists d : Set x = (c, d) \wedge c \in S \wedge d \in T)
+(c, d) \in S \times T \iff (c \in S \wedge d \in T)
 
 Title: The cartesian product with the empty set is empty (right)
 Tags: #sets
@@ -1096,4 +1096,29 @@ Tags: #sets
 A \subseteq B
 ------------------------------
 A \times C \subseteq B \times C
+
+Title: Cartesian product on the left preserves subset relation
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set
+------------------------------
+B \subseteq C
+------------------------------
+A \times B \subseteq A \times C
+
+Title: Problem : Subset on left and right of cartesian product gives subset
+Tags: #sets #tests
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+A \subseteq C
+B \subseteq D
+------------------------------
+A \times B \subseteq C \times D
+
+Title: If a cartesian product is empty, one of the sets is empty
+Tags: #sets
+\forall A : Set, \forall B : Set
+------------------------------
+A \times B = \emptyset
+------------------------------
+A = \emptyset \vee B = \emptyset
 
