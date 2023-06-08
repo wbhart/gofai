@@ -1,7 +1,7 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, ConstNode, LeafNode, TupleNode
+     FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode
 from type import FnType, TupleType
 from unification import unify, subst
 from editor import edit
@@ -135,6 +135,18 @@ def check_contradictions(screen, tl, n, ttree):
                         mark_proved(ttree, d2)
     return len(tlist1)
 
+def check_tautologies(screen, tl, ttree):
+    tlist2 = tl.tlist2.data
+    for i in range(0, len(tlist2)):
+        tree = tlist2[i]
+        if isinstance(tree, EqNode):
+            if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnNode)) \
+                  and tree.left.is_metavar:
+                mark_proved(ttree, i)
+            elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
+                  and tree.right.is_metavar:
+                mark_proved(ttree, i)
+                
 def relabel_varname(name, var_dict):
     if name in var_dict:
         subscript = var_dict[name] + 1
@@ -280,8 +292,13 @@ def apply_equality(screen, tree, string, n, subst, occurred=-1):
         if occur == n: # we found the right occurrence
             unifies, assign = unify(subst.left, tree)
             if not unifies:
-                return False, tree, n # does not unify, bogus selection
-            return True, substitute(deepcopy(subst.right), assign), n
+                unifies, assign = unify(subst.right, tree)
+                if not unifies:
+                    return False, tree, n # does not unify, bogus selection
+                else:
+                    return True, substitute(deepcopy(subst.left), assign), n
+            else:
+                return True, substitute(deepcopy(subst.right), assign), n
     if isinstance(tree, LRNode):
         found, tree.left, occur = apply_equality(screen, tree.left, string, n, subst, occur)
         if not found:

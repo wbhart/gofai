@@ -19,13 +19,13 @@ def trees_unify(tree1, tree2, assigned=[]):
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
         if is_expression(tree2):
-            assign.append((tree1, tree2))
+            assign.append(deepcopy((tree1, tree2)))
         else:
             return False, []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
         if is_expression(tree1):
-            assign.append((tree2, tree1))
+            assign.append(deepcopy((tree2, tree1)))
         else:
             return False, []
     elif isinstance(tree1, VarNode) or isinstance(tree2, VarNode):
@@ -95,7 +95,10 @@ def subst(tree1, var, tree2):
             return tree1
     elif isinstance(tree1, FnNode):
         args = [subst(t, var, tree2) for t in tree1.args]
-        return FnNode(tree1.name, args)
+        fn = FnNode(tree1.name, args)
+        fn.is_skolem = tree1.is_skolem
+        fn.is_metavar = tree1.is_metavar
+        return fn
     elif isinstance(tree1, TupleNode):
         args = [subst(t, var, tree2) for t in tree1.args]
         return TupleNode(args)

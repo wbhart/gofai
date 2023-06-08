@@ -1070,10 +1070,10 @@ S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
 Title: Definition of cartesian product
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall c : Set, \forall d : Set
+\forall S : Set, \forall T : Set, \forall x : Set
 ------------------------------
 ------------------------------
-(c, d) \in S \times T \iff (c \in S \wedge d \in T)
+(\exists c : Set, \exists d : Set x = (c, d) \wedge c \in S \wedge d \in T) \iff x \in S \times T
 
 Title: The cartesian product with the empty set is empty (right)
 Tags: #sets
@@ -1121,4 +1121,37 @@ Tags: #sets
 A \times B = \emptyset
 ------------------------------
 A = \emptyset \vee B = \emptyset
+
+Title: If cartesian products are subsets then the sets are subsets
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+A \times B \subseteq C \times D
+------------------------------
+A \subseteq C \wedge B \subseteq D
+
+Title: Definition of equality of pairs
+Tags: #sets #definition
+\forall a : Set, \forall b : Set, \forall c : Set, \forall d : Set
+------------------------------
+------------------------------
+(a, b) = (c, d) \iff a = c \wedge b = d
+
+Title: Pair in a cartesian product if elements in sets
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall a : Set, \forall b : Set
+------------------------------
+a \in S
+b \in T
+------------------------------
+(a, b) \in S \times T
+
+Title: Pair in cartesian product implies elements in sets
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall a : Set, \forall b : Set
+------------------------------
+(a, b) \in S \times T
+------------------------------
+a \in S
+b \in T
 
