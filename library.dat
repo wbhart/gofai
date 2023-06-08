@@ -1155,3 +1155,23 @@ Tags: #sets
 a \in S
 b \in T
 
+Title: Containment of cartesian products of sets implies containment of the sets
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+A \times B \subseteq C \times D
+A \neq \emptyset
+B \neq \emptyset
+------------------------------
+A \subseteq C
+B \subseteq D
+
+Title: If cartesian products are contained then the sets are contained (left)
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+A \times B \subseteq C \times D
+B \neq \emptyset
+------------------------------
+A \subseteq C
+

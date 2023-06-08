@@ -78,6 +78,8 @@ def targets_proved(screen, tl, ttree):
                             break
                         else:
                             ttree.deps.append(dep)
+                            if dep == ttree.num:
+                                ttree.proved = True
         return ttree.proved
 
     return check(ttree)
@@ -763,7 +765,7 @@ def modus_ponens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        dep = target_compatible(ttree, tlist1, dep, line2, forward) if forward else -1
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
@@ -850,7 +852,7 @@ def modus_tollens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        dep = target_compatible(ttree, tlist1, dep, line2, forward) if forwards else -1
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
