@@ -308,7 +308,13 @@ def apply_equality(screen, tree, string, n, subst, occurred=-1):
         return found, tree, occur
     elif isinstance(tree, LeafNode):
         return found, tree, occur
-    # TODO : deal with FnNode and friends
+    elif isinstance(tree, TupleNode) or isinstance (tree, FnNode):
+        for i in range(0, len(tree.args)):
+            found, tree.args[i], occur = apply_equality(screen, tree.args[i], string, n, subst, occur)
+            if found:
+                break
+        return found, tree, occur
+    # TODO : deal with renaming functions
     raise Exception("Node not dealt with")
 
 def equality(screen, tl):

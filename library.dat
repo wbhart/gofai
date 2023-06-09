@@ -916,3 +916,13 @@ B \neq \emptyset
 ------------------------------
 A \subseteq C
 
+Title: Strict containment of cartesian product of sets implies containment of sets
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+A \times B \subsetneq C \times D
+A \neq \emptyset
+B \neq \emptyset
+------------------------------
+A \subsetneq C \vee B \subsetneq D
+

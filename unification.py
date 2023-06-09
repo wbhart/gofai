@@ -37,7 +37,7 @@ def trees_unify(tree1, tree2, assigned=[]):
         if tree1.name != tree2.name: # if not metavars check names
             return False, []
         for i in range(0, len(tree1.args)):
-            unified, assign = trees_unify(tree1.args[i], tree2.args[i])
+            unified, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
             if not unified:
                 return False, []
     else: # we didn't hit a variable, or a pair of functions
