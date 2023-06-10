@@ -16,12 +16,16 @@ def main(stdscr):
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
     num_checked = 0 # number of hypotheses that have been checked for contradictions
+    deps = [] # variables that subsequent skolemizations will depend on
+    skip = False # whether to skip checking completion
+    reset = False # whether to reset dependencies
     
     while True:
         if not started:
             num_checked = 0
         c = stdscr.getkey()
         if c == '\t': # TAB = switch window focus (and associated pad)
+            skip = True
             screen.switch_window()
             tl.switch_list()
         elif c == '\x1b' or c == 'q': # ESC or q = quit
@@ -42,15 +46,17 @@ def main(stdscr):
             started = True
             ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
-            modus_ponens(screen, tl, ttree)
+            modus_ponens(screen, tl, ttree, deps)
         elif c == 't': # modus tollens
-            modus_tollens(screen, tl, ttree)
+            modus_tollens(screen, tl, ttree, deps)
         elif c == 'w': # write to library
+            skip = True
             if not started:
                 library_export(screen, tl)
         elif c == 'r': # read from library
             library_import(screen, tl)
         elif c == 'l': # load from library as tableau
+            reset = True
             # check tableau is currently empty
             if not tl.tlist0.data and not tl.tlist1.data and not tl.tlist2.data:
                 library_load(screen, tl)
@@ -59,33 +65,46 @@ def main(stdscr):
         elif c == 'n': # new result
             new_result(screen, tl)
             started = False
+            ttree = None
+            num_checked = 0
+            deps = []
         elif c == 'KEY_RIGHT':
+            skip = True
             pad = screen.focus
             pad.cursor_right()
             pad.refresh()
         elif c == 'KEY_LEFT':
+            skip = True
             pad = screen.focus
             pad.cursor_left()
             pad.refresh()
         elif c == 'KEY_DOWN':
+            skip = True
             pad = screen.focus
             if pad != screen.pad0 and tl.focus.line != tl.focus.len():
                 pad.cursor_down()
                 pad.refresh()
                 tl.focus.line += 1
         elif c == 'KEY_UP':
+            skip = True
             pad = screen.focus
             if pad != screen.pad0 and tl.focus.line != 0:
                 pad.cursor_up()
                 pad.refresh()
                 tl.focus.line -= 1
         if started: # automated cleanup
-            cleanup(screen, tl, ttree)
-            num_checked = check_contradictions(screen, tl, num_checked, ttree)
-            check_tautologies(screen, tl, ttree)
-            if targets_proved(screen, tl, ttree):
-                screen.dialog("All targets proved")
-                started = False
+            if not skip:
+                deps = cleanup(screen, tl, ttree)
+                num_checked = check_contradictions(screen, tl, num_checked, ttree)
+                check_tautologies(screen, tl, ttree)
+                if targets_proved(screen, tl, ttree):
+                    screen.dialog("All targets proved")
+                    started = False
+            skip = False
+            if reset:
+                # reset dependencies
+                tl.tlist1.dep = dict()
+                reset = False
     screen.exit()
 
 wrapper(main) # curses wrapper handles exceptions

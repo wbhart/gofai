@@ -36,6 +36,8 @@ def trees_unify(tree1, tree2, assigned=[]):
     elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):
         if tree1.name != tree2.name: # if not metavars check names
             return False, []
+        if len(tree1.args) != len(tree2.args):
+            return False, []
         for i in range(0, len(tree1.args)):
             unified, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
             if not unified:

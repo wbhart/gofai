@@ -699,12 +699,16 @@ def select_hypothesis(screen, tl, second):
         else:
             return True, -1
 
-def unquantify(tree):
+def unquantify(tree, deps):
     mv = []
     while isinstance(tree, ForallNode):
         mv.append(tree.var.name)
         tree = tree.left
-    return skolemize_statement(tree, [], [], [], mv, False)
+    n = len(deps)
+    tree = skolemize_statement(tree, deps, [], [], mv, False)
+    while len(deps) > n: # rollback deps
+       deps.pop()
+    return tree
 
 def target_compatible(ttree, tlist1, d1, j, forward):
     if forward:
@@ -717,7 +721,7 @@ def target_compatible(ttree, tlist1, d1, j, forward):
        return None
     return d1
 
-def modus_ponens(screen, tl, ttree):
+def modus_ponens(screen, tl, ttree, deps):
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -729,7 +733,7 @@ def modus_ponens(screen, tl, ttree):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    tree1 = unquantify(deepcopy(tree1)) # remove quantifiers by taking temporary metavars
+    tree1 = unquantify(deepcopy(tree1), deps) # remove quantifiers by taking temporary metavars
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
@@ -750,7 +754,10 @@ def modus_ponens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
-    qP1 = tree1.left if forward else tree1.right
+    if forward:
+        qP1 = unquantify(deepcopy(tree1.left), deps)
+    else:
+        qP1 = unquantify(deepcopy(tree1.right), deps)
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     t = qP1
     n = 1
@@ -771,7 +778,7 @@ def modus_ponens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        dep = target_compatible(ttree, tlist1, dep, line2, forward) if forward else -1
+        dep = target_compatible(ttree, tlist1, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
@@ -803,7 +810,7 @@ def modus_ponens(screen, tl, ttree):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def modus_tollens(screen, tl, ttree):
+def modus_tollens(screen, tl, ttree, deps):
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -815,7 +822,7 @@ def modus_tollens(screen, tl, ttree):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    tree1 = unquantify(deepcopy(tree1))
+    tree1 = unquantify(deepcopy(tree1), deps)
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
@@ -858,7 +865,7 @@ def modus_tollens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        dep = target_compatible(ttree, tlist1, dep, line2, forward) if forwards else -1
+        dep = target_compatible(ttree, tlist1, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
@@ -1075,6 +1082,7 @@ def cleanup(screen, tl, ttree):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
+    return deps
 
 def skolemize_quantifiers(tree, deps, sk):
     if isinstance(tree, ExistsNode):

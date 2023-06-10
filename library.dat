@@ -809,12 +809,19 @@ Tags: #sets
 ------------------------------
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
+Title: Definition of pair
+Tags: #sets #definition
+\forall c : Set, \forall d : Set, \forall x : Set
+------------------------------
+------------------------------
+x = (c, d) \iff x(0) = c \wedge x(1) = d
+
 Title: Definition of cartesian product
 Tags: #sets #definition
 \forall S : Set, \forall T : Set, \forall x : Set
 ------------------------------
 ------------------------------
-(\exists c : Set, \exists d : Set x = (c, d) \wedge c \in S \wedge d \in T) \iff x \in S \times T
+(\exists c : Set, \exists d : Set x = (c , d) \wedge c \in S \wedge d \in T) \iff x \in S \times T
 
 Title: The cartesian product with the empty set is empty (right)
 Tags: #sets
@@ -871,7 +878,7 @@ A \times B \subseteq C \times D
 ------------------------------
 A \subseteq C \wedge B \subseteq D
 
-Title: Definition of equality of pairs
+Title: Equality of pairs
 Tags: #sets #definition
 \forall a : Set, \forall b : Set, \forall c : Set, \forall d : Set
 ------------------------------
@@ -925,4 +932,18 @@ A \neq \emptyset
 B \neq \emptyset
 ------------------------------
 A \subsetneq C \vee B \subsetneq D
+
+Title: Union of cartesian products is contained in product of unions
+Tags: #sets
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
+------------------------------
+------------------------------
+A \times B \cup C \times D \subseteq (A \cup C) \times (B \cup D)
+
+Title: Components of element of cartesian product are in the sets
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall x : Set
+------------------------------
+------------------------------
+x \in S \times T \implies x(0) \in S \wedge x(1) \in T
 

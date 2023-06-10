@@ -30,7 +30,7 @@ statement = Grammar(
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
-    relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren
+    relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren / fn_application
     pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (pred_paren / pred_fn / bool)
     subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
