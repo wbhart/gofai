@@ -389,8 +389,12 @@ def new_result(screen, tl):
     tlist2.line = 0
     pad1.scoll_line = 0
     pad1.cursor_line = 0
+    pad1.scroll_char = 0
+    pad1.cursor_char = 0
     pad2.scroll_line = 0
     pad2.cursor_line = 0
+    pad2.scroll_char = 0
+    pad2.cursor_char = 0
     pad2.refresh()
     pad1.refresh()
     pad0.refresh()

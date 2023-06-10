@@ -2,7 +2,7 @@ import curses # console library
 import curses.ascii # ascii classification
 from interface import Screen, iswide_char, nchars_to_chars
 from curses import wrapper
-from editor import get_text
+from editor import get_text, edit
 from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
@@ -19,7 +19,7 @@ def main(stdscr):
     deps = [] # variables that subsequent skolemizations will depend on
     skip = False # whether to skip checking completion
     reset = False # whether to reset dependencies
-    
+
     while True:
         if not started:
             num_checked = 0
@@ -29,7 +29,10 @@ def main(stdscr):
             screen.switch_window()
             tl.switch_list()
         elif c == '\x1b' or c == 'q': # ESC or q = quit
-            break
+            response = edit(screen, "Exit (y/n): ", 12)
+            if response and response[12:] == "y" or response[12:] == "Y":
+                break
+            skip = True
         elif c == 'e': # e = edit
             line = tl.focus.line
             data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
@@ -68,6 +71,7 @@ def main(stdscr):
             ttree = None
             num_checked = 0
             deps = []
+            reset = True
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus
