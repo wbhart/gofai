@@ -53,10 +53,9 @@ statement = Grammar(
     paren_expression = "(" (add_expression space "," space)* add_expression ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
-    fn_application = name "(" (add_expression space "," space)* add_expression ")"
+    fn_application = var "(" (add_expression space "," space)* add_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    name = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     empty_set = "\\emptyset"
     space = ~"\s*"
@@ -218,8 +217,6 @@ class StatementVisitor(NodeVisitor):
             args.append(v[0])
         args.append(visited_children[3])
         return FnNode(visited_children[0], args)
-    def visit_name(self, node, visited_children):
-        return node.text
     def visit_pred_name(self, node, visited_children):
         return node.text
     def visit_exp_expression(self, node, visited_children):

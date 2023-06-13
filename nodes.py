@@ -91,16 +91,19 @@ def univar(name):
 # AST Nodes
 class VarNode(LeafNode):
     def __init__(self, name, var_type=None, is_metavar=False):
-        self.name = name
+        self._name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
         self.type = var_type
         self.is_metavar = is_metavar # whether this is a metavariable
 
+    def name(self):
+        return self._name
+
     def __str__(self):
-        return univar(self.name)+"\u0307" if self.is_metavar else univar(self.name)
+        return univar(self._name)+"\u0307" if self.is_metavar else univar(self._name)
 
     def __repr__(self):
-        return "\\dot{"+self.name+"}" if self.is_metavar else self.name
+        return "\\dot{"+self._name+"}" if self.is_metavar else self._name
 
 class NaturalNode(LeafNode):
     def __init__(self, string):
@@ -121,20 +124,23 @@ class ExpNode(LRNode):
         return self.paren_repr(self.left)+"^"+self.paren_repr(self.right)
 
 class FnNode:
-    def __init__(self, name, args):
-        self.name = name
+    def __init__(self, var, args):
+        self.var = var # the function symbol
         self.args = args
         self.dbr = -1 # debruijn indices (-1 = not set)
         self.is_skolem = False # Whether this is a skolem function
         self.is_metavar = False # Whether this is a metavariable
 
+    def name(self):
+        return self.var.name()
+
     def __str__(self):
-        name = univar(self.name)+"\u0307" if self.is_metavar else univar(self.name)
+        name = univar(self.name())+"\u0307" if self.is_metavar else univar(self.name())
         sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
     def __repr__(self):
-        name = "\\dot{"+self.name+"}" if self.is_metavar else self.name
+        name = "\\dot{"+self.name()+"}" if self.is_metavar else self.name()
         sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
@@ -451,14 +457,17 @@ class BoolNode(LeafNode):
 
 class SymbolNode(LeafNode):
     def __init__(self, name, const_type):
-        self.name = name
+        self._name = name
         self.type = const_type
     
+    def name(self):
+        return self._name
+
     def __str__(self):
-        return univar(self.name)
+        return univar(self._name)
 
     def __repr__(self):
-        return self.name
+        return self._name
 
 precedence = {ExistsNode:9, ForallNode:9,
               ImpliesNode:8, IffNode:8,

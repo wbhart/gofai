@@ -16,6 +16,23 @@ def is_expression(tree):
 
 def trees_unify(tree1, tree2, assigned=[]):
     assign = deepcopy(assigned) # default params are mutable
+    if isinstance(tree1, FnNode) and isinstance(tree2, FnNode) \
+           and (tree1.is_metavar or tree2.is_metavar) and \
+           len(tree1.args) == len(tree2.args):
+        # TODO : come up with a proper pair type
+        # This is a hack to deal with pairs
+        unified = True
+        for i in range(0, len(tree1.args)):
+            # check if all args are exactly the same
+            if str(tree1.args[i]) != str(tree2.args[i]):
+                unified = False
+                break
+            if unified:
+                if tree1.is_metavar:
+                    assign.append(deepcopy((tree1.var, tree2.var)))
+                else:
+                    assign.append(deepcopy((tree2.var, tree1.var)))
+                return True, assign
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
         if is_expression(tree2):
@@ -31,10 +48,10 @@ def trees_unify(tree1, tree2, assigned=[]):
     elif isinstance(tree1, VarNode) or isinstance(tree2, VarNode):
         if not isinstance(tree1, VarNode) or not isinstance(tree2, VarNode):
             return False, []
-        if tree1.name != tree2.name: # if not metavars check names
+        if tree1.name() != tree2.name(): # if not metavars check names
             return False, []
     elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):
-        if tree1.name != tree2.name: # if not metavars check names
+        if tree1.name() != tree2.name(): # if not metavars check names
             return False, []
         if len(tree1.args) != len(tree2.args):
             return False, []
@@ -46,7 +63,7 @@ def trees_unify(tree1, tree2, assigned=[]):
         if type(tree1) != type(tree2):
             return False, []
         elif isinstance(tree1, SymbolNode):
-            if tree1.name != tree2.name:
+            if tree1.name() != tree2.name():
                 return False, []
         elif isinstance(tree1, TupleNode):
             if len(tree1.args) != len(tree2.args):
@@ -76,7 +93,7 @@ def unify(tree1, tree2, assigned=[]):
             assign[j] = make_substitution(assign[j], assign[i])
         j = i + 1
         while j < len(assign):
-            if assign[i][0].name == assign[j][0].name:
+            if assign[i][0].name() == assign[j][0].name():
                 unified, assign = trees_unify(assign[i][1], assign[j][1], assign)
                 if not unified:
                     return False, []
@@ -91,15 +108,26 @@ def subst(tree1, var, tree2):
     if tree1 == None:
         return tree1
     if isinstance(tree1, VarNode):
-        if tree1.name == var.name:
+        if tree1.name() == var.name():
             return deepcopy(tree2)
         else:
             return tree1
     elif isinstance(tree1, FnNode):
+        # TODO : come up with a proper Pair type
+        # This is an unsound hack to allow pairs to be
+        # treated like functions
+        if tree1.name() == var.name() and (isinstance(tree2, VarNode) \
+               or isinstance(tree2, FnNode)):
+            tree = tree2
+            symbol = tree2
+        else:
+            tree = tree1
+            symbol = tree1.var
+        #######
         args = [subst(t, var, tree2) for t in tree1.args]
-        fn = FnNode(tree1.name, args)
+        fn = FnNode(symbol, args)
         fn.is_skolem = tree1.is_skolem
-        fn.is_metavar = tree1.is_metavar
+        fn.is_metavar = tree.is_metavar
         return fn
     elif isinstance(tree1, TupleNode):
         args = [subst(t, var, tree2) for t in tree1.args]

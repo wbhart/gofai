@@ -6,8 +6,8 @@ from editor import get_text, edit
 from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
-     library_import, new_result, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, check_tautologies
+     library_import, clear_tableau, equality, targets_proved, TargetNode, \
+     check_contradictions, library_load, check_tautologies, negate_target
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -52,6 +52,8 @@ def main(stdscr):
             modus_ponens(screen, tl, ttree, deps)
         elif c == 't': # modus tollens
             modus_tollens(screen, tl, ttree, deps)
+        elif c == 'n': # negate target
+            negate_target(screen, tl)
         elif c == 'w': # write to library
             skip = True
             if not started:
@@ -65,8 +67,8 @@ def main(stdscr):
                 library_load(screen, tl)
             else:
                 screen.dialog("Tableau must be empty before loading problem")
-        elif c == 'n': # new result
-            new_result(screen, tl)
+        elif c == 'c': # clear_tableau
+            clear_tableau(screen, tl)
             started = False
             ttree = None
             num_checked = 0
