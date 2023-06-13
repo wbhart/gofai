@@ -940,5 +940,5 @@ Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
 ------------------------------
-A \times B \cap C \times D \subseteq (A \cap C) \times (B \cap D)
+A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 
