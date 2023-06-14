@@ -155,6 +155,17 @@ class TupleNode:
     def __repr__(self):
         return "("+', '.join([repr(s) for s in self.args])+")"
 
+class PowerSetNode(LRNode):
+    def __init__(self, arg):
+        self.left = arg
+        self.right = None
+
+    def __str__(self):
+        return "\u2118("+str(self.left)+")"
+
+    def __repr__(self):
+        return "\\mathcal{P}("+repr(self.left)+")"
+
 class ConstNode(LRNode):
     def __init__(self, var, expr):
         self.var = var
@@ -479,6 +490,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               DiffNode:5,
               UnionNode:4, IntersectNode:4,
               CartesianNode:3,
+              PowerSetNode:2,
               # Arithmetic nodes
               LeqNode:6, LtNode:6,
               GeqNode:6, GtNode:6,

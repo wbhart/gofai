@@ -942,3 +942,10 @@ Tags: #sets
 ------------------------------
 A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 
+Title: Definition of powerset
+Tags: #sets #definition
+\forall S : Set, \forall U : Set
+------------------------------
+------------------------------
+U \in \mathcal{P}(S) \iff U \subseteq S
+

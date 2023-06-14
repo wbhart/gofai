@@ -7,7 +7,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
-     SymbolNode, CartesianNode, TupleNode
+     SymbolNode, CartesianNode, TupleNode, PowerSetNode
 from type import NumberType, NamedType, FnType, TupleType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -39,7 +39,8 @@ statement = Grammar(
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = set_paren / var / number_type / empty_set
+    set = set_paren / var / number_type / empty_set / powerset
+    powerset = "\\mathcal{P}(" space set_expression space ")"
     set_paren = "(" set_expression ")"
     alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
@@ -169,6 +170,8 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_set_paren(self, node, visited_children):
         return visited_children[1]
+    def visit_powerset(self, node, visited_children):
+        return PowerSetNode(visited_children[2])
     def visit_neg_expression(self, node, visited_children):
         return NotNode(visited_children[2][0])
     def visit_expression(self, node, visited_children):

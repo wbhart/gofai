@@ -397,6 +397,10 @@ def clear_tableau(screen, tl):
         del tlist2.data[n - i - 1]
         pad2.pad[i] = ''
     tlist2.line = 0
+    pad0.scoll_line = 0
+    pad0.cursor_line = 0
+    pad0.scroll_char = 0
+    pad0.cursor_char = 0
     pad1.scoll_line = 0
     pad1.cursor_line = 0
     pad1.scroll_char = 0
