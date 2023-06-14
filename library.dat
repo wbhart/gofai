@@ -949,3 +949,10 @@ Tags: #sets #definition
 ------------------------------
 U \in \mathcal{P}(S) \iff U \subseteq S
 
+Title: A set is an element of the powerset of the empty set iff it is empty
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \in \mathcal{P}(\emptyset) \iff S = \emptyset
+

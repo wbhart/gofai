@@ -1,7 +1,7 @@
 from copy import deepcopy
 from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   SubNode, MulNode, DivNode, IntersectNode, UnionNode, \
-                  DiffNode, SymbolNode, TupleNode
+                  DiffNode, SymbolNode, TupleNode, PowerSetNode
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -9,7 +9,8 @@ def is_expression(tree):
        or isinstance(tree, AddNode) or isinstance(tree, SubNode) \
        or isinstance(tree, MulNode) or isinstance(tree, DivNode) \
        or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
-       or isinstance(tree, DiffNode):
+       or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
+       or isinstance(tree, SymbolNode):
         return True
     else:
         return True
