@@ -749,6 +749,7 @@ def target_compatible(ttree, tlist1, d1, j, forward):
        return None
     return d1
 
+""" Not needed at present
 def negate_target(screen, tl):
     screen.save_state()
     tlist1 = tl.tlist1
@@ -775,6 +776,7 @@ def negate_target(screen, tl):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
+"""
 
 def modus_ponens(screen, tl, ttree, deps):
     screen.save_state()

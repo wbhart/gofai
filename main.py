@@ -7,7 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, check_tautologies, negate_target
+     check_contradictions, library_load, check_tautologies
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -53,8 +53,8 @@ def main(stdscr):
             modus_ponens(screen, tl, ttree, deps)
         elif c == 't': # modus tollens
             modus_tollens(screen, tl, ttree, deps)
-        elif c == 'n': # negate target
-            negate_target(screen, tl)
+        # elif c == 'n': # negate target
+        #    negate_target(screen, tl)
         elif c == 'w': # write to library
             skip = True
             if not started:
