@@ -956,3 +956,18 @@ Tags: #sets
 ------------------------------
 S \in \mathcal{P}(\emptyset) \iff S = \emptyset
 
+Title: Power sets are contained if the sets are contained
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+S \subseteq T
+------------------------------
+\mathcal{P}(S) \subseteq \mathcal{P}(T)
+
+Title: Empty set is an element of the powerset of every set
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+\emptyset \in \mathcal{P}(S)
+

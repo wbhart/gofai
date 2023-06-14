@@ -34,7 +34,7 @@ statement = Grammar(
     pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (pred_paren / pred_fn / bool)
     subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
-    elem_relation = add_expression space "\\in" space set_expression
+    elem_relation = (add_expression / set_expression) space "\\in" space set_expression
     set_expression = set_diff / set_union / set_cartesian
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
@@ -160,7 +160,7 @@ class StatementVisitor(NodeVisitor):
     def visit_set_expression(self, node, visited_children):
         return visited_children[0]
     def visit_elem_relation(self, node, visited_children):
-        return ElemNode(visited_children[0], visited_children[4])
+        return ElemNode(visited_children[0][0], visited_children[4])
     def visit_set_diff(self, node, visited_children):
         return DiffNode(visited_children[0], visited_children[4])
     def visit_set_union(self, node, visited_children):
