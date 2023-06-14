@@ -62,7 +62,8 @@ def targets_proved(screen, tl, ttree):
             if not ttree.proved:
                 S = set(ttree.andlist[0].deps)
                 for i in range(1, len(ttree.andlist)):
-                    S = S.intersection(ttree.andlist[i].deps)
+                    if not ttree.andlist[i].proved:
+                        S = S.intersection(ttree.andlist[i].deps)
                 ttree.deps = list(S)
                 if ttree.num in ttree.deps:
                     ttree.proved = True
@@ -71,7 +72,13 @@ def targets_proved(screen, tl, ttree):
                 P = hyps[i]
                 dep = tl.tlist1.dependency(i)
                 if dep not in ttree.deps: # if we didn't already prove with this dep
-                    unifies, assign = unify(P, tars[ttree.num])
+                    if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
+                        unifies, assign = unify(complement_tree(P.left), \
+                              tars[ttree.num])
+                        if unifies:
+                            unifies, assign = unify(P.right, tars[ttree.num])
+                    else:
+                        unifies, assign = unify(P, tars[ttree.num])
                     if unifies:
                         if dep == -1:
                             ttree.proved = True
@@ -826,6 +833,8 @@ def modus_ponens(screen, tl, ttree, deps):
             screen.restore_state()
             screen.focus.refresh()
             return
+        if not forward:
+            dep = tlist1.dependency(line1)
         dep = target_compatible(ttree, tlist1, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
@@ -913,6 +922,8 @@ def modus_tollens(screen, tl, ttree, deps):
             screen.restore_state()
             screen.focus.refresh()
             return
+        if not forward:
+            dep = tlist1.dependency(line1)
         dep = target_compatible(ttree, tlist1, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")

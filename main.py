@@ -47,6 +47,7 @@ def main(stdscr):
             equality(screen, tl)
         elif c == 's': # start automated cleanup
             started = True
+            skip = False
             ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
             modus_ponens(screen, tl, ttree, deps)
