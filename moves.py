@@ -680,6 +680,8 @@ def complement_tree(tree):
             return OrNode(complement(tree.left), complement(tree.right))
         elif isinstance(tree, OrNode):
             return AndNode(complement(tree.left), complement(tree.right))
+        elif isinstance(tree, ImpliesNode):
+            return AndNode(tree.left, complement(tree.right))
         elif isinstance(tree, NotNode):
             return tree.left
         else:
@@ -718,6 +720,7 @@ def select_hypothesis(screen, tl, second):
             return True, -1
 
 def unquantify(tree, deps):
+    tree = deepcopy(tree)
     mv = []
     while isinstance(tree, ForallNode):
         mv.append(tree.var.name())
@@ -778,7 +781,7 @@ def modus_ponens(screen, tl, ttree, deps):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    tree1 = unquantify(deepcopy(tree1), deps) # remove quantifiers by taking temporary metavars
+    tree1 = unquantify(tree1, deps) # remove quantifiers by taking temporary metavars
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
@@ -800,9 +803,9 @@ def modus_ponens(screen, tl, ttree, deps):
         screen.focus.refresh()
         return
     if forward:
-        qP1 = unquantify(deepcopy(tree1.left), deps)
+        qP1 = unquantify(tree1.left, deps)
     else:
-        qP1 = unquantify(deepcopy(tree1.right), deps)
+        qP1 = unquantify(tree1.right, deps)
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     t = qP1
     n = 1
@@ -867,7 +870,7 @@ def modus_tollens(screen, tl, ttree, deps):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
-    tree1 = unquantify(deepcopy(tree1), deps)
+    tree1 = unquantify(tree1, deps)
     if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
@@ -889,8 +892,8 @@ def modus_tollens(screen, tl, ttree, deps):
         screen.focus.refresh()
         return
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-    qP1 = complement_tree(tree1.right) if forward else \
-          complement_tree(tree1.left)
+    qP1 = unquantify(tree1.right, deps) if forward else tree1.left
+    qP1 = complement_tree(qP1) if forward else complement_tree(unquantify(qP1, deps))
     t1 = qP1
     n = 1 # number of hypotheses/targets in conjunction
     while isinstance(t1, AndNode):

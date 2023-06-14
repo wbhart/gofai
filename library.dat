@@ -704,6 +704,14 @@ S \cup T = S
 ------------------------------
 T \subseteq S
 
+Title: Set is subset of union if it is subset of either set
+Tags: #sets
+\forall C : Set, \forall S : Set, \forall T : Set
+------------------------------
+C \subseteq S \vee C \subseteq T
+------------------------------
+C \subseteq S \cup T
+
 Title: If a set is contained in one of two then it is contained in their union
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
@@ -970,4 +978,27 @@ Tags: #sets
 ------------------------------
 ------------------------------
 \emptyset \in \mathcal{P}(S)
+
+Title: Power set of an intersection is the intersection of the power sets
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+\mathcal{P}(S \cap T) = \mathcal{P}(S) \cap \mathcal{P}(T)
+
+Title: Union of powersets is contained in powerset of the union
+Tags: #sets
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+\mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
+
+Title: Set contained in intersection is contained in sets
+Tags: #sets
+\forall C : Set, \forall S : Set, \forall T : Set
+------------------------------
+C \subseteq S \cap T
+------------------------------
+C \subseteq S
+C \subseteq T
 
