@@ -7,7 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, check_tautologies
+     check_contradictions, library_load, check_tautologies, fill_universes
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -102,6 +102,7 @@ def main(stdscr):
         if started: # automated cleanup
             if not skip:
                 deps = cleanup(screen, tl, ttree)
+                fill_universes(screen, tl)
                 num_checked = check_contradictions(screen, tl, num_checked, ttree)
                 check_tautologies(screen, tl, ttree)
                 if targets_proved(screen, tl, ttree):

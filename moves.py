@@ -1,7 +1,8 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode
+     FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode, UnionNode, \
+     IntersectNode, DiffNode, CartesianNode
 from type import FnType, TupleType
 from unification import unify, subst
 from editor import edit
@@ -47,6 +48,66 @@ def metavars_used(tree):
     search(tree)
     return used
 
+def get_type(var, qz):
+    tree = qz
+    name = var.name()
+    while qz:
+        if qz.var.name() == name:
+            return qz.var.type.universe
+        qz = qz.left
+    raise Exception("Type not found for "+var.name())
+    
+def universe(tree, qz):
+    if isinstance(tree, VarNode):
+        if tree.is_metavar:
+            return tree
+        else:
+            return get_type(tree, qz)
+    elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
+         isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
+        return universe(tree.left, qz)
+    elif isinstance(tree, FnNode) and tree.name() == 'complement':
+        return universe(tree.args[0], qz)
+    elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
+        return tree.type.universe
+    else:
+        raise Exception("Unable to determine universe")
+
+def fill_universes(screen, tl):
+    def fill(tree):
+        if tree == None:
+            return None
+        if isinstance(tree, FnNode):
+            if tree.name() == 'universe':
+                if not isinstance(tree.args[0], VarNode) or not tree.args[0].is_metavar:
+                    return universe(tree.args[0], tl.tlist0.data[0])
+            for i in range(0, len(tree.args)):
+                tree.args[i] = fill(tree.args[i])
+            return tree
+        elif isinstance(tree, TupleNode):
+            for i in range(0, len(tree.args)):
+                tree.args[i] = fill(tree.args[i])
+            return tree
+        elif isinstance(tree, LRNode):
+            tree.left = fill(tree.left)
+            tree.right = fill(tree.right)
+            return tree
+        elif isinstance(tree, LeafNode):
+            return tree
+        else:
+            return tree
+
+    for i in range(0, len(tl.tlist1.data)):
+        tl.tlist1.data[i] = fill(tl.tlist1.data[i])
+        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+    for i in range(0, len(tl.tlist2.data)):
+        tl.tlist2.data[i] = fill(tl.tlist2.data[i])
+        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus.refresh()
+
+
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
@@ -90,7 +151,7 @@ def targets_proved(screen, tl, ttree):
                             if dep == ttree.num:
                                 ttree.proved = True
         return ttree.proved
-
+    
     return check(ttree)
 
 def mark_proved(ttree, n):

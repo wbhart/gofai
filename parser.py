@@ -8,7 +8,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode
-from type import NumberType, NamedType, FnType, TupleType
+from type import NumberType, FnType, TupleType, SetType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -22,11 +22,11 @@ statement = Grammar(
     forall = "\\forall" space typed_var
     typed_var = var space ":" space type
     type = fn_type / basic_type
-    basic_type = number_type / named_type
+    basic_type = number_type / set_type
     fn_type = domain_type space "\\to" space basic_type
     domain_type = tuple_type / basic_type
     tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
-    named_type = "Set"
+    set_type = "Set" ("(" space (var / number_type) space ")")?
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
@@ -39,7 +39,9 @@ statement = Grammar(
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = set_paren / var / number_type / empty_set / powerset
+    set = universe / complement / set_paren / var / number_type / empty_set / universum / powerset
+    universe = "universe(" space set_expression space ")"
+    complement = "complement(" space set_expression space ")"
     powerset = "\\mathcal{P}(" space set_expression space ")"
     set_paren = "(" set_expression ")"
     alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
@@ -58,7 +60,8 @@ statement = Grammar(
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    empty_set = "\\emptyset"
+    empty_set = "\\emptyset" ("(" space (var / number_type) space ")")?
+    universum = "\\mathcal{U}"
     space = ~"\s*"
     """)
 
@@ -135,8 +138,16 @@ class StatementVisitor(NodeVisitor):
         types = [v[0] for v in visited_children[2]]
         types.append(visited_children[3])
         return TupleType(types)
-    def visit_named_type(self, node, visited_children):
-        return NamedType(node.text)
+    def visit_set_type(self, node, visited_children):
+        params = visited_children[1]
+        if isinstance(params, Node):
+            return SetType(SymbolNode("\\mathcal{U}", None))
+        else:
+            return SetType(params[0][2][0])
+    def visit_universe(self, node, visited_children):
+        return FnNode(VarNode("universe"), [visited_children[2]])
+    def visit_complement(self, node, visited_children):
+        return FnNode(VarNode("complement"), [visited_children[2]])
     def visit_number_type(self, node, visited_children):
         return NumberType(node.text)
     def visit_fn_type(self, node, visited_children):
@@ -233,7 +244,14 @@ class StatementVisitor(NodeVisitor):
         value = True if node.text == "True" else False
         return BoolNode(value)
     def visit_empty_set(self, node, visited_children):
-        return SymbolNode("\\emptyset", NamedType("Set"))
+        params = visited_children[1]
+        if isinstance(params, Node):
+            set_type = SetType(SymbolNode("\\mathcal{U}", None))
+        else:
+            set_type = SetType(params[0][2][0])
+        return SymbolNode("\\emptyset", set_type)
+    def visit_universum(self, node, visited_children):
+        return SymbolNode("\\mathcal{U}", SetType(SymbolNode("\\mathcal{U}", None)))
 
 def to_ast(screen, string):
     try:

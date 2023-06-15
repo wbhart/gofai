@@ -81,7 +81,8 @@ def univar(name):
                     "\\chi" : "\u03c7",
                     "\\psi" : "\u03c8",
                     "\\omega" : "\u03c9",
-                    "\\emptyset" : "\u2205"}
+                    "\\emptyset" : "\u2205",
+                    "\\mathcal{U}" : "\u03a9"}
 
     if name in unicode_dict:
         return unicode_dict[name]+suffix

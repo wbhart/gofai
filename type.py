@@ -23,14 +23,17 @@ type_str = {"Natural" : "\u2115",
 
 class NumberType:
     def __init__(self, name):
-        self.name = type_name[name]
+        self._name = type_name[name]
 
     def __repr__(self):
-        return type_repr[self.name]
+        return type_repr[self._name]
 
     def __str__(self):
-        return type_str[self.name]
+        return type_str[self._name]
 
+    def name(self):
+        return self._name
+        
 class NamedType:
     def __init__(self, name):
         self.name = name
@@ -41,6 +44,22 @@ class NamedType:
     def __str__(self):
          return self.name
 
+class SetType:
+    def __init__(self, universe):
+        self.universe = universe
+
+    def __repr__(self):
+        if self.universe.name() == '\\mathcal{U}':
+            return "Set"
+        else:
+            return "Set("+repr(self.universe)+")"
+            
+    def __str__(self):
+        if self.universe.name() == '\\mathcal{U}':
+            return "Set"
+        else:
+            return "Set("+str(self.universe)+")"
+            
 class FnType:
     def __init__(self, domain, codomain):
          self.domain = domain

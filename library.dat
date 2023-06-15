@@ -1002,3 +1002,24 @@ C \subseteq S \cap T
 C \subseteq S
 C \subseteq T
 
+Title: Definition of complement
+Tags: #sets #definition
+\forall S : Set, \forall x : Set
+------------------------------
+------------------------------
+x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
+
+Title: Definition of set universe
+Tags: #sets
+\forall S : Set, \forall x : Set
+------------------------------
+------------------------------
+x \in S \implies x \in universe(S)
+
+Title: Complement of complement of a set is equal to that set
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S = complement(complement(S))
+
