@@ -73,10 +73,12 @@ def targets_proved(screen, tl, ttree):
                 dep = tl.tlist1.dependency(i)
                 if dep not in ttree.deps: # if we didn't already prove with this dep
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
-                        unifies, assign = unify(complement_tree(P.left), \
+                        varlist = deepcopy(tl.vars) # temporary relabelling
+                        unifies, assign = unify(complement_tree(relabel(deepcopy(P.left), varlist)), \
                               tars[ttree.num])
                         if unifies:
-                            unifies, assign = unify(P.right, tars[ttree.num])
+                            varlist = deepcopy(tl.vars) # or branched can be assigned independently
+                            unifies, assign = unify(relabel(deepcopy(P.right), varlist), tars[ttree.num], assign)
                     else:
                         unifies, assign = unify(P, tars[ttree.num])
                     if unifies:
@@ -846,7 +848,15 @@ def modus_ponens(screen, tl, ttree, deps):
         new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
         tree2 = AndNode(tree2, new_tree2)
     qP2 = tree2
-    unifies, assign = unify(qP1, qP2)
+    if isinstance(qP2, ImpliesNode):
+        # treat P => Q as ¬P \wedge Q
+        varlist = deepcopy(tl.vars) # temporary relabelling
+        unifies, assign = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        if unifies:
+            varlist = deepcopy(tl.vars) # assignments in or branches can be independent
+            unifies, assign = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
+    else:
+        unifies, assign = unify(qP1, qP2)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -935,7 +945,15 @@ def modus_tollens(screen, tl, ttree, deps):
         new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
         tree2 = AndNode(tree2, new_tree2)
     qP2 = tree2
-    unifies, assign = unify(qP1, qP2)
+    if isinstance(qP2, ImpliesNode):
+        # treat P => Q as ¬P \wedge Q
+        vars = deepcopy(tl.vars) # temporary relabelling
+        unifies, assign = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        if unifies:
+            vars = deepcopy(tl.vars) # assignments in or branches can be independent
+            unifies, assign = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
+    else:
+        unifies, assign = unify(qP1, qP2)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
