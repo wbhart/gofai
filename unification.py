@@ -15,8 +15,16 @@ def is_expression(tree):
     else:
         return True
 
-def trees_unify(tree1, tree2, assigned=[]):
+def trees_unify(tree1, tree2, assigned=[], univ=[]):
     assign = deepcopy(assigned) # default params are mutable
+    universes = deepcopy(univ)
+    # special case to deal with unexpanded universes
+    if isinstance(tree1, FnNode) and tree1.name() == 'universe':
+        universes.append((tree2, tree1.args[0]))
+        return True, assign, universes
+    if isinstance(tree2, FnNode) and tree2.name() == 'universe':
+        universes.append((tree1, tree2.args[0]))
+        return True, assign, universes
     if isinstance(tree1, FnNode) and isinstance(tree2, FnNode) \
            and (tree1.is_metavar or tree2.is_metavar) and \
            len(tree1.args) == len(tree2.args):
@@ -33,61 +41,61 @@ def trees_unify(tree1, tree2, assigned=[]):
                     assign.append(deepcopy((tree1.var, tree2.var)))
                 else:
                     assign.append(deepcopy((tree2.var, tree1.var)))
-                return True, assign
+                return True, assign, universes
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
         if is_expression(tree2):
             assign.append(deepcopy((tree1, tree2)))
         else:
-            return False, []
+            return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
         if is_expression(tree1):
             assign.append(deepcopy((tree2, tree1)))
         else:
-            return False, []
+            return False, [], []
     elif isinstance(tree1, VarNode) or isinstance(tree2, VarNode):
         if not isinstance(tree1, VarNode) or not isinstance(tree2, VarNode):
-            return False, []
+            return False, [], []
         if tree1.name() != tree2.name(): # if not metavars check names
-            return False, []
+            return False, [], []
     elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):
         if tree1.name() != tree2.name(): # if not metavars check names
-            return False, []
+            return False, [], []
         if len(tree1.args) != len(tree2.args):
-            return False, []
+            return False, [], []
         for i in range(0, len(tree1.args)):
-            unified, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
+            unified, assign, universes = trees_unify(tree1.args[i], tree2.args[i], assign, universes)
             if not unified:
-                return False, []
+                return False, [], []
     else: # we didn't hit a variable, or a pair of functions
         if type(tree1) != type(tree2):
-            return False, []
+            return False, [], []
         elif isinstance(tree1, SymbolNode):
             if tree1.name() != tree2.name():
-                return False, []
+                return False, [], []
         elif isinstance(tree1, TupleNode):
             if len(tree1.args) != len(tree2.args):
-                return False, []
+                return False, [], []
             for i in range(0, len(tree1.args)):
-                unified, assign = trees_unify(tree1.args[i], tree2.args[i], assign)
+                unified, assign, universes = trees_unify(tree1.args[i], tree2.args[i], assign, universes)
                 if not unified:
-                    return False, []
+                    return False, [], []
         elif isinstance(tree1, LRNode):
-            unified, assign = trees_unify(tree1.left, tree2.left, assign)
+            unified, assign, universes = trees_unify(tree1.left, tree2.left, assign, universes)
             if not unified:
-                return False, []
-            unified, assign = trees_unify(tree1.right, tree2.right, assign)
+                return False, [], []
+            unified, assign, universes = trees_unify(tree1.right, tree2.right, assign, universes)
             if not unified:
-                return False, []
+                return False, [], []
     # if any case falls through, unification occurred successfully
-    return True, assign
+    return True, assign, universes
 
 def unify(tree1, tree2, assigned=[]):
     assign = deepcopy(assigned) # default params are mutable
-    unified, assign = trees_unify(tree1, tree2, assign)
+    unified, assign, universes = trees_unify(tree1, tree2, assign)
     if not unified:
-        return False, []
+        return False, [], []
     i = 0
     while i < len(assign):
         for j in range(0, i):
@@ -95,15 +103,15 @@ def unify(tree1, tree2, assigned=[]):
         j = i + 1
         while j < len(assign):
             if assign[i][0].name() == assign[j][0].name():
-                unified, assign = trees_unify(assign[i][1], assign[j][1], assign)
+                unified, assign, universes = trees_unify(assign[i][1], assign[j][1], assign, universes)
                 if not unified:
-                    return False, []
+                    return False, [], []
                 del assign[j]
             else:
                 assign[j] = make_substitution(assign[j], assign[i])
                 j += 1
         i += 1
-    return True, assign
+    return True, assign, universes
 
 def subst(tree1, var, tree2):
     if tree1 == None:

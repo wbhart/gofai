@@ -4,7 +4,7 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode, UnionNode, \
      IntersectNode, DiffNode, CartesianNode
 from type import FnType, TupleType
-from unification import unify, subst
+from unification import unify, subst, trees_unify
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
@@ -60,7 +60,7 @@ def get_type(var, qz):
 def universe(tree, qz):
     if isinstance(tree, VarNode):
         if tree.is_metavar:
-            return tree
+            return None
         else:
             return get_type(tree, qz)
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
@@ -71,7 +71,7 @@ def universe(tree, qz):
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
         return tree.type.universe
     else:
-        raise Exception("Unable to determine universe")
+        return None # no universe
 
 def fill_universes(screen, tl):
     def fill(tree):
@@ -107,6 +107,18 @@ def fill_universes(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
+def check_universes(universes, assign, qz):
+    # check universes after substitution
+    for (uni1, uni2) in universes:
+        tree = substitute(deepcopy(uni2), assign)
+        tree = universe(tree, qz)
+        if tree == None:
+            return False
+        unified, assign, univ = unify(uni1, tree, assign)
+        universes.extend(univ)
+        if not unified:
+            return False
+    return True
 
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
@@ -135,13 +147,18 @@ def targets_proved(screen, tl, ttree):
                 if dep not in ttree.deps: # if we didn't already prove with this dep
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
                         varlist = deepcopy(tl.vars) # temporary relabelling
-                        unifies, assign = unify(complement_tree(relabel(deepcopy(P.left), varlist)), \
+                        unifies, assign, universes = unify(complement_tree(relabel(deepcopy(P.left), varlist)), \
                               tars[ttree.num])
+                        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                         if unifies:
                             varlist = deepcopy(tl.vars) # or branched can be assigned independently
-                            unifies, assign = unify(relabel(deepcopy(P.right), varlist), tars[ttree.num], assign)
+                            unifies, assign, universes = unify(relabel(deepcopy(P.right), varlist), \
+                                                           tars[ttree.num], assign)
+                            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                        
                     else:
-                        unifies, assign = unify(P, tars[ttree.num])
+                        unifies, assign, universes = unify(P, tars[ttree.num])
+                        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies:
                         if dep == -1:
                             ttree.proved = True
@@ -188,7 +205,8 @@ def check_contradictions(screen, tl, n, ttree):
             d2 = tl.tlist1.dependency(j)
             if d1 < 0 or d2 < 0:
                 tree2 = tlist1[j]
-                unifies, assign = unify(tree1, tree2)
+                unifies, assign, universes = unify(tree1, tree2)
+                unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                 if unifies: # we found a contradiction
                     if d1 >= 0:
                         mark_proved(ttree, d1)
@@ -197,12 +215,14 @@ def check_contradictions(screen, tl, n, ttree):
             elif d1 >= 0 and d2 >= 0:
                 if deps_compatible(ttree, d1, d2):
                     tree2 = tlist1[j]
-                    unifies, assign = unify(tree1, tree2)
+                    unifies, assign, universes = unify(tree1, tree2)
+                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
                         mark_proved(ttree, d1)
                 elif deps_compatible(ttree, d2, d1):
                     tree2 = tlist1[j]
-                    unifies, assign = unify(tree1, tree2)
+                    unifies, assign, universes = unify(tree1, tree2)
+                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
                         mark_proved(ttree, d2)
     return len(tlist1)
@@ -363,7 +383,7 @@ def find_all(string, substring):
         res.append(start)
         start += n
 
-def apply_equality(screen, tree, string, n, subst, occurred=-1):
+def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
     occur = occurred
     found = False
     if tree == None:
@@ -371,9 +391,11 @@ def apply_equality(screen, tree, string, n, subst, occurred=-1):
     if str(tree) == string: # we found an occurrence
         occur += 1
         if occur == n: # we found the right occurrence
-            unifies, assign = unify(subst.left, tree)
+            unifies, assign, universes = unify(subst.left, tree)
+            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
             if not unifies:
-                unifies, assign = unify(subst.right, tree)
+                unifies, assign, universes = unify(subst.right, tree)
+                unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                 if not unifies:
                     return False, tree, n # does not unify, bogus selection
                 else:
@@ -435,7 +457,7 @@ def equality(screen, tl):
         return
     idx = find_all(string, sub_string)
     n = idx.index(start) # which occurence of substring do we want (0-indexed)
-    found, tree, occur = apply_equality(screen, sub_tlist.data[line2], sub_string, n, tree1)
+    found, tree, occur = apply_equality(screen, tl, sub_tlist.data[line2], sub_string, n, tree1)
     if not found:
         screen.dialog("Equality cannot be applied. Press Enter to continue")
         screen.restore_state()
@@ -914,12 +936,15 @@ def modus_ponens(screen, tl, ttree, deps):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         varlist = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        unifies, assign, universes = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
         if unifies:
             varlist = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
+            unifies, assign, universes = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
+            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
     else:
-        unifies, assign = unify(qP1, qP2)
+        unifies, assign, universes = unify(qP1, qP2)
+        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -934,7 +959,7 @@ def modus_ponens(screen, tl, ttree, deps):
         stmt = substitute(deepcopy(tree1.left), assign)
         stmt = relabel(stmt, tl.vars)
         if line2 in tl.tars: # we already reasoned from this target
-            stmt = complement(tree, stmt)
+            stmt = complement_tree(stmt)
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
@@ -1017,12 +1042,15 @@ def modus_tollens(screen, tl, ttree, deps):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         vars = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        unifies, assign, universes = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
         if unifies:
             vars = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
+            unifies, assign, universes = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
+            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
     else:
-        unifies, assign = unify(qP1, qP2)
+        unifies, assign, universes = unify(qP1, qP2)
+        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -1134,7 +1162,8 @@ def cleanup(screen, tl, ttree):
                         screen.pad1[i] = str(tl1[i])
                 if isinstance(tl1[i], OrNode):
                     # First check we don't have P \vee P
-                    unifies, assign = unify(tl1[i].left, tl1[i].right)
+                    unifies, assign, universes = unify(tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1151,7 +1180,8 @@ def cleanup(screen, tl, ttree):
                     tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \vee P
-                    unifies, assign = unify(tl1[i].left, tl1[i].right)
+                    unifies, assign, universes = unify(tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1201,7 +1231,8 @@ def cleanup(screen, tl, ttree):
                     tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
-                    unifies, assign = unify(tl2[j].left, tl2[j].right)
+                    unifies, assign, universes = unify(tl2[j].left, tl2[j].right)
+                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl2, j, tl2[j].left)
                     else:

@@ -1037,3 +1037,10 @@ Tags: #sets
 ------------------------------
 S \cup T = complement(complement(S) \cap complement(T))
 
+Title: Union of set and complement is universe
+Tags: #sets
+\forall X : Set, \forall S : Set(X)
+------------------------------
+------------------------------
+S \cup complement(S) = universe(S)
+
