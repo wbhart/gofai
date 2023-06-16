@@ -479,6 +479,8 @@ def clear_tableau(screen, tl):
     pad2.cursor_line = 0
     pad2.scroll_char = 0
     pad2.cursor_char = 0
+    tl.vars = dict()
+    tl.tars = dict()
     pad2.refresh()
     pad1.refresh()
     pad0.refresh()
@@ -931,8 +933,14 @@ def modus_ponens(screen, tl, ttree, deps):
     else:
         stmt = substitute(deepcopy(tree1.left), assign)
         stmt = relabel(stmt, tl.vars)
-        append_tree(screen.pad2, tlist2.data, stmt)
-        add_descendant(ttree, line2, len(tlist2.data) - 1)
+        if line2 in tl.tars: # we already reasoned from this target
+            stmt = complement(tree, stmt)
+            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            tlist1.dep[len(tlist1.data) - 1] = dep
+        else:
+            append_tree(screen.pad2, tlist2.data, stmt)
+            add_descendant(ttree, line2, len(tlist2.data) - 1)
+            tl.tars[line2] = True
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -1028,8 +1036,14 @@ def modus_tollens(screen, tl, ttree, deps):
     else:
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         stmt = relabel(stmt, tl.vars)
-        append_tree(screen.pad2, tlist2.data, stmt)
-        add_descendant(ttree, line2, len(tlist2.data) - 1)
+        if line2 in tl.tars: # we already reasoned from this target
+            stmt = complement_tree(stmt)
+            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            tlist1.dep[len(tlist1.data) - 1] = dep
+        else:
+            append_tree(screen.pad2, tlist2.data, stmt)
+            add_descendant(ttree, line2, len(tlist2.data) - 1)
+            tl.tars[line2] = True
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line

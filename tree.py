@@ -35,6 +35,7 @@ class TreeList:
         self.tlist2 = TList()
         self.focus = self.tlist0
         self.vars = dict() # variables used
+        self.tars = dict() # targets used
 
     def switch_list(self):
         if self.focus == self.tlist0:

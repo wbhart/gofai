@@ -1023,3 +1023,17 @@ Tags: #sets
 ------------------------------
 S = complement(complement(S))
 
+Title: Definition of set difference
+Tags: #sets #definition
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+x \in S \setminus T \iff x \in S \cap complement(T)
+
+Title: Union of sets is the complement of the union of their complements
+Tags: #sets
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
+------------------------------
+------------------------------
+S \cup T = complement(complement(S) \cap complement(T))
+
