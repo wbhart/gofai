@@ -1059,3 +1059,18 @@ S = X
 ------------------------------
 complement(S) = \emptyset(X)
 
+Title: Complement of empty set is universe
+Tags: #sets
+\forall X : Set
+------------------------------
+------------------------------
+complement(\emptyset(X)) = X
+
+Title: Complement reverses order of inclusion
+Tags: #sets
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
+------------------------------
+S \subseteq T
+------------------------------
+complement(T) \subseteq complement(S)
+
