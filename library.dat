@@ -1057,5 +1057,5 @@ Tags: #sets
 ------------------------------
 S = X
 ------------------------------
-complement(S) = \emptyset
+complement(S) = \emptyset(X)
 
