@@ -476,10 +476,16 @@ class SymbolNode(LeafNode):
         return self._name
 
     def __str__(self):
-        return univar(self._name)
+        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
+           return univar(self._name)+"("+str(self.type.universe)+")"
+        else:
+            return univar(self._name)
 
     def __repr__(self):
-        return self._name
+        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
+           return self._name+"("+repr(self.type.universe)+")"
+        else:
+            return self._name
 
 precedence = {ExistsNode:9, ForallNode:9,
               ImpliesNode:8, IffNode:8,
