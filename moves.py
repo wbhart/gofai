@@ -2,7 +2,7 @@ from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode, UnionNode, \
-     IntersectNode, DiffNode, CartesianNode
+     IntersectNode, DiffNode, CartesianNode, SymbolNode
 from type import FnType, TupleType
 from unification import unify, subst, trees_unify
 from editor import edit
@@ -403,21 +403,21 @@ def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
             else:
                 return True, substitute(deepcopy(subst.right), assign), n
     if isinstance(tree, LRNode):
-        found, tree.left, occur = apply_equality(screen, tree.left, string, n, subst, occur)
+        found, tree.left, occur = apply_equality(screen, tl, tree.left, string, n, subst, occur)
         if not found:
-            found, tree.right, occur = apply_equality(screen, tree.right, string, n, subst, occur)
+            found, tree.right, occur = apply_equality(screen, tl, tree.right, string, n, subst, occur)
         return found, tree, occur
     elif isinstance(tree, LeafNode):
         return found, tree, occur
     elif isinstance(tree, TupleNode) or isinstance (tree, FnNode):
         for i in range(0, len(tree.args)):
-            found, tree.args[i], occur = apply_equality(screen, tree.args[i], string, n, subst, occur)
+            found, tree.args[i], occur = apply_equality(screen, tl, tree.args[i], string, n, subst, occur)
             if found:
                 break
         if not found and isinstance(tree, FnNode):
-            found, tree.var, occur = apply_equality(screen, tree.var, string, n, subst, occur)
+            found, tree.var, occur = apply_equality(screen, tl, tree.var, string, n, subst, occur)
         return found, tree, occur
-    raise Exception("Node not dealt with")
+    raise Exception("Node not dealt with : "+str(type(tree)))
 
 def equality(screen, tl):
     screen.save_state()

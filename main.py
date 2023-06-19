@@ -45,6 +45,7 @@ def main(stdscr):
         #    automate(screen, tl, ad)
         elif c == 'v': # equivalence
             equality(screen, tl)
+            num_checked = 0 # equivalence may cause something to contradict fresh
         elif c == 's': # start automated cleanup
             started = True
             skip = False

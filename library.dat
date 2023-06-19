@@ -1044,3 +1044,18 @@ Tags: #sets
 ------------------------------
 S \cup complement(S) = universe(S)
 
+Title: Intersection of a set with its complement is the empty set
+Tags: #sets
+\forall S : Set
+------------------------------
+------------------------------
+S \cap complement(S) = \emptyset
+
+Title: Complement of a set equal to its universe is the empty set
+Tags: #sets
+\forall X : Set, \forall S : Set(X)
+------------------------------
+S = X
+------------------------------
+complement(S) = \emptyset
+
