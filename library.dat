@@ -1074,3 +1074,10 @@ S \subseteq T
 ------------------------------
 complement(T) \subseteq complement(S)
 
+Title: Complement of the complement of a set is the set itself
+Tags: #sets
+\forall X : Set, \forall S : Set(X)
+------------------------------
+------------------------------
+complement(complement(S)) = S
+
