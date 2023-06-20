@@ -135,8 +135,12 @@ def targets_proved(screen, tl, ttree):
             if ttree.proved and ttree.num != -1:
                 screen.dialog("Target "+str(ttree.num)+" proved")
             if not ttree.proved:
-                S = set(ttree.andlist[0].deps)
-                for i in range(1, len(ttree.andlist)):
+                j = 0
+                while j < len(ttree.andlist):
+                    if not ttree.andlist[j].proved:
+                        break
+                S = set(ttree.andlist[j].deps)
+                for i in range(j + 1, len(ttree.andlist)):
                     if not ttree.andlist[i].proved:
                         S = S.intersection(ttree.andlist[i].deps)
                 ttree.deps = list(S)
@@ -151,13 +155,13 @@ def targets_proved(screen, tl, ttree):
                 if dep not in ttree.deps: # if we didn't already prove with this dep
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
                         varlist = deepcopy(tl.vars) # temporary relabelling
-                        unifies, assign, universes = unify(complement_tree(relabel(deepcopy(P.left), varlist)), \
-                              tars[ttree.num])
+                        unifies, assign, universes = unify(complement_tree(P.left), \
+                                                relabel(deepcopy(tars[ttree.num]), varlist))
                         unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                         if unifies:
-                            varlist = deepcopy(tl.vars) # or branched can be assigned independently
-                            unifies, assign, universes = unify(relabel(deepcopy(P.right), varlist), \
-                                                           tars[ttree.num], assign)
+                            # or branched can be assigned independently
+                            unifies, assign, universes = unify(P.right, \
+                                                relabel(deepcopy(tars[ttree.num]), varlist), assign)
                             unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
                         
                     else:
@@ -170,14 +174,14 @@ def targets_proved(screen, tl, ttree):
                                 screen.dialog("Target "+str(ttree.num)+" proved")
                             break
                         else:
-                            ttree.deps.append(dep)
                             if dep == ttree.num:
                                 ttree.proved = True
                                 if ttree.num != -1:
                                     screen.dialog("Target "+str(ttree.num)+" proved")
                             else:
-                                if ttree.num != -1:
+                                if ttree.num != -1 and dep not in ttree.deps:
                                     screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
+                            ttree.deps.append(dep)
         return ttree.proved
     
     return check(ttree)
@@ -185,6 +189,7 @@ def targets_proved(screen, tl, ttree):
 def mark_proved(ttree, n):
     if ttree.num == n:
         ttree.proved = True
+        screen.dialog("Target "+str(ttree.num)+" proved")
         return True
     for P in ttree.andlist:
         if mark_proved(P, n):
@@ -267,6 +272,14 @@ def relabel(tree, tldict):
         elif isinstance(tree, VarNode):
             if tree.name() in vars_dict:
                 tree._name = vars_dict[tree.name()]
+            elif tree.is_metavar:
+                name = tree.name()
+                sp = name.split("_")
+                if sp.pop().isdigit():
+                    name = '_'.join(sp)
+                new_name = relabel_varname(name, tldict)
+                vars_dict[name] = new_name
+                tree._name = new_name 
         elif isinstance(tree, LRNode):
             process(tree.left)
             process(tree.right)
@@ -276,6 +289,14 @@ def relabel(tree, tldict):
             # treated like functions
             if tree.name() in vars_dict:
                 tree.var._name = vars_dict[tree.name()] # TODO : add setter for assignment
+            elif tree.is_metavar:
+                name = tree.name()
+                sp = name.split("_")
+                if sp.pop().isdigit():
+                    name = '_'.join(sp)
+                new_name = relabel_varname(name, tldict)
+                vars_dict[name] = new_name
+                tree.var._name = new_name
             #######
             for v in tree.args:
                 process(v)

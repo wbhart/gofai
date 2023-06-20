@@ -1076,10 +1076,10 @@ complement(complement(S)) = S
 
 Title: Definition of set difference
 Tags: #sets #definition
-\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
-x \in S \setminus T \iff x \in S \cap complement(T)
+S \setminus T = S \cap complement(T)
 
 Title: Problem : Complement of set difference is complement first union second set
 Tags: #sets
@@ -1088,7 +1088,7 @@ Tags: #sets
 ------------------------------
 complement(S \setminus T) = complement(S) \cup T
 
-Title: Problem : Complement of set diff is complement of first set union the intersection
+Title: Problem : Complement of set diff is complement of set union the intersection
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1101,4 +1101,11 @@ Tags: #sets
 ------------------------------
 ------------------------------
 complement(S) \setminus complement(T) = T \setminus S
+
+Title: Problem : Difference with intersection is union of differences
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 
