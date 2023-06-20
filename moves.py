@@ -132,6 +132,8 @@ def targets_proved(screen, tl, ttree):
             for Q in ttree.andlist:
                 proved = check(Q) and proved # and is short circuiting
             ttree.proved = proved
+            if ttree.proved and ttree.num != -1:
+                screen.dialog("Target "+str(ttree.num)+" proved")
             if not ttree.proved:
                 S = set(ttree.andlist[0].deps)
                 for i in range(1, len(ttree.andlist)):
@@ -140,6 +142,8 @@ def targets_proved(screen, tl, ttree):
                 ttree.deps = list(S)
                 if ttree.num in ttree.deps:
                     ttree.proved = True
+                    if ttree.num != -1:
+                        screen.dialog("Target "+str(ttree.num)+" proved")
         if not ttree.proved and ttree.num != -1:
             for i in range(0, len(hyps)):
                 P = hyps[i]
@@ -162,11 +166,18 @@ def targets_proved(screen, tl, ttree):
                     if unifies:
                         if dep == -1:
                             ttree.proved = True
+                            if ttree.num != -1:
+                                screen.dialog("Target "+str(ttree.num)+" proved")
                             break
                         else:
                             ttree.deps.append(dep)
                             if dep == ttree.num:
                                 ttree.proved = True
+                                if ttree.num != -1:
+                                    screen.dialog("Target "+str(ttree.num)+" proved")
+                            else:
+                                if ttree.num != -1:
+                                    screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
         return ttree.proved
     
     return check(ttree)
