@@ -139,6 +139,7 @@ def targets_proved(screen, tl, ttree):
                 while j < len(ttree.andlist):
                     if not ttree.andlist[j].proved:
                         break
+                    j += 1
                 S = set(ttree.andlist[j].deps)
                 for i in range(j + 1, len(ttree.andlist)):
                     if not ttree.andlist[i].proved:

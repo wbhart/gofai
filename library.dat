@@ -1109,3 +1109,10 @@ Tags: #sets
 ------------------------------
 C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 
+Title: Problem: Difference with union is intersection of differences
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+C \setminus A \cup B = (C \setminus A) \cap (C \setminus B)
+
