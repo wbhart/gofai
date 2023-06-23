@@ -44,6 +44,13 @@ class NamedType:
     def __str__(self):
          return self.name
 
+class PredType:
+    def __repr__(self):
+       return "Pred"
+
+    def __str__(self):
+       return "Pred"
+
 class SetType:
     def __init__(self, universe):
         self.universe = universe

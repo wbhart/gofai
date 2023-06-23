@@ -137,12 +137,12 @@ class FnNode:
 
     def __str__(self):
         name = univar(self.name())+"\u0307" if self.is_metavar else univar(self.name())
-        sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
+        sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else "()"
         return name+sig
 
     def __repr__(self):
         name = "\\dot{"+self.name()+"}" if self.is_metavar else self.name()
-        sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
+        sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else "()"
         return name+sig
 
 class TupleNode:
@@ -349,6 +349,13 @@ class DiffNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\setminus "+self.paren_repr(self.right)
 
+class SetBuilderNode(LRNode):
+    def __str__(self):
+        return "{"+str(self.left)+" | "+str(self.right)+"}"
+
+    def __repr__(self):
+        return "{"+repr(self.left)+" | "+repr(self.right)+"}"
+
 class AbsNode(LRNode):
     def __init__(self, expr):
         self.left = expr
@@ -497,7 +504,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               DiffNode:5,
               UnionNode:4, IntersectNode:4,
               CartesianNode:3,
-              PowerSetNode:2,
+              PowerSetNode:2, SetBuilderNode:2,
               # Arithmetic nodes
               LeqNode:6, LtNode:6,
               GeqNode:6, GtNode:6,
@@ -512,7 +519,8 @@ precedence = {ExistsNode:9, ForallNode:9,
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,
                  DivNode:False, ExpNode:False,
-                 UnionNode:True, IntersectNode:True}
+                 UnionNode:True, IntersectNode:True,
+                 DiffNode:False}
 
 # whether it associates with its dual
 dual_associative = {AndNode:True, SubNode:False, MulNode:True,

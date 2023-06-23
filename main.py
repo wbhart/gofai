@@ -7,7 +7,8 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, check_tautologies, fill_universes
+     check_contradictions, library_load, check_tautologies, fill_universes, \
+     vars_typed
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -16,7 +17,6 @@ def main(stdscr):
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
     num_checked = 0 # number of hypotheses that have been checked for contradictions
-    deps = [] # variables that subsequent skolemizations will depend on
     skip = False # whether to skip checking completion
     reset = False # whether to reset dependencies
 
@@ -47,13 +47,14 @@ def main(stdscr):
             equality(screen, tl)
             num_checked = 0 # equivalence may cause something to contradict fresh
         elif c == 's': # start automated cleanup
-            started = True
-            skip = False
-            ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+            if vars_typed(screen, tl):
+                started = True
+                skip = False
+                ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
-            modus_ponens(screen, tl, ttree, deps)
+            modus_ponens(screen, tl, ttree)
         elif c == 't': # modus tollens
-            modus_tollens(screen, tl, ttree, deps)
+            modus_tollens(screen, tl, ttree)
         # elif c == 'n': # negate target
         #    negate_target(screen, tl)
         elif c == 'w': # write to library
@@ -74,7 +75,6 @@ def main(stdscr):
             started = False
             ttree = None
             num_checked = 0
-            deps = []
             reset = True
         elif c == 'KEY_RIGHT':
             skip = True
@@ -102,7 +102,7 @@ def main(stdscr):
                 tl.focus.line -= 1
         if started: # automated cleanup
             if not skip:
-                deps = cleanup(screen, tl, ttree)
+                cleanup(screen, tl, ttree)
                 fill_universes(screen, tl)
                 num_checked = check_contradictions(screen, tl, num_checked, ttree)
                 check_tautologies(screen, tl, ttree)

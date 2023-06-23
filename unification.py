@@ -1,7 +1,13 @@
 from copy import deepcopy
 from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   SubNode, MulNode, DivNode, IntersectNode, UnionNode, \
-                  DiffNode, SymbolNode, TupleNode, PowerSetNode
+                  DiffNode, SymbolNode, TupleNode, PowerSetNode, AndNode, \
+                  OrNode, ElemNode, EqNode, NeqNode, LtNode, GtNode, \
+                  LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
+                  SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
+                  NotNode, ForallNode, ExistsNode, ConstNode, BoolNode
+
+from type import PredType
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -14,6 +20,29 @@ def is_expression(tree):
         return True
     else:
         return True
+
+def is_predicate(tree):
+    if isinstance(tree, AndNode) or isinstance(tree, OrNode) \
+       or isinstance(tree, ElemNode) or isinstance(tree, EqNode) \
+       or isinstance(tree, NeqNode) or isinstance(tree, LtNode) \
+       or isinstance(tree, GtNode) or isinstance(tree, GeqNode) \
+       or isinstance(tree, LeqNode) or isinstance(tree, SubseteqNode) \
+       or isinstance(tree, SubsetneqNode) or isinstance(tree, SupseteqNode) \
+       or isinstance(tree, SupsetneqNode) or isinstance(tree, ImpliesNode) \
+       or isinstance(tree, IffNode) or isinstance(tree, NotNode) \
+       or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
+       or isinstance(tree, ConstNode) or isinstance(tree, BoolNode):
+        return True
+    else:
+        return False
+
+def node_type(tree):
+    if isinstance(tree, VarNode):
+        return tree.type
+    elif isinstance(tree, FnNode):
+        return tree.var.type
+    else:
+        return None
 
 def trees_unify(tree1, tree2, assigned=[], univ=[]):
     assign = deepcopy(assigned) # default params are mutable
@@ -44,13 +73,15 @@ def trees_unify(tree1, tree2, assigned=[], univ=[]):
                 return True, assign, universes
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
-        if is_expression(tree2):
+        if (isinstance(node_type(tree1), PredType) and is_predicate(tree2)) \
+              or (not isinstance(node_type(tree1), PredType) and is_expression(tree2)):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
-        if is_expression(tree1):
+        if (isinstance(node_type(tree2), PredType) and is_predicate(tree1)) \
+              or (not isinstance(node_type(tree2), PredType) and is_expression(tree1)):
             assign.append(deepcopy((tree2, tree1)))
         else:
             return False, [], []
@@ -74,6 +105,10 @@ def trees_unify(tree1, tree2, assigned=[], univ=[]):
         elif isinstance(tree1, SymbolNode):
             if tree1.name() != tree2.name():
                 return False, [], []
+            if tree1.name() == '\\emptyset':
+                unified, assign, universes = trees_unify(tree1.type.universe, tree2.type.universe, assign, universes)
+                if not unified:
+                    return False, [], []
         elif isinstance(tree1, TupleNode):
             if len(tree1.args) != len(tree2.args):
                 return False, [], []
@@ -122,6 +157,11 @@ def subst(tree1, var, tree2):
         else:
             return tree1
     elif isinstance(tree1, FnNode):
+        if tree1.name() == var.name() and is_predicate(tree2):
+            p = deepcopy(tree2)
+            for i in range(0, len(tree1.args)):
+                p = subst(p, var.args[i], tree1.args[i])
+            return p
         # TODO : come up with a proper Pair type
         # This is an unsound hack to allow pairs to be
         # treated like functions
@@ -144,7 +184,10 @@ def subst(tree1, var, tree2):
     elif isinstance(tree1, LRNode):
         tree1.left = subst(tree1.left, var, tree2)
         tree1.right = subst(tree1.right, var, tree2)
-        return tree1 
+        return tree1
+    elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
+        tree1.type.universe = subst(tree1.type.universe, var, tree2)
+        return tree1
     else:
         return tree1
 

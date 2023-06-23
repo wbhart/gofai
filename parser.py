@@ -7,8 +7,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
-     SymbolNode, CartesianNode, TupleNode, PowerSetNode
-from type import NumberType, FnType, TupleType, SetType
+     SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode
+from type import NumberType, FnType, TupleType, SetType, PredType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -22,7 +22,8 @@ statement = Grammar(
     forall = "\\forall" space typed_var
     typed_var = var space ":" space type
     type = fn_type / basic_type
-    basic_type = number_type / set_type
+    basic_type = number_type / set_type / pred_type
+    pred_type = "Pred"
     fn_type = domain_type space "\\to" space basic_type
     domain_type = tuple_type / basic_type
     tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
@@ -35,7 +36,8 @@ statement = Grammar(
     neg_expression = "\\neg" space (pred_paren / pred_fn / bool)
     subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = (add_expression / set_expression) space "\\in" space set_expression
-    set_expression = set_diff / set_union / set_cartesian
+    set_expression = set_builder / set_diff / set_union / set_cartesian
+    set_builder = "{" space elem_relation space "|" space expression space "}"
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
@@ -144,6 +146,8 @@ class StatementVisitor(NodeVisitor):
             return SetType(SymbolNode("\\mathcal{U}", None))
         else:
             return SetType(params[0][2][0])
+    def visit_pred_type(self, node, visited_children):
+        return PredType()
     def visit_universe(self, node, visited_children):
         return FnNode(VarNode("universe"), [visited_children[2]])
     def visit_complement(self, node, visited_children):
@@ -183,6 +187,8 @@ class StatementVisitor(NodeVisitor):
         return visited_children[1]
     def visit_powerset(self, node, visited_children):
         return PowerSetNode(visited_children[2])
+    def visit_set_builder(self, node, visited_children):
+        return SetBuilderNode(visited_children[2], visited_children[6])
     def visit_neg_expression(self, node, visited_children):
         return NotNode(visited_children[2][0])
     def visit_expression(self, node, visited_children):

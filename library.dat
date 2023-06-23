@@ -1114,5 +1114,91 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
 ------------------------------
-C \setminus A \cup B = (C \setminus A) \cap (C \setminus B)
+C \setminus (A \cup B) = (C \setminus A) \cap (C \setminus B)
+
+Title: Problem: Difference with difference is union of intersection and difference
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+C \setminus (B \setminus A) = C \cap A \cup (C \setminus B)
+
+Title: Problem : Difference with difference from same set is intersection
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+C \setminus (C \setminus A) = C \cap A
+
+Title: Problem: Intersection with difference is difference with intersection
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+(B \setminus A) \cap C = B \cap C \setminus A
+
+Title: Problem : Intersection with difference is intersection with other difference
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+(B \setminus A) \cap C = B \cap (C \setminus A)
+
+Title: Problem : Union with difference is difference of union and difference
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+------------------------------
+(B \setminus A) \cup C = B \cup C \setminus (A \setminus C)
+
+Title: Difference of a set with itself is empty
+Tags: #sets
+\forall A : Set
+------------------------------
+------------------------------
+A \setminus A = \emptyset
+
+Title: Difference of any set with empty set is empty
+Tags: #sets
+\forall A : Set
+------------------------------
+------------------------------
+\emptyset \setminus A = \emptyset
+
+Title: Difference of empty set with any set is that set
+Tags: #sets
+\forall A : Set
+------------------------------
+------------------------------
+A \setminus \emptyset = A
+
+Title: Difference of a set and its universe is the empty set
+Tags: #sets
+\forall X : Set, \forall A : Set(X)
+------------------------------
+------------------------------
+A \setminus universe(A) = \emptyset
+
+Title: Containment of sets is reverse upon taking differences with another set
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+A \subseteq B
+------------------------------
+C \setminus B \subseteq C \setminus A
+
+Title: Problem : Difference is contained if different difference is contained
+Tags: #sets
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
+------------------------------
+B \setminus C \subseteq A
+------------------------------
+B \setminus A \subseteq C
+
+Title: Definition of set builder
+Tags: #sets #definition
+\forall X : Set, \forall x : Set, \forall P : Pred
+------------------------------
+------------------------------
+(x \in {y \in X | P(y)}) \iff P(x) \wedge x \in X
 
