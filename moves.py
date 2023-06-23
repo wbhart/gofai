@@ -1195,9 +1195,6 @@ def modus_tollens(screen, tl, ttree):
 def substitute(tree, assign):
    for (var, val) in assign:
        tree = subst(tree, var, val)
-   if is_predicate(tree):
-       for (var, val) in assign:
-           tree = subst(tree, var, val)
    return tree
 
 def append_tree(pad, tl, stmt):
