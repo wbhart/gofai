@@ -1,0 +1,13 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_intersection, axiom, (
+    ! [X,S,T] : (member(X,intersect(S,T)) <=> (member(X,S) & member(X,T)))
+)).
+
+fof(element_both_intersection, conjecture, (
+    ! [C,S,T]: (! [X] : (member(X,C) => (member(X,S) & member(X,T)))) => 
+                         subset(C,intersect(S,T))
+)).
+

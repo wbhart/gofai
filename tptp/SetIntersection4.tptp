@@ -1,0 +1,24 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X,Y] : ((X = Y) <=> (subset(X,Y) & subset(Y,X)))
+)).
+
+fof(emptyset_definition, axiom,
+    ![E] : (
+        (
+            ![X]: (~member(X, E))
+        ) <=> (E = empty)
+    )
+).
+
+fof(set_intersection, axiom, (
+    ! [X,S,T] : (member(X,intersect(S,T)) <=> (member(X,S) & member(X,T)))
+)).
+
+fof(empty_intersection_no_common, conjecture, (
+    ! [X,S,T]: ((intersect(S,T) = empty) & (member(X,S))) => ~member(X,T)
+)).
+

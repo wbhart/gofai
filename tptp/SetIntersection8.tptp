@@ -1,0 +1,20 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X, Y] : ((X = Y) <=> (subset(X, Y) & subset(Y, X)))
+)).
+
+fof(set_union, axiom, (
+    ! [X,S,T] : (member(X,union(S,T)) <=> (member(X,S) | member(X,T)))
+)).
+
+fof(set_intersection, axiom, (
+    ! [X,S,T] : (member(X,intersect(S,T)) <=> (member(X,S) & member(X,T)))
+)).
+
+fof(union_distributes_over_intersection, conjecture, (
+    ! [S,T,U]: union(S,intersect(T,U)) = intersect(union(S,T),union(S,U))
+)).
+
