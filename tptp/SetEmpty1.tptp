@@ -1,0 +1,16 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(emptyset_definition, axiom,
+    ![E] : (
+        (
+            ![X]: (~member(X, E))
+        ) <=> (E = empty)
+    )
+).
+
+fof(empty_subset_all_sets, conjecture, (
+    ![S]: (subset(empty,S))
+)).
+

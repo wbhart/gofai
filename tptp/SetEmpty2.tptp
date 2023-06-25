@@ -1,0 +1,12 @@
+fof(emptyset_definition, axiom,
+    ![E] : (
+        (
+            ![X]: (~member(X, E))
+        ) <=> (E = empty)
+    )
+).
+
+fof(element_of_set_or_empty, conjecture, (
+    ![X,S]: ((member(X,S) | member(X,empty)) => member(X,S))
+)).
+
