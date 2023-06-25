@@ -1,0 +1,8 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(element_superset, conjecture, (
+    ![X,S,T]: ((member(X,S) & subset(S,T)) => member(X,T))
+)).
+

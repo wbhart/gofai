@@ -1,0 +1,4 @@
+fof(element_of_equal_sets, conjecture, (
+    ![X,S,T]: ((member(X,S) & (S = T)) => member(X,T))
+)).
+

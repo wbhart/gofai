@@ -1,0 +1,8 @@
+fof(set_equality, axiom, (
+    ! [X, Y] : (equal(X, Y) <=> (subset(X, Y) & subset(Y, X)))
+)).
+
+fof(equality_commutativity, conjecture, (
+    ! [A,B] : (equal(A,B) => equal(B,A))
+)).
+

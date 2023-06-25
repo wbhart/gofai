@@ -1,0 +1,12 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X,Y] : ((X = Y) <=> (subset(X,Y) & subset(Y,X)))
+)).
+
+fof(cyclic_inclusion, conjecture, (
+    ![S,T,U]: ((subset(S,T) & subset(T,U) & subset(U,S)) => (S = T))
+)).
+

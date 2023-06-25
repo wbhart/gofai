@@ -1,0 +1,16 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X,Y] : ((X = Y) <=> (subset(X,Y) & subset(Y,X)))
+)).
+
+fof(in_one_set_not_other, conjecture, (
+    ![S,T]: (
+        (?[X]: (member(X,S) & ~member(X,T)) 
+        | ?[Y]: (member(Y,T) & ~member(Y,S)))
+        => (S != T)
+    )
+)).
+

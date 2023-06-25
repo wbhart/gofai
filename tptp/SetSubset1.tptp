@@ -1,0 +1,9 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(subset_transitivity, conjecture, (
+    ! [A,B,C] :
+        ((subset(A,B) & subset(B,C)) => subset(A,C))
+)).
+
