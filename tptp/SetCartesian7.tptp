@@ -1,0 +1,28 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X, Y] : (equal(X, Y) <=> (subset(X, Y) & subset(Y, X)))
+)).
+
+fof(pair_equality, axiom,
+    ! [X,Y,V,W] : (pair(X,Y) = pair(V,W)) <=> ((X = V) & (Y = W))
+).
+
+fof(cartesian_product, axiom,
+    ! [X,S,T] : member(X,cross(S,T)) <=> ((? [C,D] : X = pair(C,D)) & member(comp(X,0),S) & member(comp(X,1),T))
+).
+
+fof(pair_definition, axiom,
+   ! [X,C,D] : (X = pair(C,D)) => ((comp(X,0) = C) & (comp(X,1) = D)) 
+).
+
+fof(set_union, axiom, (
+    ! [X,S,T] : (member(X,union(S,T)) <=> (member(X,S) | member(X,T)))
+)).
+
+fof(union_of_cartesian, conjecture, (
+    ! [A,B,C,D]: subset(union(cross(A,B),cross(C,D)), cross(union(A,C),union(B,D)))
+)).
+
