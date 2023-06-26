@@ -1,0 +1,28 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(set_equality, axiom, (
+    ! [X, Y] : (equal(X, Y) <=> (subset(X, Y) & subset(Y, X)))
+)).
+
+fof(powerset_definition, axiom,
+    ![X,S] : member(X,power(S)) <=> subset(X,S)
+).
+
+fof(set_union, axiom, (
+    ! [X,S,T] : (member(X,union(S,T)) <=> (member(X,S) | member(X,T)))
+)).
+
+fof(emptyset_definition, axiom,
+    ![E] : (
+        (
+            ![X]: (~member(X, E))
+        ) <=> (E = empty)
+    )
+).
+
+fof(powerset_of_union, conjecture, (
+    ![S,T] : subset(union(power(S),power(T)),power(union(S,T)))
+)).
+

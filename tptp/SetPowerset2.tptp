@@ -1,0 +1,12 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(powerset_definition, axiom,
+    ![X,S] : member(X,power(S)) <=> subset(X,S)
+).
+
+fof(powerset_preserves_subset, conjecture, (
+    ![S,T] : subset(S,T) => subset(power(S),power(T))
+)).
+

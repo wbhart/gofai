@@ -1,0 +1,20 @@
+fof(subset_definition, axiom, (
+    ! [X,Y] : (subset(X,Y) <=> (! [Z] : (member(Z,X) => member(Z,Y))))
+)).
+
+fof(emptyset_definition, axiom,
+    ![E] : (
+        (
+            ![X]: (~member(X, E))
+        ) <=> (E = empty)
+    )
+).
+
+fof(powerset_definition, axiom,
+    ![X,S] : member(X,power(S)) <=> subset(X,S)
+).
+
+fof(element_of_powerset_of_empty_is_empty, conjecture, (
+    ![U] : member(U, power(empty)) <=> (U = empty)
+)).
+
