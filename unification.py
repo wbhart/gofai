@@ -195,4 +195,5 @@ def make_substitution(assign1, assign2):
     (var1, expr1) = assign1
     (var2, expr2) = assign2
 
+    var1 = subst(deepcopy(var1), var2, expr2) # in case it is a function
     return (var1, subst(deepcopy(expr1), var2, expr2))

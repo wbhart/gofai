@@ -1202,3 +1202,10 @@ Tags: #sets #definition
 ------------------------------
 (x \in {y \in X | P(y)}) \iff P(x) \wedge x \in X
 
+Title: Intersection in terms of set builder
+Tags: #sets
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
+------------------------------
+------------------------------
+{x \in S | x \in T} = S \cap T
+

@@ -329,6 +329,9 @@ def check_tautologies(screen, tl, ttree):
                 mark_proved(screen, ttree, i)
                 
 def relabel_varname(name, var_dict):
+    sp = name.split("_")
+    if sp.pop().isdigit():
+        name = '_'.join(sp)
     if name in var_dict:
         subscript = var_dict[name] + 1
     else:
@@ -347,9 +350,6 @@ def relabel(tree, tldict):
                 tree._name = vars_dict[tree.name()]
             elif tree.is_metavar:
                 name = tree.name()
-                sp = name.split("_")
-                if sp.pop().isdigit():
-                    name = '_'.join(sp)
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
@@ -1466,7 +1466,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                 deps.append(tree.left.left)
             else:
                 tree.left.left.is_metavar = True
-                deps.append(tree.left.left)
+                deps.append(tree.left.left) # free
                 mv.append(tree.left.left.name())
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, blocked)
         tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive, blocked)
