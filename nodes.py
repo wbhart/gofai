@@ -55,7 +55,10 @@ class LRNode:
             return repr(child)
 
 def univar(name):
-    if len(name) > 2 and name[-2] == '_' and name[-1].isdigit():
+    if len(name) > 3 and name[-3] == '_' and name[-2:-1].isdigit():
+        suffix = chr(8336+int(name[-1]))
+        name = name[0:-3]
+    elif len(name) > 2 and name[-2] == '_' and name[-1].isdigit():
         suffix = chr(8320+int(name[-1]))
         name = name[0:-2]
     else:

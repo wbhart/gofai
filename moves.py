@@ -337,7 +337,7 @@ def relabel_varname(name, var_dict):
     else:
         subscript = 0
     var_dict[name] = subscript
-    return name+'_'+chr(48+subscript)
+    return name+'_'+str(subscript)
 
 def relabel(tree, tldict):
     vars_dict = dict()
@@ -370,9 +370,6 @@ def relabel(tree, tldict):
                 tree.var._name = vars_dict[tree.name()] # TODO : add setter for assignment
             elif tree.is_metavar:
                 name = tree.name()
-                sp = name.split("_")
-                if sp.pop().isdigit():
-                    name = '_'.join(sp)
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree.var._name = new_name
