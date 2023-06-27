@@ -358,6 +358,8 @@ def check_tautologies(screen, tl, ttree):
             elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
                   and tree.right.is_metavar:
                 mark_proved(screen, ttree, i)
+            elif str(tree.left) == str(tree.right):
+                mark_proved(screen, ttree, i)
                 
 def relabel_varname(name, var_dict):
     sp = name.split("_")

@@ -1246,3 +1246,10 @@ Tags: #sets #functions
 ------------------------------
 f \subseteq A \times B
 
+Title: Pair with function value in function
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : B
+------------------------------
+------------------------------
+(a, f(a)) \in f
+
