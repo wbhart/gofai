@@ -22,10 +22,10 @@ statement = Grammar(
     forall = "\\forall" space typed_var
     typed_var = var space ":" space type
     type = fn_type / basic_type
-    basic_type = number_type / set_type / pred_type
+    basic_type = number_type / set_type / pred_type / set_expression
     pred_type = "Pred"
     fn_type = domain_type space "\\to" space basic_type
-    domain_type = tuple_type / basic_type
+    domain_type = tuple_type / basic_type / set_expression
     tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
     set_type = "Set" ("(" space (var / number_type) space ")")?
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
@@ -41,8 +41,10 @@ statement = Grammar(
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = universe / complement / set_paren / var / number_type / empty_set / universum / powerset
+    set = universe / domain / codomain / complement / set_paren / add_expression / var / number_type / empty_set / universum / powerset
     universe = "universe(" space set_expression space ")"
+    domain = "domain(" space var space ")"
+    codomain = "codomain(" space var space ")"
     complement = "complement(" space set_expression space ")"
     powerset = "\\mathcal{P}(" space set_expression space ")"
     set_paren = "(" set_expression ")"
@@ -150,6 +152,10 @@ class StatementVisitor(NodeVisitor):
         return PredType()
     def visit_universe(self, node, visited_children):
         return FnNode(VarNode("universe"), [visited_children[2]])
+    def visit_domain(self, node, visited_children):
+        return FnNode(VarNode("domain"), [visited_children[2]])
+    def visit_codomain(self, node, visited_children):
+        return FnNode(VarNode("codomain"), [visited_children[2]])
     def visit_complement(self, node, visited_children):
         return FnNode(VarNode("complement"), [visited_children[2]])
     def visit_number_type(self, node, visited_children):

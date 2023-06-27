@@ -1209,3 +1209,40 @@ Tags: #sets
 ------------------------------
 {x \in S | x \in T} = S \cap T
 
+Title: Definition of function
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall x : Set
+------------------------------
+------------------------------
+x \in f \implies (\exists c : Set, \exists d : Set x = (c, d)) \wedge (x(0) \in domain(f)) \wedge (x(1) \in codomain(f)) \wedge (\forall a : Set (x(0), a) \in f \implies a = x(1))
+
+Title: Definition of function value
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall c : Set, \forall d : Set
+------------------------------
+------------------------------
+f(c) = d \iff (c, d) \in f
+
+Title: Definition of function domain and codomain
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall c : Set
+------------------------------
+------------------------------
+c \in domain(f) \implies (\exists a : Set a \in codomain(f) \wedge (c, a) \in f)
+
+Title: Function values are unique
+Tags: #functions
+\forall S : Set, \forall T : Set, \forall f : S \to T, \forall a : Set, \forall c : Set, \forall d : Set
+------------------------------
+f(a) = c
+f(a) = d
+------------------------------
+c = d
+
+Title: Functions are contained in cartesion product of domain and codomain
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B
+------------------------------
+------------------------------
+f \subseteq A \times B
+

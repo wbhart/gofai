@@ -53,7 +53,7 @@ def get_type(var, qz):
     name = var.name()
     while qz:
         if qz.var.name() == name:
-            return qz.var.type.universe
+            return qz.var.type
         qz = qz.left
     raise Exception("Type not found for "+var.name())
 
@@ -129,7 +129,7 @@ def universe(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            return get_type(tree, qz)
+            return get_type(tree, qz).universe
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
          isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
         return universe(tree.left, qz)
@@ -140,7 +140,27 @@ def universe(tree, qz):
     else:
         return None # no universe
 
-def fill_universes(screen, tl):
+def domain(tree, qz):
+    if isinstance(tree, VarNode):
+        if tree.is_metavar:
+            return None
+        else:
+            fn_type = get_type(tree, qz)
+            return fn_type.domain
+    else:
+        return None # no domain
+
+def codomain(tree, qz):
+    if isinstance(tree, VarNode):
+        if tree.is_metavar:
+            return None
+        else:
+            fn_type = get_type(tree, qz)
+            return fn_type.codomain
+    else:
+        return None # no domain
+        
+def fill_macros(screen, tl):
     def fill(tree):
         if tree == None:
             return None
@@ -148,6 +168,12 @@ def fill_universes(screen, tl):
             if tree.name() == 'universe':
                 if not isinstance(tree.args[0], VarNode) or not tree.args[0].is_metavar:
                     return universe(tree.args[0], tl.tlist0.data[0])
+            if tree.name() == 'domain':
+                if not isinstance(tree.args[0], VarNode) or not tree.args[0].is_metavar:
+                    return domain(tree.args[0], tl.tlist0.data[0])
+            if tree.name() == 'codomain':
+                if not isinstance(tree.args[0], VarNode) or not tree.args[0].is_metavar:
+                    return codomain(tree.args[0], tl.tlist0.data[0])
             for i in range(0, len(tree.args)):
                 tree.args[i] = fill(tree.args[i])
             return tree
@@ -174,15 +200,20 @@ def fill_universes(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def check_universes(universes, assign, qz):
-    # check universes after substitution
-    for (uni1, uni2) in universes:
-        tree = substitute(deepcopy(uni2), assign)
-        tree = universe(tree, qz)
+def check_macros(macros, assign, qz):
+    # check macros after substitution
+    for (uni1, tree2) in macros:
+        tree = substitute(deepcopy(tree2.args[0]), assign)
+        if tree2.name() == 'universe':
+            tree = universe(tree, qz)
+        elif tree2.name() == 'domain':
+            tree = domain(tree, qz)
+        elif tree2.name() == 'codomain':
+            tree = codomain(tree, qz)
         if tree == None:
             return False
-        unified, assign, univ = unify(uni1, tree, assign)
-        universes.extend(univ)
+        unified, assign, macr = unify(uni1, tree, assign)
+        macros.extend(macr)
         if not unified:
             return False
     return True
@@ -228,18 +259,18 @@ def targets_proved(screen, tl, ttree):
                 if dep not in ttree.deps: # if we didn't already prove with this dep
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
                         varlist = deepcopy(tl.vars) # temporary relabelling
-                        unifies, assign, universes = unify(complement_tree(P.left), \
+                        unifies, assign, macros = unify(complement_tree(P.left), \
                                                 relabel(deepcopy(tars[ttree.num]), varlist))
-                        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                         if unifies:
                             # or branched can be assigned independently
-                            unifies, assign, universes = unify(P.right, \
+                            unifies, assign, macros = unify(P.right, \
                                                 relabel(deepcopy(tars[ttree.num]), varlist), assign)
-                            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                         
                     else:
-                        unifies, assign, universes = unify(P, tars[ttree.num])
-                        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                        unifies, assign, macros = unify(P, tars[ttree.num])
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies:
                         if dep == -1:
                             ttree.proved = True
@@ -294,8 +325,8 @@ def check_contradictions(screen, tl, n, ttree):
             d2 = tl.tlist1.dependency(j)
             if d1 < 0 or d2 < 0:
                 tree2 = tlist1[j]
-                unifies, assign, universes = unify(tree1, tree2)
-                unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                unifies, assign, macros = unify(tree1, tree2)
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                 if unifies: # we found a contradiction
                     if d1 >= 0:
                         mark_proved(screen, ttree, d1)
@@ -304,14 +335,14 @@ def check_contradictions(screen, tl, n, ttree):
             elif d1 >= 0 and d2 >= 0:
                 if deps_compatible(ttree, d1, d2):
                     tree2 = tlist1[j]
-                    unifies, assign, universes = unify(tree1, tree2)
-                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                    unifies, assign, macros = unify(tree1, tree2)
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
                         mark_proved(screen, ttree, d1)
                 elif deps_compatible(ttree, d2, d1):
                     tree2 = tlist1[j]
-                    unifies, assign, universes = unify(tree1, tree2)
-                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                    unifies, assign, macros = unify(tree1, tree2)
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
                         mark_proved(screen, ttree, d2)
     return len(tlist1)
@@ -345,6 +376,13 @@ def relabel(tree, tldict):
     def process(tree):
         if tree == None:
             return
+        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            name = tree.var.name()
+            new_name = relabel_varname(name, tldict)
+            vars_dict[name] = new_name
+            process(tree.var)
+            process(tree.left)
+            process(tree.var.type)
         elif isinstance(tree, VarNode):
             if tree.name() in vars_dict:
                 tree._name = vars_dict[tree.name()]
@@ -382,6 +420,9 @@ def relabel(tree, tldict):
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
                       isinstance(tree.type.universe, VarNode):
             process(tree.type.universe)
+        elif isinstance(tree, FnType):
+            process(tree.domain)
+            process(tree.codomain)
     t = tree
     while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
         name = t.var.name()
@@ -501,11 +542,11 @@ def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
     if str(tree) == string: # we found an occurrence
         occur += 1
         if occur == n: # we found the right occurrence
-            unifies, assign, universes = unify(subst.left, tree)
-            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+            unifies, assign, macros = unify(subst.left, tree)
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
             if not unifies:
-                unifies, assign, universes = unify(subst.right, tree)
-                unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                unifies, assign, macros = unify(subst.right, tree)
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                 if not unifies:
                     return False, tree, n # does not unify, bogus selection
                 else:
@@ -1046,15 +1087,15 @@ def modus_ponens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         varlist = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, universes = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
-        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+        unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
         if unifies:
             varlist = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, universes = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
-            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+            unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
     else:
-        unifies, assign, universes = unify(qP1, qP2)
-        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+        unifies, assign, macros = unify(qP1, qP2)
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -1152,15 +1193,15 @@ def modus_tollens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         vars = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, universes = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
-        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+        unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
         if unifies:
             vars = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, universes = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
-            unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+            unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
     else:
-        unifies, assign, universes = unify(qP1, qP2)
-        unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+        unifies, assign, macros = unify(qP1, qP2)
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -1274,8 +1315,8 @@ def cleanup(screen, tl, ttree):
                         screen.pad1[i] = str(tl1[i])
                 if isinstance(tl1[i], OrNode):
                     # First check we don't have P \vee P
-                    unifies, assign, universes = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                    unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1295,8 +1336,8 @@ def cleanup(screen, tl, ttree):
                     rollback()
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \vee P
-                    unifies, assign, universes = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                    unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1348,8 +1389,8 @@ def cleanup(screen, tl, ttree):
                     tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
-                    unifies, assign, universes = unify(tl2[j].left, tl2[j].right)
-                    unifies = unifies and check_universes(universes, assign, tl.tlist0.data[0])
+                    unifies, assign, macros = unify(tl2[j].left, tl2[j].right)
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl2, j, tl2[j].left)
                     else:

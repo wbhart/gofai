@@ -140,12 +140,12 @@ class FnNode:
 
     def __str__(self):
         name = univar(self.name())+"\u0307" if self.is_metavar else univar(self.name())
-        sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else "()"
+        sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
     def __repr__(self):
         name = "\\dot{"+self.name()+"}" if self.is_metavar else self.name()
-        sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else "()"
+        sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
 class TupleNode:
