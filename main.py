@@ -8,7 +8,7 @@ from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
      check_contradictions, library_load, check_tautologies, fill_macros, \
-     vars_typed
+     type_vars
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -47,10 +47,10 @@ def main(stdscr):
             equality(screen, tl)
             num_checked = 0 # equivalence may cause something to contradict fresh
         elif c == 's': # start automated cleanup
-            if vars_typed(screen, tl):
-                started = True
-                skip = False
-                ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+            type_vars(screen, tl)
+            started = True
+            skip = False
+            ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
             modus_ponens(screen, tl, ttree)
         elif c == 't': # modus tollens

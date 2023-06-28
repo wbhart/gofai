@@ -2,8 +2,8 @@ from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode, UnionNode, \
-     IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode
-from type import FnType, TupleType
+     IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, DeadNode
+from type import FnType, TupleType, SetType
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
@@ -58,43 +58,35 @@ def get_type(var, qz):
     raise Exception("Type not found for "+var.name())
 
 def process_types(screen, tree, types, vars):
+    def del_last(L, str):
+        gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
+        del L[next(gen, None)]
+
     if isinstance(tree, ConstNode) or isinstance(tree, ForallNode) \
          or isinstance(tree, ExistsNode):
-        if tree.var.name() in vars:
-            screen.dialog("Variable "+tree.var.name()+" is declared twice")
-            return False
-        vars.append(tree.var.name())
+        name = tree.var.name()
+        vars.append(name)
         types[tree.var.name()] = tree.var.type
-        r = process_types(screen, tree.left, types, vars)
-        vars.pop()
-        return r
+        process_types(screen, tree.left, types, vars)
+        del_last(vars, name)
     elif isinstance(tree, SetBuilderNode):
-        if tree.left.left.name() in vars:
-            screen.dialog("Variable "+tree.left.left.name()+" is declared twice")
-            return False
-        vars.append(tree.left.left.name())
+        name = tree.left.left.name()
+        vars.append(name)
         types[tree.left.left.name()] = tree.left.left.type
-        ok = process_types(screen, tree.left, types, vars)
-        if not ok:
-            return False
-        r = process_types(screen, tree.right, types, vars)
-        vars.pop()
-        return r
+        process_types(screen, tree.left, types, vars)
+        process_types(screen, tree.right, types, vars)
+        del_last(vars, name)
     elif isinstance(tree, VarNode):
         if not tree.name() in vars:
-            screen.dialog("Variable "+tree.name()+" is not declared")
-            return False
-        tree.type = types[tree.name()]
-        return True
+            types[tree.name()] = SetType(SymbolNode("\\mathcal{U}", None))
+            vars.append(tree.name())
+        else:
+            tree.type = types[tree.name()]
     elif isinstance(tree, LRNode):
-        ok = process_types(screen, tree.left, types, vars)
-        if not ok:
-            return False
-        return process_types(screen, tree.right, types, vars)
-    else:
-        return True
+        process_types(screen, tree.left, types, vars)
+        process_types(screen, tree.right, types, vars)
 
-def vars_typed(screen, tl):
+def type_vars(screen, tl):
     types = dict()
     vars = []
 
@@ -108,21 +100,12 @@ def vars_typed(screen, tl):
         types[qz.var.name()] = qz.var.type
         qz = qz.left
 
-    def rollback(vars):
-        while len(vars) > len:
-            vars.pop()
-
     hyps = tl.tlist1.data
     for tree in hyps:
-        ok = process_types(screen, tree, types, vars)
-        if not ok:
-            return False
+        process_types(screen, tree, types, vars)
     tars = tl.tlist2.data
     for tree in tars:
-        ok = process_types(screen, tree, types, vars)
-        if not ok:
-            return False
-    return True
+        process_types(screen, tree, types, vars)
 
 def universe(tree, qz):
     if isinstance(tree, VarNode):
@@ -230,8 +213,8 @@ def targets_proved(screen, tl, ttree):
             for Q in ttree.andlist:
                 proved = check(Q) and proved # and is short circuiting
             ttree.proved = proved
-            if ttree.proved and ttree.num != -1:
-                screen.dialog("Target "+str(ttree.num)+" proved")
+            if ttree.proved:
+                mark_proved(screen, tl, ttree, ttree.num)
             if not ttree.proved:
                 j = 0
                 while j < len(ttree.andlist):
@@ -244,14 +227,13 @@ def targets_proved(screen, tl, ttree):
                         S = S.intersection(ttree.andlist[i].deps)
                 deps = list(S)
                 if ttree.num in deps:
-                    ttree.proved = True
-                    if ttree.num != -1:
-                        screen.dialog("Target "+str(ttree.num)+" proved")
+                    mark_proved(screen, tl, ttree, ttree.num)
                 else:
                     for dep in deps:
                         if dep not in ttree.deps:
                             ttree.deps.append(dep)
-                            screen.dialog("Target "+str(ttree.num)+"  with dependency on "+str(dep))
+                            if ttree.num != -1:
+                                screen.dialog("Target "+str(ttree.num)+"  with dependency on "+str(dep))
         if not ttree.proved and ttree.num != -1:
             for i in range(0, len(hyps)):
                 P = hyps[i]
@@ -273,15 +255,11 @@ def targets_proved(screen, tl, ttree):
                         unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies:
                         if dep == -1:
-                            ttree.proved = True
-                            if ttree.num != -1:
-                                screen.dialog("Target "+str(ttree.num)+" proved")
+                            mark_proved(screen, tl, ttree, ttree.num)
                             break
                         else:
                             if dep == ttree.num:
-                                ttree.proved = True
-                                if ttree.num != -1:
-                                    screen.dialog("Target "+str(ttree.num)+" proved")
+                                mark_proved(screen, tl, ttree, ttree.num)
                             else:
                                 if ttree.num != -1 and dep not in ttree.deps:
                                     screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
@@ -290,13 +268,19 @@ def targets_proved(screen, tl, ttree):
     
     return check(ttree)
 
-def mark_proved(screen, ttree, n):
+def mark_proved(screen, tl, ttree, n):
     if ttree.num == n:
-        ttree.proved = True
-        screen.dialog("Target "+str(ttree.num)+" proved")
+        if not ttree.proved:
+            ttree.proved = True
+            if n >= 0:
+                screen.dialog("Target "+str(ttree.num)+" proved")
+                tl.tlist2.data[n] = DeadNode()
+                screen.pad2.pad[n] = str(tl.tlist2.data[n])
+                screen.pad2.refresh()
+                screen.focus.refresh()
         return True
     for P in ttree.andlist:
-        if mark_proved(screen, P, n):
+        if mark_proved(screen, tl, P, n):
             return True
     return False
 
@@ -329,22 +313,22 @@ def check_contradictions(screen, tl, n, ttree):
                 unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                 if unifies: # we found a contradiction
                     if d1 >= 0:
-                        mark_proved(screen, ttree, d1)
+                        mark_proved(screen, tl, ttree, d1)
                     else:
-                        mark_proved(screen, ttree, d2)
+                        mark_proved(screen, tl, ttree, d2)
             elif d1 >= 0 and d2 >= 0:
                 if deps_compatible(ttree, d1, d2):
                     tree2 = tlist1[j]
                     unifies, assign, macros = unify(tree1, tree2)
                     unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
-                        mark_proved(screen, ttree, d1)
+                        mark_proved(screen, tl, ttree, d1)
                 elif deps_compatible(ttree, d2, d1):
                     tree2 = tlist1[j]
                     unifies, assign, macros = unify(tree1, tree2)
                     unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
                     if unifies: # we found a contradiction
-                        mark_proved(screen, ttree, d2)
+                        mark_proved(screen, tl, ttree, d2)
     return len(tlist1)
 
 def check_tautologies(screen, tl, ttree):
@@ -354,12 +338,12 @@ def check_tautologies(screen, tl, ttree):
         if isinstance(tree, EqNode):
             if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnNode)) \
                   and tree.left.is_metavar:
-                mark_proved(screen, ttree, i)
+                mark_proved(screen, tl, ttree, i)
             elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
                   and tree.right.is_metavar:
-                mark_proved(screen, ttree, i)
+                mark_proved(screen, tl, ttree, i)
             elif str(tree.left) == str(tree.right):
-                mark_proved(screen, ttree, i)
+                mark_proved(screen, tl, ttree, i)
                 
 def relabel_varname(name, var_dict):
     sp = name.split("_")
@@ -1404,7 +1388,8 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
                     add_sibling(ttree, j, len(tl2) - 1)
                 screen.pad2[j] = str(tl2[j])
-                j += 1
+                if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode):
+                    j += 1
                 while len(mv) > m:
                     mv.pop()
     

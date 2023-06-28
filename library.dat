@@ -1239,3 +1239,21 @@ is_function(f, A, B) \wedge a \in A
 ------------------------------
 (a, f(a)) \in f
 
+Title: Definition of function composition
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall x : Set
+------------------------------
+is_function(f, A, B)
+is_function(g, B, C)
+------------------------------
+x \in g \circ f \iff (\exists a : Set, \exists c : Set x = (a, c) \wedge a \in domain(f) \wedge c = g(f(a)))
+
+Title: Composition is function
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
+------------------------------
+is_function(f, A, B)
+is_function(g, B, C)
+------------------------------
+is_function(g \circ f, A, C)
+

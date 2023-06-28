@@ -93,6 +93,14 @@ def univar(name):
         return name+suffix
 
 # AST Nodes
+
+class DeadNode(LeafNode):
+    def __str__(self):
+        return "----"
+
+    def __repr__(self):
+        return "----"
+
 class VarNode(LeafNode):
     def __init__(self, name, var_type=None, is_metavar=False):
         self._name = name
