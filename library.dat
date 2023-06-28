@@ -1211,45 +1211,31 @@ Tags: #sets
 
 Title: Definition of function
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall x : Set
+\forall A : Set, \forall B : Set, \forall f : Set
 ------------------------------
 ------------------------------
-x \in f \implies (\exists c : Set, \exists d : Set x = (c, d)) \wedge (x(0) \in domain(f)) \wedge (x(1) \in codomain(f)) \wedge (\forall a : Set (x(0), a) \in f \implies a = x(1))
+is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a : Set a \in A \implies (\exists b : Set b \in B \wedge (a, b) \in f)) \wedge (\forall a : Set a \in A \implies (\forall b : Set, \forall c : Set (a, b) \in f \wedge (a, c) \in f \implies b = c))
 
 Title: Definition of function value
 Tags: #sets #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B, \forall c : Set, \forall d : Set
 ------------------------------
 ------------------------------
-f(c) = d \iff (c, d) \in f
+is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
-Title: Definition of function domain and codomain
+Title: Function value in codomain
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall c : Set
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : Set
 ------------------------------
+is_function(f, A, B) \wedge a \in A
 ------------------------------
-c \in domain(f) \implies (\exists a : Set a \in codomain(f) \wedge (c, a) \in f)
-
-Title: Function values are unique
-Tags: #functions
-\forall S : Set, \forall T : Set, \forall f : S \to T, \forall a : Set, \forall c : Set, \forall d : Set
-------------------------------
-f(a) = c
-f(a) = d
-------------------------------
-c = d
-
-Title: Functions are contained in cartesion product of domain and codomain
-Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B
-------------------------------
-------------------------------
-f \subseteq A \times B
+f(a) \in B
 
 Title: Pair with function value in function
-Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : B
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : Set
 ------------------------------
+is_function(f, A, B) \wedge a \in A
 ------------------------------
 (a, f(a)) \in f
 
