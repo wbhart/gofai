@@ -62,9 +62,10 @@ statement = Grammar(
     circ_expression = exp_expression (space "\\circ" space exp_expression)*
     exp_expression = terminal (space "^" space terminal)*
     terminal = alg_terminal / var
-    alg_terminal = paren_expression / abs_expression / fn_application / natural
+    alg_terminal = tuple_expression / paren_expression / abs_expression / fn_application / natural
     bool = ("True" / "False")
-    paren_expression = "(" (add_expression space "," space)* alg_expression ")"
+    tuple_expression = "(" (add_expression space "," space)+ add_expression ")"
+    paren_expression = "(" space alg_expression space ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = var "(" (add_expression space "," space)* add_expression ")"
@@ -255,12 +256,12 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_alg_terminal(self, node, visited_children):
         return visited_children[0]
-    def visit_paren_expression(self, node, visited_children):
+    def visit_tuple_expression(self, node, visited_children):
         entries = [v[0] for v in visited_children[1]]
         entries.append(visited_children[2])
-        if len(entries) == 1:
-            return visited_children[2]
         return TupleNode(entries)
+    def visit_paren_expression(self, node, visited_children):
+        return visited_children[2]
     def visit_abs_expression(self, node, visited_children):
         return AbsNode(visited_children[1])
     def visit_fn_application(self, node, visited_children):
