@@ -127,6 +127,13 @@ class ExpNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+"^"+self.paren_repr(self.right)
 
+class CircNode(LRNode):
+    def __str__(self):
+        return self.paren_str(self.left)+"\u03bf"+self.paren_str(self.right)
+
+    def __repr__(self):
+        return self.paren_repr(self.left)+" \\circ "+self.paren_repr(self.right)
+
 class FnNode:
     def __init__(self, var, args):
         self.var = var # the function symbol
@@ -508,6 +515,8 @@ precedence = {ExistsNode:9, ForallNode:9,
               UnionNode:4, IntersectNode:4,
               CartesianNode:3,
               PowerSetNode:2, SetBuilderNode:2,
+              # Function nodes
+              CircNode:3,
               # Arithmetic nodes
               LeqNode:6, LtNode:6,
               GeqNode:6, GtNode:6,
@@ -521,11 +530,11 @@ precedence = {ExistsNode:9, ForallNode:9,
 
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,
-                 DivNode:False, ExpNode:False,
+                 DivNode:False, ExpNode:False, CircNode:True,
                  UnionNode:True, IntersectNode:True,
                  DiffNode:False}
 
 # whether it associates with its dual
 dual_associative = {AndNode:True, SubNode:False, MulNode:True,
-                 DivNode:False, ExpNode:False,
+                 DivNode:False, ExpNode:False, CircNode:False,
                  UnionNode:False, IntersectNode:False}

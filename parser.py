@@ -7,7 +7,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
-     SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode
+     SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode
 from type import NumberType, FnType, TupleType, SetType, PredType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -31,33 +31,40 @@ statement = Grammar(
     number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
-    relation = bool / elem_relation / subset_relation / alg_relation / neg_expression / pred_paren / fn_application
+    relation = bool / elem_relation / subset_relation / equality / alg_relation / neg_expression / pred_paren / fn_application
     pred_paren = "(" statement ")"
     neg_expression = "\\neg" space (pred_paren / pred_fn / bool)
-    subset_relation = (set_expression space ("=" / "\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
+    equality = any_expression space "=" space any_expression
+    any_expression = alg_expression / set_expression / var
+    subset_relation = (set_expression space ("\\neq" / "\\subseteq" / "\\subsetneq" / "\\supseteq" / "\\supsetneq") space)+ set_expression
     elem_relation = (add_expression / set_expression) space "\\in" space set_expression
     set_expression = set_builder / set_diff / set_union / set_cartesian
     set_builder = "{" space elem_relation space "|" space expression space "}"
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = universe / domain / codomain / complement / set_paren / add_expression / var / number_type / empty_set / universum / powerset
+    set = universe / domain / codomain / complement / set_paren / var / number_type / empty_set / universum / powerset
+    set_paren = "(" set_expression ")"
     universe = "universe(" space set_expression space ")"
     domain = "domain(" space var space ")"
     codomain = "codomain(" space var space ")"
     complement = "complement(" space set_expression space ")"
     powerset = "\\mathcal{P}(" space set_expression space ")"
-    set_paren = "(" set_expression ")"
-    alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "=" / "\\neq") space add_expression
+    alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "\\neq") space add_expression
+    alg_expression = left_alg_expression / right_alg_expression / minus_expression / mult_expression1 / alg_terminal
+    left_alg_expression = terminal space ("+" / "-" / "*" / "/") space add_expression
+    right_alg_expression = terminal space ("^" / "\\circ") space circ_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2 / minus_expression
     mult_expression1 = natural mult_expression2
-    mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
+    mult_expression2 = (circ_expression space ("*" / "/") space)* circ_expression
     minus_expression = "-" mult_expression
+    circ_expression = exp_expression (space "\\circ" space exp_expression)*
     exp_expression = terminal (space "^" space terminal)*
-    terminal = paren_expression / abs_expression / fn_application / natural / var
+    terminal = alg_terminal / var
+    alg_terminal = paren_expression / abs_expression / fn_application / natural
     bool = ("True" / "False")
-    paren_expression = "(" (add_expression space "," space)* add_expression ")"
+    paren_expression = "(" (add_expression space "," space)* alg_expression ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = var "(" (add_expression space "," space)* add_expression ")"
@@ -90,9 +97,14 @@ node_dict = {
     "\\subseteq" : SubseteqNode,
     "\\supsetneq" : SupsetneqNode,
     "\\supseteq" : SupseteqNode,
-    "\\times" : CartesianNode
+    "\\times" : CartesianNode,
+    "\\circ" : CircNode
 }
 
+def is_alg_left_node(tree):
+    return isinstance(tree, AddNode) or isinstance(tree, SubNode) or \
+           isinstance(tree, MulNode) or isinstance(tree, DivNode)
+           
 def left_rec(L, v):
     """Turn a list L and final value v into a tree. Each element of the list
     will contain 4 items [v, _, op, _]. If L is empty only v is returned.
@@ -178,6 +190,10 @@ class StatementVisitor(NodeVisitor):
         for v in sets[1:]:
             expr = CartesianNode(expr, v)
         return expr
+    def visit_equality(self, node, visited_children):
+        return EqNode(visited_children[0], visited_children[4])
+    def visit_any_expression(self, node, visited_children):
+        return visited_children[0]
     def visit_set_expression(self, node, visited_children):
         return visited_children[0]
     def visit_elem_relation(self, node, visited_children):
@@ -207,6 +223,20 @@ class StatementVisitor(NodeVisitor):
         expr = visited_children[4]
         Node = node_dict[visited_children[2][0].text]
         return Node(visited_children[0], expr)
+    def visit_alg_expression(self, node, visited_children):
+        return visited_children[0]
+    def visit_left_alg_expression(self, node, visited_children):
+        Node = node_dict[visited_children[2][0].text]
+        t = visited_children[4]
+        if not is_alg_left_node(t):
+            return Node(visited_children[0], visited_children[4])
+        while is_alg_left_node(t.left):
+            t = t.left
+        t.left = Node(visited_children[0], t.left)
+        return visited_children[4]
+    def visit_right_alg_expression(self, node, visited_children):
+        Node = node_dict[visited_children[2][0].text]
+        return Node(visited_children[0], visited_children[4])
     def visit_add_expression(self, node, visited_children):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
@@ -222,6 +252,8 @@ class StatementVisitor(NodeVisitor):
     def visit_var(self, node, visited_children):
         return VarNode(node.text)
     def visit_terminal(self, node, visited_children):
+        return visited_children[0]
+    def visit_alg_terminal(self, node, visited_children):
         return visited_children[0]
     def visit_paren_expression(self, node, visited_children):
         entries = [v[0] for v in visited_children[1]]
@@ -249,6 +281,11 @@ class StatementVisitor(NodeVisitor):
         res = visited_children[0]
         for v in visited_children[1]:
             res = ExpNode(res, v[3])
+        return res
+    def visit_circ_expression(self, node, visited_children):
+        res = visited_children[0]
+        for v in visited_children[1]:
+            res = CircNode(res, v[3])
         return res
     def visit_natural(self, node, visited_children):
         return NaturalNode(node.text)
