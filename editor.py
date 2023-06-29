@@ -33,6 +33,8 @@ def edit(screen, start_text, i):
                     i -= 1 # decrement pos. in text and delete character there
                     del screen.edit_text[i]
                     pad.pad[0] = ''.join(screen.edit_text)
+                    pad.scroll_char -= 1
+                    pad.refresh()
             else: # cursor > 0 (not left of window)
                 i -= 1 # dec. pos. in text and delete character there
                 del screen.edit_text[i]
