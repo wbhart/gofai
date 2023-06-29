@@ -657,7 +657,10 @@ canonical_numtypes = { "\\N" : "\\mathbb{N}",
                        "\\C" : "\\mathbb{C}"}
 
 def tags_to_list(tags):
-    return tags[6:].split(" ")
+    t = tags[6:].split(" ")
+    if len(t) == 1 and t[0] == '':
+        t = []
+    return t
 
 def canonicalise_tags(tags):
     taglist = tags_to_list(tags)
@@ -675,7 +678,7 @@ def filter_titles(titles, c):
     return titles2
 
 def library_import(screen, tl):
-    tags = edit(screen, "Tags: ", 6)
+    tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
     tags = canonicalise_tags(tags) # deal with type shorthands
@@ -768,7 +771,7 @@ def library_import(screen, tl):
     library.close()
 
 def library_load(screen, tl):
-    tags = edit(screen, "Tags: ", 6)
+    tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
     tags = canonicalise_tags(tags) # deal with type shorthands
@@ -848,10 +851,10 @@ def library_load(screen, tl):
     library.close()
 
 def library_export(screen, tl):
-    title = edit(screen, "Title: ", 7)
+    title = edit(screen, "Title: ", 7, True)
     if title == None:
         return
-    tags = edit(screen, "Tags: ", 6)
+    tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
     tags = canonicalise_tags(tags) # deal with type shorthands

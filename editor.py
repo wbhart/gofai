@@ -1,7 +1,7 @@
 from parser import statement, to_ast
 from interface import EditMode
 
-def edit(screen, start_text, i):
+def edit(screen, start_text, i, fixed_text=False):
     """This is the main editor, in the status bar at the bottom of the screen.
     We start of with the given text, editing at index i in that text.
     """
@@ -14,6 +14,7 @@ def edit(screen, start_text, i):
     pad.cursor_char = min(i, pad.width - 1) # min(text index, window right)
     pad.scroll_char = i - pad.cursor_char
     pad.refresh()
+    min_char = i if fixed_text else 0
 
     while True:
         c = stdscr.getkey() # get a key from terminal
@@ -23,24 +24,25 @@ def edit(screen, start_text, i):
                 pad.refresh()
                 i += 1
         elif c == "KEY_LEFT": # left cursor was pressed
-            if i > 0:
+            if i > min_char:
                 pad.cursor_left()
                 pad.refresh()
                 i -= 1
         elif c == "KEY_BACKSPACE": # backspace key pressed
             if pad.cursor_char == 0: # if at left of window
-                if i > 0: # if not at beginning of text
+                if i > min_char: # if not at beginning of text
                     i -= 1 # decrement pos. in text and delete character there
                     del screen.edit_text[i]
                     pad.pad[0] = ''.join(screen.edit_text)
                     pad.scroll_char -= 1
                     pad.refresh()
             else: # cursor > 0 (not left of window)
-                i -= 1 # dec. pos. in text and delete character there
-                del screen.edit_text[i]
-                pad.cursor_left()
-                pad.pad[0] = ''.join(screen.edit_text)
-                pad.refresh() # update display
+                if i > min_char:
+                    i -= 1 # dec. pos. in text and delete character there
+                    del screen.edit_text[i]
+                    pad.cursor_left()
+                    pad.pad[0] = ''.join(screen.edit_text)
+                    pad.refresh() # update display
         elif c == "KEY_DC": # delete key pressed
             if i < len(screen.edit_text): # if not beyond end of text string
                 del screen.edit_text[i] # delete character at curr. str. pos
@@ -59,7 +61,7 @@ def edit(screen, start_text, i):
             window.clear() # clear edit window now that text is complete
             window.refresh() # update display
             return None
-        elif not c.isprintable():
+        elif c == 'KEY_UP' or c == 'KEY_DOWN' or not c.isprintable():
             continue
         else: # otherwise presumably character is valid
             screen.process_char(i, mode, c)

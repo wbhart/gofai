@@ -29,8 +29,8 @@ def main(stdscr):
             screen.switch_window()
             tl.switch_list()
         elif c == '\x1b' or c == 'q': # ESC or q = quit
-            response = edit(screen, "Exit (y/n): ", 12)
-            if response and response[12:] == "y" or response[12:] == "Y":
+            response = edit(screen, "Exit (y/n): ", 12, True)
+            if response and (response[12:] == "y" or response[12:] == "Y"):
                 break
             skip = True
         elif c == 'e': # e = edit
