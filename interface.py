@@ -175,7 +175,7 @@ class Pad:
 
     def cursor_down(self):
         start = 1 if self.border else 0
-        if self.cursor_line < self.height - 2*start - 1:
+        if self.cursor_line < self.height - 1:
             # just move the cursor
             self.cursor_line += 1
         else:
@@ -216,7 +216,7 @@ class Pad:
         for y in range(0, self.height):
             line = y + self.scroll_line
             if line < len(self.pad):
-                if line == self.cursor_line:
+                if line == self.cursor_line + self.scroll_line:
                     redraw_line_with_reverse(self.window, y, self.pad[line], self.scroll_char, self.width, self.rev1, self.rev2, border=self.border)
                 else:
                     redraw_line(self.window, y, self.pad[line], self.scroll_char, self.width, border=self.border)

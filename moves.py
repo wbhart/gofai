@@ -188,6 +188,7 @@ def fill_macros(screen, tl):
     screen.focus.refresh()
 
 def check_macros(macros, assign, qz):
+    qz = qz[0] if len(qz) > 0 else []
     # check macros after substitution
     for (uni1, tree2) in macros:
         tree = substitute(deepcopy(tree2.args[0]), assign)
@@ -441,7 +442,7 @@ def select_substring(screen, tl):
                 pad.cursor_up()
                 pad.refresh()
         elif c == 'KEY_DOWN':
-            if pad.scroll_line + pad.cursor_line < tlist.len():
+            if pad.scroll_line + pad.cursor_line < tlist.len() - 1:
                 pad.cursor_down()
                 pad.refresh()
         elif c == 'KEY_RIGHT':
@@ -460,11 +461,12 @@ def select_substring(screen, tl):
             screen.status("")
             return True, 0, 0, 0
         elif c == '\n':
-            line = pad.scroll_line + pad.cursor_line
-            pad.rev1 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
-                              pad.scroll_char, pad.cursor_char)
-            pad.rev2 = pad.rev1
-            break
+            if line < tlist.len():
+                line = pad.scroll_line + pad.cursor_line
+                pad.rev1 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
+                                  pad.scroll_char, pad.cursor_char)
+                pad.rev2 = pad.rev1
+                break
         else:
             screen.status("")
             return True, 0, 0, 0
@@ -533,10 +535,10 @@ def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
         occur += 1
         if occur == n: # we found the right occurrence
             unifies, assign, macros = unify(subst.left, tree)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
             if not unifies:
                 unifies, assign, macros = unify(subst.right, tree)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                 if not unifies:
                     return False, tree, n # does not unify, bogus selection
                 else:
@@ -944,7 +946,7 @@ def select_hypothesis(screen, tl, second):
                 pad.cursor_up()
                 pad.refresh()
         elif c == 'KEY_DOWN':
-            if pad.scroll_line + pad.cursor_line < tlist.len():
+            if pad.scroll_line + pad.cursor_line < tlist.len() - 1:
                 pad.cursor_down()
                 pad.refresh()
         elif second and c == '\t': # TAB = switch hypotheses/targets, forward/backward
@@ -956,7 +958,9 @@ def select_hypothesis(screen, tl, second):
         elif c == '\x1b': # ESC = cancel
             return True, -1
         elif c == '\n':
-            return forward, pad.scroll_line + pad.cursor_line
+            line = pad.scroll_line + pad.cursor_line
+            if line < tlist.len():
+                return forward, line
         else:
             return True, -1
 
@@ -1081,14 +1085,14 @@ def modus_ponens(screen, tl, ttree):
         # treat P => Q as ¬P \wedge Q
         varlist = deepcopy(tl.vars) # temporary relabelling
         unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
         if unifies:
             varlist = deepcopy(tl.vars) # assignments in or branches can be independent
             unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(qP1, qP2)
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -1187,14 +1191,14 @@ def modus_tollens(screen, tl, ttree):
         # treat P => Q as ¬P \wedge Q
         vars = deepcopy(tl.vars) # temporary relabelling
         unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
         if unifies:
             vars = deepcopy(tl.vars) # assignments in or branches can be independent
             unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(qP1, qP2)
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -1309,7 +1313,7 @@ def cleanup(screen, tl, ttree):
                 if isinstance(tl1[i], OrNode):
                     # First check we don't have P \vee P
                     unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1330,7 +1334,7 @@ def cleanup(screen, tl, ttree):
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \vee P
                     unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -1383,7 +1387,7 @@ def cleanup(screen, tl, ttree):
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(tl2[j].left, tl2[j].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl2, j, tl2[j].left)
                     else:
