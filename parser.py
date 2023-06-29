@@ -18,8 +18,8 @@ statement = Grammar(
     typed_constant = typed_var space ","? space statement?
     existential = exists space ","? space statement
     universal = forall space ","? space statement
-    exists = "\\exists" space typed_var
-    forall = "\\forall" space typed_var
+    exists = "\\exists" space (typed_var / var)
+    forall = "\\forall" space (typed_var / var)
     typed_var = var space ":" space type
     type = fn_type / basic_type
     basic_type = number_type / set_type / pred_type / set_expression
@@ -140,9 +140,9 @@ class StatementVisitor(NodeVisitor):
         quantor.left = expr
         return quantor
     def visit_forall(self, node, visited_children):
-        return ForallNode(visited_children[2], None)
+        return ForallNode(visited_children[2][0], None)
     def visit_exists(self, node, visited_children):
-        return ExistsNode(visited_children[2], None)
+        return ExistsNode(visited_children[2][0], None)
     def visit_typed_var(self, node, visited_children):
         visited_children[0].type = visited_children[4]
         return visited_children[0]

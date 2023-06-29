@@ -101,8 +101,28 @@ class DeadNode(LeafNode):
     def __repr__(self):
         return "----"
 
+class SymbolNode(LeafNode):
+    def __init__(self, name, const_type):
+        self._name = name
+        self.type = const_type
+    
+    def name(self):
+        return self._name
+
+    def __str__(self):
+        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
+            return univar(self._name)+"("+str(self.type.universe)+")"
+        else:
+            return univar(self._name)
+
+    def __repr__(self):
+        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
+            return self._name+"("+repr(self.type.universe)+")"
+        else:
+            return self._name
+
 class VarNode(LeafNode):
-    def __init__(self, name, var_type=None, is_metavar=False):
+    def __init__(self, name, var_type=SymbolNode("\\mathcal{U}", None), is_metavar=False):
         self._name = name
         self.dbr = -1 # used for debruijn indices (-1 = not set)
         self.type = var_type
@@ -152,7 +172,7 @@ class FnNode:
 
     def name(self): # only used to compare against constant names
         return str(self.var)
-        
+
     def __str__(self):
         if isinstance(self.var, VarNode):
             fn_name = self.var.name()
@@ -442,7 +462,10 @@ class ExistsNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        return "\u2203"+str(self.var)+" : "+str(self.var.type)+expr
+        if is_universum(self.var.type):
+            return "\u2203"+str(self.var)+expr
+        else:
+            return "\u2203"+str(self.var)+" : "+str(self.var.type)+expr
 
     def __repr__(self):
         if self.left:
@@ -453,7 +476,10 @@ class ExistsNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        return "\\exists "+repr(self.var)+" : "+repr(self.var.type)+expr
+        if is_universum(self.var.type):
+            return "\\exists "+repr(self.var)+expr
+        else:
+            return "\\exists "+repr(self.var)+" : "+repr(self.var.type)+expr
 
 class ForallNode(LRNode):
     def __init__(self, var, expr):
@@ -470,7 +496,10 @@ class ForallNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        return "\u2200"+str(self.var)+" : "+str(self.var.type)+expr
+        if is_universum(self.var.type):
+            return "\u2200"+str(self.var)+expr
+        else:
+            return "\u2200"+str(self.var)+" : "+str(self.var.type)+expr
 
     def __repr__(self):
         if self.left:
@@ -481,7 +510,10 @@ class ForallNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        return "\\forall "+repr(self.var)+" : "+repr(self.var.type)+expr
+        if is_universum(self.var.type):
+            return "\\forall "+repr(self.var)+expr
+        else:
+            return "\\forall "+repr(self.var)+" : "+repr(self.var.type)+expr
 
 class ElemNode(LRNode):
     def __str__(self):
@@ -499,26 +531,6 @@ class BoolNode(LeafNode):
 
     def __repr__(self):
         return "True" if self.value else "False"
-
-class SymbolNode(LeafNode):
-    def __init__(self, name, const_type):
-        self._name = name
-        self.type = const_type
-    
-    def name(self):
-        return self._name
-
-    def __str__(self):
-        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
-           return univar(self._name)+"("+str(self.type.universe)+")"
-        else:
-            return univar(self._name)
-
-    def __repr__(self):
-        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
-           return self._name+"("+repr(self.type.universe)+")"
-        else:
-            return self._name
 
 precedence = {ExistsNode:9, ForallNode:9,
               ImpliesNode:8, IffNode:8,
@@ -554,3 +566,6 @@ associative = {AddNode:True, SubNode:False, MulNode:True,
 dual_associative = {AndNode:True, SubNode:False, MulNode:True,
                  DivNode:False, ExpNode:False, CircNode:False,
                  UnionNode:False, IntersectNode:False}
+
+def is_universum(t):
+    return isinstance(t, SymbolNode) and t.name() ==  "\\mathcal{U}"

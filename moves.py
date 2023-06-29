@@ -112,7 +112,11 @@ def universe(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            return get_type(tree, qz).universe
+            t = get_type(tree, qz)
+            if not isinstance(t, SetType):
+                return SymbolNode("\\mathcal{U}", None)
+            else:
+                return t.universe
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
          isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
         return universe(tree.left, qz)
