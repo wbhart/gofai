@@ -461,8 +461,8 @@ def select_substring(screen, tl):
             screen.status("")
             return True, 0, 0, 0
         elif c == '\n':
+            line = pad.scroll_line + pad.cursor_line
             if line < tlist.len():
-                line = pad.scroll_line + pad.cursor_line
                 pad.rev1 = pad.scroll_char + nchars_to_chars(pad.pad[line], \
                                   pad.scroll_char, pad.cursor_char)
                 pad.rev2 = pad.rev1
