@@ -501,6 +501,8 @@ def select_substring(screen, tl):
             pad.refresh()
             screen.status("")
             return hyp, pad.cursor_line + pad.scroll_line, rev1, rev2
+        elif c == 'KEY_UP' or c == 'KEY_DOWN' or c == '\t':
+            continue
         else:
             pad.rev1 = 0
             pad.rev2 = 0
@@ -716,6 +718,8 @@ def library_import(screen, tl):
                 screen.status('')
                 screen.focus.refresh()
                 break
+            elif c == 'KEY_LEFT' or c == 'KEY_RIGHT' or c == '\t':
+                continue
             else:
                 library.close()
                 screen.status('')
@@ -949,6 +953,8 @@ def select_hypothesis(screen, tl, second):
             if pad.scroll_line + pad.cursor_line < tlist.len() - 1:
                 pad.cursor_down()
                 pad.refresh()
+        elif c == 'KEY_RIGHT' or c == 'KEY_LEFT':
+            continue
         elif second and c == '\t': # TAB = switch hypotheses/targets, forward/backward
             pad = screen.pad2 if forward else screen.pad1
             window = screen.win2 if forward else screen.win1
@@ -961,6 +967,8 @@ def select_hypothesis(screen, tl, second):
             line = pad.scroll_line + pad.cursor_line
             if line < tlist.len():
                 return forward, line
+        elif c == 'KEY_RIGHT' or c == 'KEY_LEFT':
+            continue
         else:
             return True, -1
 
