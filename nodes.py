@@ -144,22 +144,30 @@ class CircNode(LRNode):
 
 class FnNode:
     def __init__(self, var, args):
-        self.var = var # the function symbol
+        self.var = var # the function symbol (could be an expr like f \circ g)
         self.args = args
         self.dbr = -1 # debruijn indices (-1 = not set)
         self.is_skolem = False # Whether this is a skolem function
         self.is_metavar = False # Whether this is a metavariable
 
-    def name(self):
-        return self.var.name()
-
+    def name(self): # only used to compare against constant names
+        return str(self.var)
+        
     def __str__(self):
-        name = univar(self.name())+"\u0307" if self.is_metavar else univar(self.name())
+        if isinstance(self.var, VarNode):
+            fn_name = self.var.name()
+        else:
+            fn_name = "("+str(self.var)+")"
+        name = univar(fn_name)+"\u0307" if self.is_metavar else univar(fn_name)
         sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
     def __repr__(self):
-        name = "\\dot{"+self.name()+"}" if self.is_metavar else self.name()
+        if isinstance(self.var, VarNode):
+            fn_name = self.var.name()
+        else:
+            fn_name = "("+repr(self.var)+")"
+        name = "\\dot{"+fn_name+"}" if self.is_metavar else fn_name
         sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
         return name+sig
 

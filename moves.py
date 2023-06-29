@@ -390,7 +390,7 @@ def relabel(tree, tldict):
             # TODO : come up with a proper Pair type
             # This is an unsound hack to allow pairs to be
             # treated like functions
-            if tree.name() in vars_dict:
+            if isinstance(tree.var, VarNode) and tree.name() in vars_dict:
                 tree.var._name = vars_dict[tree.name()] # TODO : add setter for assignment
             elif tree.is_metavar:
                 name = tree.name()
@@ -1535,7 +1535,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
             return fn
     elif isinstance(tree, FnNode):
         is_meta = False
-        if tree.var.name() in mv:
+        if tree.name() in mv:
             tree.is_metavar = True
         n = skolem_deps(tree.name(), sk)
         if n != -1: # skolem variable

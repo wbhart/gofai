@@ -62,13 +62,14 @@ statement = Grammar(
     circ_expression = var (space "\\circ" space var)+
     exp_expression = terminal (space "^" space terminal)*
     terminal = alg_terminal / var
-    alg_terminal = tuple_expression / paren_expression / abs_expression / fn_application / natural
+    alg_terminal = tuple_expression / paren_expression / abs_expression / fn_application / composite_fn_app / natural
     bool = ("True" / "False")
     tuple_expression = "(" (add_expression space "," space)+ add_expression ")"
     paren_expression = "(" space alg_expression space ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = var "(" (any_expression space "," space)* any_expression ")"
+    composite_fn_app = "(" circ_expression ")(" (any_expression space "," space)* any_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
@@ -270,6 +271,12 @@ class StatementVisitor(NodeVisitor):
             args.append(v[0])
         args.append(visited_children[3])
         return FnNode(visited_children[0], args)
+    def visit_composite_fn_app(self, node, visited_children):
+        args = []
+        for v in visited_children[3]:
+            args.append(v[0])
+        args.append(visited_children[4])
+        return FnNode(visited_children[1], args)
     def visit_pred_fn(self, node, visited_children):
         args = []
         for v in visited_children[2]:

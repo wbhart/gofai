@@ -1259,11 +1259,10 @@ is_function(g \circ f, A, C)
 
 Title: Function values of composition
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall h : A \to C \forall a : Set
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall a : Set
 ------------------------------
 is_function(f, A, B)
 is_function(g, B, C)
-h = g \circ f
 ------------------------------
-a \in A \implies h(a) = g(f(a))
+a \in A \implies (g \circ f)(a) = g(f(a))
 

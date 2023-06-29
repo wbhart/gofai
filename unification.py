@@ -96,7 +96,8 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
         if tree1.name() != tree2.name(): # if not metavars check names
             return False, [], []
     elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):
-        if tree1.name() != tree2.name(): # if not metavars check names
+        unified, assign, macros = trees_unify(tree1.var, tree2.var, assign, macros)
+        if not unified:
             return False, [], []
         if len(tree1.args) != len(tree2.args):
             return False, [], []
@@ -178,19 +179,15 @@ def subst(tree1, var, tree2):
                 return tree2.args[n]
             else:
                 raise Exception("Tuple is not a general function")
-        if tree1.name() == var.name() and (isinstance(tree2, VarNode) \
-               or isinstance(tree2, FnNode)):
-            tree = tree2
-            symbol = tree2
-        else:
-            tree = tree1
-            symbol = tree1.var
-        #######
-        args = [subst(t, var, tree2) for t in tree1.args]
-        fn = FnNode(symbol, args)
-        fn.is_skolem = tree1.is_skolem
-        fn.is_metavar = tree.is_metavar
-        return fn
+        p = deepcopy(tree1)
+        p.var = subst(p.var, var, tree2)
+        if not isinstance(p.var, VarNode) and not isinstance(p.var, FnNode):
+            p.is_metavar = False
+        elif tree1.name() == var.name(): # we did substitution
+            p.is_metavar = tree2.is_metavar
+        for i in range(0, len(p.args)):
+            p.args[i] = subst(p.args[i], var, tree2)
+        return p
     elif isinstance(tree1, TupleNode):
         args = [subst(t, var, tree2) for t in tree1.args]
         return TupleNode(args)
