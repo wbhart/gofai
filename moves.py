@@ -703,12 +703,14 @@ def library_import(screen, tl):
         screen.status(filtered_titles2[i][1])
         while True:
             c = screen.stdscr.getkey()
-            if c == 'KEY_DOWN' and i < len(filtered_titles2) - 1:
-                i += 1
-                screen.status(filtered_titles2[i][1])
-            elif c == 'KEY_UP' and i > 0:
-                i -= 1
-                screen.status(filtered_titles2[i][1])
+            if c == 'KEY_DOWN':
+                if i < len(filtered_titles2) - 1:
+                    i += 1
+                    screen.status(filtered_titles2[i][1])
+            elif c == 'KEY_UP':
+                if i > 0:
+                   i -= 1
+                   screen.status(filtered_titles2[i][1])
             elif c.isalpha():
                 filtered_titles2 = filter_titles(filtered_titles, c)
                 i = 0
@@ -798,12 +800,14 @@ def library_load(screen, tl):
         screen.status(filtered_titles2[i][1])
         while True:
             c = screen.stdscr.getkey()
-            if c == 'KEY_DOWN' and i < len(filtered_titles2) - 1:
-                i += 1
-                screen.status(filtered_titles2[i][1])
-            elif c == 'KEY_UP' and i > 0:
-                i -= 1
-                screen.status(filtered_titles2[i][1])
+            if c == 'KEY_DOWN':
+                if i < len(filtered_titles2) - 1:
+                    i += 1
+                    screen.status(filtered_titles2[i][1])
+            elif c == 'KEY_UP':
+                if i > 0:
+                   i -= 1
+                   screen.status(filtered_titles2[i][1])
             elif c.isalpha():
                 filtered_titles2 = filter_titles(filtered_titles, c)
                 i = 0
