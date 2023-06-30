@@ -217,8 +217,7 @@ def targets_proved(screen, tl, ttree):
             proved = True
             for Q in ttree.andlist:
                 proved = check(Q) and proved # and is short circuiting
-            ttree.proved = proved
-            if ttree.proved:
+            if proved:
                 mark_proved(screen, tl, ttree, ttree.num)
             if not ttree.proved:
                 j = 0
@@ -279,16 +278,17 @@ def mark_proved(screen, tl, ttree, n):
             ttree.proved = True
             if n >= 0:
                 screen.dialog("Target "+str(ttree.num)+" proved")
-                for i in range(0, len(tl.tlist1.data)):
-                    d1 = tl.tlist1.dependency(i)
-                    if d1 != -1 and deps_compatible(ttree, d1, n):
-                        tl.tlist1.data[i] = DeadNode()
-                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
-                screen.pad1.refresh()
+            for i in range(0, len(tl.tlist1.data)):
+                d1 = tl.tlist1.dependency(i)
+                if d1 != -1 and (n == -1 or deps_compatible(ttree, d1, n)):
+                    tl.tlist1.data[i] = DeadNode()
+                    screen.pad1.pad[i] = str(tl.tlist1.data[i])
+            screen.pad1.refresh()
+            if n >= 0:
                 tl.tlist2.data[n] = DeadNode()
                 screen.pad2.pad[n] = str(tl.tlist2.data[n])
                 screen.pad2.refresh()
-                screen.focus.refresh()
+            screen.focus.refresh()
         return True
     for P in ttree.andlist:
         if mark_proved(screen, tl, P, n):
