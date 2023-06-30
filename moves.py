@@ -321,7 +321,7 @@ def check_contradictions(screen, tl, n, ttree):
             if d1 < 0 or d2 < 0:
                 tree2 = tlist1[j]
                 unifies, assign, macros = unify(tree1, tree2)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                 if unifies: # we found a contradiction
                     if d1 >= 0:
                         mark_proved(screen, tl, ttree, d1)
@@ -331,13 +331,13 @@ def check_contradictions(screen, tl, n, ttree):
                 if deps_compatible(ttree, d1, d2):
                     tree2 = tlist1[j]
                     unifies, assign, macros = unify(tree1, tree2)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies: # we found a contradiction
                         mark_proved(screen, tl, ttree, d1)
                 elif deps_compatible(ttree, d2, d1):
                     tree2 = tlist1[j]
                     unifies, assign, macros = unify(tree1, tree2)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies: # we found a contradiction
                         mark_proved(screen, tl, ttree, d2)
     return len(tlist1)
