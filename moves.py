@@ -1461,6 +1461,8 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
         while len(sk) > s:
             sk.pop()
  
+    if isinstance(tree, NotNode) and isinstance(tree.left, EqNode):
+        return NeqNode(tree.left.left, tree.left.right)
     if isinstance(tree, OrNode):
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, True)
         tree.right = skolemize_statement(tree.right, deps, sk, qz, mv, positive, True)
