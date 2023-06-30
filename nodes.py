@@ -37,7 +37,8 @@ class LRNode:
     def __init__(self, left, right):
         self.left = left
         self.right = right
-
+        self.paren = False # for temporary marking as in parentheses during parsing
+    
     def paren_str(self, child):
         if not isatomic(child) and precedence[type(child)] > precedence[type(self)]:
             return '('+str(child)+')'

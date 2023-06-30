@@ -7,7 +7,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
-     SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode
+     SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
+     LRNode
 from type import NumberType, FnType, TupleType, SetType, PredType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -230,7 +231,7 @@ class StatementVisitor(NodeVisitor):
     def visit_left_alg_expression(self, node, visited_children):
         Node = node_dict[visited_children[2][0].text]
         t = visited_children[4]
-        if not is_alg_left_node(t):
+        if not is_alg_left_node(t) or t.paren:
             return Node(visited_children[0], visited_children[4])
         while is_alg_left_node(t.left):
             t = t.left
@@ -262,7 +263,10 @@ class StatementVisitor(NodeVisitor):
         entries.append(visited_children[2])
         return TupleNode(entries)
     def visit_paren_expression(self, node, visited_children):
-        return visited_children[2]
+        t = visited_children[2]
+        if isinstance(t, LRNode):
+            t.paren = True
+        return t
     def visit_abs_expression(self, node, visited_children):
         return AbsNode(visited_children[1])
     def visit_fn_application(self, node, visited_children):
