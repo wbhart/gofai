@@ -1295,7 +1295,6 @@ def cleanup(screen, tl, ttree):
             del tl.tlist0.data[0]
             screen.pad0[0] = ''
 
-    deps = []
     d = len(deps)
     s = len(sk)
     m = len(mv)
@@ -1448,7 +1447,8 @@ def cleanup(screen, tl, ttree):
 def skolemize_quantifiers(tree, deps, sk):
     if isinstance(tree, ExistsNode):
         sk.append((tree.var.name(), len(deps)))
-        deps.append(tree.var)
+        # probably not needed, depends on all the same things
+        # deps.append(tree.var)
         return skolemize_quantifiers(tree.left, deps, sk)
     elif isinstance(tree, ForallNode):
         deps.append(tree.var)
