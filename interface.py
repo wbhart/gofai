@@ -322,7 +322,7 @@ class Screen:
         pad = self.pad3
         window = pad.window
         pad.clear_line(0) # clear the entire line
-        window.addstr(0, 0, string) # output string
+        window.addstr(0, 0, string[0:pad.width-1]) # output string
         window.refresh() # update display
 
     def dialog(self, string):

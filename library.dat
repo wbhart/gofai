@@ -1257,7 +1257,7 @@ is_function(g, B, C)
 ------------------------------
 is_function(g \circ f, A, C)
 
-Title: Function values of composition
+Title: Function values of composition a really really really really really really really long title
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall a : Set
 ------------------------------
