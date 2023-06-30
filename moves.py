@@ -248,16 +248,16 @@ def targets_proved(screen, tl, ttree):
                         varlist = deepcopy(tl.vars) # temporary relabelling
                         unifies, assign, macros = unify(complement_tree(P.left), \
                                                 relabel(deepcopy(tars[ttree.num]), varlist))
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                         if unifies:
                             # or branched can be assigned independently
                             unifies, assign, macros = unify(P.right, \
                                                 relabel(deepcopy(tars[ttree.num]), varlist), assign)
-                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                         
                     else:
                         unifies, assign, macros = unify(P, tars[ttree.num])
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data[0])
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies:
                         if dep == -1:
                             mark_proved(screen, tl, ttree, ttree.num)
@@ -279,6 +279,12 @@ def mark_proved(screen, tl, ttree, n):
             ttree.proved = True
             if n >= 0:
                 screen.dialog("Target "+str(ttree.num)+" proved")
+                for i in range(0, len(tl.tlist1.data)):
+                    d1 = tl.tlist1.dependency(i)
+                    if d1 != -1 and deps_compatible(ttree, d1, n):
+                        tl.tlist1.data[i] = DeadNode()
+                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+                screen.pad1.refresh()
                 tl.tlist2.data[n] = DeadNode()
                 screen.pad2.pad[n] = str(tl.tlist2.data[n])
                 screen.pad2.refresh()
