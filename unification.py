@@ -5,7 +5,8 @@ from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   OrNode, ElemNode, EqNode, NeqNode, LtNode, GtNode, \
                   LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
-                  NotNode, ForallNode, ExistsNode, ConstNode, BoolNode
+                  NotNode, ForallNode, ExistsNode, ConstNode, BoolNode, \
+                  SetBuilderNode
 
 from type import PredType
 
@@ -44,6 +45,29 @@ def node_type(tree):
     else:
         return None
 
+def tree_contains_binder(tree, ignorevars=[]):
+    ignore = deepcopy(ignorevars) # default params are mutable
+    if tree == None:
+        return False
+    elif isinstance(tree, SetBuilderNode):
+        ignore.append(tree.left.left.name)
+    elif isinstance(tree, VarNode):
+        return tree.is_binder and tree.name() not in ignore
+    elif isinstance(tree, LRNode):
+        return tree_contains_binder(tree.left, ignore) or \
+               tree_contains_binder(tree.right, ignore)
+    elif isinstance(tree, FnNode):
+        if tree.is_binder and tree.name() not in ignore:
+            return True
+        for i in range(0, len(tree.args)):
+            if tree_contains_binder(tree.args[i], ignore):
+                return True
+    elif isinstance(tree, TupleNode):
+        for i in range(0, len(tree.args)):
+            if tree_contains_binder(tree.args[i], ignore):
+                return True
+    return False # all other cases
+
 def trees_unify(tree1, tree2, assigned=[], macro=[]):
     assign = deepcopy(assigned) # default params are mutable
     macros = deepcopy(macro)
@@ -79,14 +103,16 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
         if (isinstance(node_type(tree1), PredType) and is_predicate(tree2)) \
-              or (not isinstance(node_type(tree1), PredType) and is_expression(tree2)):
+              or (not isinstance(node_type(tree1), PredType) and is_expression(tree2)
+              and (tree1.is_binder or not tree_contains_binder(tree2))):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
         if (isinstance(node_type(tree2), PredType) and is_predicate(tree1)) \
-              or (not isinstance(node_type(tree2), PredType) and is_expression(tree1)):
+              or (not isinstance(node_type(tree2), PredType) and is_expression(tree1)
+              and (tree2.is_binder or not tree_contains_binder(tree1))):
             assign.append(deepcopy((tree2, tree1)))
         else:
             return False, [], []

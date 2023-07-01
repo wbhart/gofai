@@ -128,6 +128,7 @@ class VarNode(LeafNode):
         self.dbr = -1 # used for debruijn indices (-1 = not set)
         self.type = var_type
         self.is_metavar = is_metavar # whether this is a metavariable
+        self.is_binder = False # whether this node is a binder variable
 
     def name(self):
         return self._name
@@ -170,9 +171,11 @@ class FnNode:
         self.dbr = -1 # debruijn indices (-1 = not set)
         self.is_skolem = False # Whether this is a skolem function
         self.is_metavar = False # Whether this is a metavariable
+        self.is_binder = False # whether this function is a binder variable
 
     def name(self): # only used to compare against constant names
-        return str(self.var)
+        return self.var.name() if isinstance(self.var, VarNode) or \
+               isinstance(self.var, FnNode) else str(self.var)
 
     def __str__(self):
         if isinstance(self.var, VarNode):
@@ -570,3 +573,19 @@ dual_associative = {AndNode:True, SubNode:False, MulNode:True,
 
 def is_universum(t):
     return isinstance(t, SymbolNode) and t.name() ==  "\\mathcal{U}"
+
+def mark_binder_vars(tree, var):
+    if isinstance(tree, VarNode):
+        if tree.name() == var.name():
+            tree.is_binder = True
+    elif isinstance(tree, LRNode):
+        mark_binder_vars(tree.left, var)
+        mark_binder_vars(tree.right, var)
+    elif isinstance(tree, FnNode):
+        if tree.name() == var.name():
+            tree.is_binder = True
+        for i in range(0, len(tree.args)):
+            mark_binder_vars(tree.args[i], var)
+    elif isinstance(tree, TupleNode):
+        for i in range(0, len(tree.args)):
+            mark_binder_vars(tree.args[i], var)

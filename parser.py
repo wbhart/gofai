@@ -2,7 +2,7 @@ from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 from parsimonious import exceptions
 from pprint import pprint
-from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
+from nodes import mark_binder_vars, AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
@@ -213,6 +213,8 @@ class StatementVisitor(NodeVisitor):
     def visit_powerset(self, node, visited_children):
         return PowerSetNode(visited_children[2])
     def visit_set_builder(self, node, visited_children):
+        visited_children[2].left.is_binder = True
+        mark_binder_vars(visited_children[6], visited_children[2].left)
         return SetBuilderNode(visited_children[2], visited_children[6])
     def visit_neg_expression(self, node, visited_children):
         return NotNode(visited_children[2][0])

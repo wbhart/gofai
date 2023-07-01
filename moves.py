@@ -85,6 +85,11 @@ def process_types(screen, tree, types, vars):
     elif isinstance(tree, LRNode):
         process_types(screen, tree.left, types, vars)
         process_types(screen, tree.right, types, vars)
+    elif isinstance(tree, FnNode):
+        process_types(screen, tree.var, types, vars)
+        for v in tree.args:
+            process_types(screen, v, types, vars)
+        
 
 def type_vars(screen, tl):
     types = dict()
@@ -284,10 +289,11 @@ def mark_proved(screen, tl, ttree, n):
                     tl.tlist1.data[i] = DeadNode()
                     screen.pad1.pad[i] = str(tl.tlist1.data[i])
             screen.pad1.refresh()
-            if n >= 0:
-                tl.tlist2.data[n] = DeadNode()
-                screen.pad2.pad[n] = str(tl.tlist2.data[n])
-                screen.pad2.refresh()
+            for i in range(0, len(tl.tlist2.data)):
+                if n == -1 or deps_compatible(ttree, i, n): 
+                    tl.tlist2.data[i] = DeadNode()
+                    screen.pad2.pad[i] = str(tl.tlist2.data[i])
+            screen.pad2.refresh()
             screen.focus.refresh()
         return True
     for P in ttree.andlist:
@@ -1480,15 +1486,16 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                 deps.append(tree.var)
                 qz.append(tree)
             else:
-                if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
+                if not isinstance(tree.left, ImpliesNode) and not \
+                       isinstance(tree.left, OrNode):
                     tree.var.is_metavar = True
                     deps.append(tree.var)
                     mv.append(tree.var.name())
                     qz.append(ConstNode(tree.var, None))
                 else:
                     is_blocked = True
-        rollback()
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked or isinstance(tree.left, IffNode))
+        rollback()
         return tree.left if not is_blocked else tree    
     elif isinstance(tree, ExistsNode):
         is_blocked = blocked
@@ -1565,9 +1572,9 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                 fn.is_metavar = True
             return fn
     elif isinstance(tree, FnNode):
-        is_meta = False
         if tree.name() in mv:
             tree.is_metavar = True
+            tree.var.is_metavar = True
         n = skolem_deps(tree.name(), sk)
         if n != -1: # skolem variable
             raise Exception("Case not handled")
