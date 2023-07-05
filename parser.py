@@ -2,13 +2,13 @@ from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 from parsimonious import exceptions
 from pprint import pprint
-from nodes import mark_binder_vars, AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
+from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
-     LRNode
+     LambdaNode, LRNode
 from type import NumberType, FnType, TupleType, SetType, PredType
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
@@ -213,9 +213,8 @@ class StatementVisitor(NodeVisitor):
     def visit_powerset(self, node, visited_children):
         return PowerSetNode(visited_children[2])
     def visit_set_builder(self, node, visited_children):
-        visited_children[2].left.is_binder = True
-        mark_binder_vars(visited_children[6], visited_children[2].left)
-        return SetBuilderNode(visited_children[2], visited_children[6])
+        lmbda = LambdaNode(visited_children[2].left, visited_children[6])
+        return SetBuilderNode(visited_children[2], lmbda)
     def visit_neg_expression(self, node, visited_children):
         return NotNode(visited_children[2][0])
     def visit_expression(self, node, visited_children):

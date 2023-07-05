@@ -195,6 +195,13 @@ class FnNode:
         sig = "("+', '.join(repr(e) for e in self.args)+")" if self.args else ""
         return name+sig
 
+class LambdaNode(LRNode):
+    def __str__(self):
+        return "(\u03bb"+str(self.left)+" : "+str(self.right)+")"
+
+    def __repr__(self):
+        return "(\\lambda"+repr(self.left)+" : "+repr(self.right)+")"
+
 class TupleNode:
     def __init__(self, args):
         self.name = '_'
@@ -401,10 +408,10 @@ class DiffNode(LRNode):
 
 class SetBuilderNode(LRNode):
     def __str__(self):
-        return "{"+str(self.left)+" | "+str(self.right)+"}"
+        return "{"+str(self.left)+" | "+str(self.right.right)+"}"
 
     def __repr__(self):
-        return "{"+repr(self.left)+" | "+repr(self.right)+"}"
+        return "{"+repr(self.left)+" | "+repr(self.right.right)+"}"
 
 class AbsNode(LRNode):
     def __init__(self, expr):

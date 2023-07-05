@@ -6,7 +6,7 @@ from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
                   NotNode, ForallNode, ExistsNode, ConstNode, BoolNode, \
-                  SetBuilderNode
+                  SetBuilderNode, LambdaNode, mark_binder_vars
 
 from type import PredType
 
@@ -17,7 +17,7 @@ def is_expression(tree):
        or isinstance(tree, MulNode) or isinstance(tree, DivNode) \
        or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
        or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
-       or isinstance(tree, SymbolNode):
+       or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode):
         return True
     else:
         return True
@@ -131,6 +131,36 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
             unified, assign, macros = trees_unify(tree1.args[i], tree2.args[i], assign, macros)
             if not unified:
                 return False, [], []
+    elif isinstance(tree1, LambdaNode) and isinstance(tree2, LambdaNode):
+        t1 = deepcopy(tree1)
+        t2 = deepcopy(tree2)
+        var1 = t1.left
+        var2 = t2.left
+        mark_binder_vars(t1, var1)
+        mark_binder_vars(t2, var2)
+        unified, assign, macros = trees_unify(var1, var2, assign, macros)
+        if not unified:
+            return False, [], []
+        unified, assign, macros = trees_unify(t1.right, t2.right, assign, macros)
+        if not unified:
+            return False, [], []
+    elif isinstance(tree1, EqNode) and isinstance(tree2, EqNode):
+        # special case for equality, try both directions
+        ass = deepcopy(assign)
+        mac = deepcopy(macros)
+        unified, ass, mac = trees_unify(tree1.left, tree2.left, ass, mac)
+        if unified:
+            unified, ass, mac = trees_unify(tree1.right, tree2.right, ass, mac)
+        if not unified: # try the other way around
+            unified, assign, macros = trees_unify(tree1.left, tree2.right, assign, macros)
+            if not unified:
+                return False, [], []
+            unified, assign, macros = trees_unify(tree1.right, tree2.left, assign, macros)
+            if not unified:
+                return False, [], []
+        else:
+            assign = ass
+            macros = mac
     else: # we didn't hit a variable, or a pair of functions
         if type(tree1) != type(tree2):
             return False, [], []

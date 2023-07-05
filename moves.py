@@ -588,6 +588,7 @@ def equality(screen, tl):
         screen.focus.refresh()
         return
     tree1 = tlist1.data[line1]
+    tree1 = unquantify(tree1, True)
     if not isinstance(tree1, EqNode): # not an equality
         screen.dialog("Not an equality. Press Enter to continue.")
         screen.restore_state()
