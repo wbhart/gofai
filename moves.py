@@ -36,7 +36,7 @@ def metavars_used(tree):
                 name = tree.name()
                 if name not in used:
                     used.append(name)
-        elif isinstanced(tree, FnNode):
+        elif isinstance(tree, FnNode):
             if tree.is_metavar:
                 name = tree.name()
                 if name not in used:
@@ -211,6 +211,12 @@ def check_macros(macros, assign, qz):
             return False
     return True
 
+def assign_vars_in_single_target(tl, i, assign):
+    for (var, expr) in assign:
+        if not var_in_single_target(tl, i, var.name()):
+            return False
+    return True
+
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
@@ -264,15 +270,17 @@ def targets_proved(screen, tl, ttree):
                         unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies:
                         if dep == -1:
-                            mark_proved(screen, tl, ttree, ttree.num)
-                            break
-                        else:
-                            if dep == ttree.num:
+                            if assign_vars_in_single_target(tl, i, assign):
                                 mark_proved(screen, tl, ttree, ttree.num)
-                            else:
-                                if ttree.num != -1 and dep not in ttree.deps:
-                                    screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
-                            ttree.deps.append(dep)
+                                break
+                        else:
+                            if assign_vars_in_single_target(tl, i, assign):
+                                if dep == ttree.num:
+                                    mark_proved(screen, tl, ttree, ttree.num)
+                                else:
+                                    if ttree.num != -1 and dep not in ttree.deps:
+                                        screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
+                                ttree.deps.append(dep)
         return ttree.proved
     
     return check(ttree)
@@ -348,6 +356,15 @@ def check_contradictions(screen, tl, n, ttree):
                         mark_proved(screen, tl, ttree, d2)
     return len(tlist1)
 
+def var_in_single_target(tl, i, varname):
+    tlist2 = tl.tlist2.data
+    for j in range(0, len(tlist2)):
+        if i != j:
+            mv = metavars_used(tlist2[j])
+            if varname in mv:
+                return False
+    return True
+
 def check_tautologies(screen, tl, ttree):
     tlist2 = tl.tlist2.data
     for i in range(0, len(tlist2)):
@@ -355,10 +372,12 @@ def check_tautologies(screen, tl, ttree):
         if isinstance(tree, EqNode):
             if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnNode)) \
                   and tree.left.is_metavar:
-                mark_proved(screen, tl, ttree, i)
+                if var_in_single_target(tl, i, tree.left.name()):
+                    mark_proved(screen, tl, ttree, i)
             elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
                   and tree.right.is_metavar:
-                mark_proved(screen, tl, ttree, i)
+                if var_in_single_target(tl, i, tree.right.name()):
+                    mark_proved(screen, tl, ttree, i)
             elif str(tree.left) == str(tree.right):
                 mark_proved(screen, tl, ttree, i)
                 
@@ -1312,6 +1331,8 @@ def cleanup(screen, tl, ttree):
         while len(sk) > s:
             sk.pop()
     
+    deps = []
+    sk = []
     hyps_done = False
     tars_done = False
     i = 0
@@ -1578,7 +1599,8 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
             tree.var.is_metavar = True
         n = skolem_deps(tree.name(), sk)
         if n != -1: # skolem variable
-            raise Exception("Case not handled")
+            tree.var = skolemize_statement(tree.var, deps, sk, qz, mv, positive, blocked)
+            rollback()
         for i in range(0, len(tree.args)):
             tree.args[i] = skolemize_statement(tree.args[i], deps, sk, qz, mv, positive, blocked)
             rollback()

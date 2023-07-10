@@ -180,9 +180,11 @@ class FnNode:
     def __str__(self):
         if isinstance(self.var, VarNode):
             fn_name = self.var.name()
+            name = univar(fn_name)+"\u0307" if self.is_metavar else univar(fn_name)
+        elif isinstance(self.var, FnNode):
+            name = str(self.var)
         else:
-            fn_name = "("+str(self.var)+")"
-        name = univar(fn_name)+"\u0307" if self.is_metavar else univar(fn_name)
+            name = "("+str(self.var)+")"
         sig = "("+', '.join(str(e) for e in self.args)+")" if self.args else ""
         return name+sig
 

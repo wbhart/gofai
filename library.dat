@@ -1266,3 +1266,12 @@ is_function(g, B, C)
 ------------------------------
 a \in A \implies (g \circ f)(a) = g(f(a))
 
+Title: Functions restrict to subsets
+Tags: #sets #functions
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : B \to C
+------------------------------
+is_function(f, B, C)
+A \subseteq B
+------------------------------
+\exists g : A \to C is_function(g, A, C) \wedge (\forall a a \in A \implies f(a) = g(a))
+
