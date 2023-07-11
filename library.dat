@@ -1285,3 +1285,21 @@ is_function(h, A, B)
 ------------------------------
 (f \circ g) \circ h = f \circ (g \circ h)
 
+Title: Definition of injective
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall f : A \to B
+------------------------------
+------------------------------
+is_function(f, A, B) \implies (is_injective(f) \iff (\forall a, \forall b a \in A \wedge b \in A \wedge f(a) = f(b) \implies a = b))
+
+Title: Composition of injective functions is injective
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
+------------------------------
+is_function(f, A, B)
+is_function(g, B, C)
+is_injective(f)
+is_injective(g)
+------------------------------
+is_injective(g \circ f)
+
