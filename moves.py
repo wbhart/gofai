@@ -453,6 +453,7 @@ def relabel(tree, tldict):
         new_name = relabel_varname(name, tldict)
         vars_dict[name] = new_name
         t.var._name = new_name # TODO : allow assignment of name for FnNode
+        process(t.var.type)
         t = t.left
 
     process(t)

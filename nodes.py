@@ -573,12 +573,13 @@ precedence = {ExistsNode:9, ForallNode:9,
 associative = {AddNode:True, SubNode:False, MulNode:True,
                  DivNode:False, ExpNode:False, CircNode:False,
                  UnionNode:True, IntersectNode:True,
-                 DiffNode:False}
+                 DiffNode:False, ImpliesNode:False, IffNode:False}
 
 # whether it associates with its dual
 dual_associative = {AndNode:True, SubNode:False, MulNode:True,
                  DivNode:False, ExpNode:False, CircNode:False,
-                 UnionNode:False, IntersectNode:False}
+                 UnionNode:False, IntersectNode:False,
+                 ImpliesNode:False, IffNode:False}
 
 def is_universum(t):
     return isinstance(t, SymbolNode) and t.name() ==  "\\mathcal{U}"

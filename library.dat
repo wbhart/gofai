@@ -1303,3 +1303,10 @@ is_injective(g)
 ------------------------------
 is_injective(g \circ f)
 
+Title: Definition of surjective
+Tags: #functions
+\forall D : Set, \forall C : Set, \forall f : D \to C
+------------------------------
+------------------------------
+is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c c \in C \implies (\exists d d \in D \wedge f(d) = c)))
+
