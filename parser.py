@@ -54,13 +54,15 @@ statement = Grammar(
     alg_relation = add_expression space ("<" / ">" / "\\leq" / "\\geq" / "\\neq") space add_expression
     alg_expression = left_alg_expression / right_alg_expression / minus_expression / mult_expression1 / alg_terminal
     left_alg_expression = terminal space ("+" / "-" / "*" / "/") space add_expression
-    right_alg_expression = terminal space ("^" / "\\circ") space circ_expression
+    right_alg_expression = terminal space ("^" / "_dummyxxx") space exp_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
     mult_expression = mult_expression1 / mult_expression2 / minus_expression
     mult_expression1 = natural mult_expression2
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
     minus_expression = "-" mult_expression
-    circ_expression = var (space "\\circ" space var)+
+    circ_expression = (fn_expression space ("\\circ" / "_dummyyyy") space)+ fn_expression
+    fn_expression = var / fn_paren
+    fn_paren = "(" circ_expression ")"
     exp_expression = terminal (space "^" space terminal)*
     terminal = alg_terminal / var
     alg_terminal = tuple_expression / paren_expression / abs_expression / fn_application / composite_fn_app / natural
@@ -70,7 +72,7 @@ statement = Grammar(
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = var "(" (any_expression space "," space)* any_expression ")"
-    composite_fn_app = "(" circ_expression ")(" (any_expression space "," space)* any_expression ")"
+    composite_fn_app = fn_paren "(" (any_expression space "," space)* any_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
@@ -278,10 +280,14 @@ class StatementVisitor(NodeVisitor):
         return FnNode(visited_children[0], args)
     def visit_composite_fn_app(self, node, visited_children):
         args = []
-        for v in visited_children[3]:
+        for v in visited_children[2]:
             args.append(v[0])
-        args.append(visited_children[4])
-        return FnNode(visited_children[1], args)
+        args.append(visited_children[3])
+        return FnNode(visited_children[0], args)
+    def visit_fn_expression(self, node, visited_children):
+        return visited_children[0]
+    def visit_fn_paren(self, node, visited_children):
+        return visited_children[1]
     def visit_pred_fn(self, node, visited_children):
         args = []
         for v in visited_children[2]:
@@ -296,10 +302,8 @@ class StatementVisitor(NodeVisitor):
             res = ExpNode(res, v[3])
         return res
     def visit_circ_expression(self, node, visited_children):
-        res = visited_children[0]
-        for v in visited_children[1]:
-            res = CircNode(res, v[3])
-        return res
+        expr = visited_children[1]
+        return left_rec(visited_children[0], expr)
     def visit_natural(self, node, visited_children):
         return NaturalNode(node.text)
     def visit_bool(self, node, visited_children):

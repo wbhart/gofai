@@ -1257,7 +1257,7 @@ is_function(g, B, C)
 ------------------------------
 is_function(g \circ f, A, C)
 
-Title: Function values of composition a really really really really really really really long title
+Title: Function values of composition
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall a : Set
 ------------------------------
@@ -1274,4 +1274,14 @@ is_function(f, B, C)
 A \subseteq B
 ------------------------------
 \exists g : A \to C is_function(g, A, C) \wedge (\forall a a \in A \implies f(a) = g(a))
+
+Title: Composition of functions is associative
+Tags: #functions
+\forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set, \forall f : C \to D, \forall g : B \to C, \forall h : A \to B
+------------------------------
+is_function(f, C, D)
+is_function(g, B, C)
+is_function(h, A, B)
+------------------------------
+(f \circ g) \circ h = f \circ (g \circ h)
 

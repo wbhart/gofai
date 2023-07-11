@@ -433,6 +433,8 @@ def relabel(tree, tldict):
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree.var._name = new_name
+            else:
+                process(tree.var)
             #######
             for v in tree.args:
                 process(v)

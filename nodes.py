@@ -571,7 +571,7 @@ precedence = {ExistsNode:9, ForallNode:9,
 
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,
-                 DivNode:False, ExpNode:False, CircNode:True,
+                 DivNode:False, ExpNode:False, CircNode:False,
                  UnionNode:True, IntersectNode:True,
                  DiffNode:False}
 
