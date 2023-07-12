@@ -211,16 +211,17 @@ def check_macros(macros, assign, qz):
             return False
     return True
 
-def assign_vars_in_single_target(tl, i, assign):
+def assign_vars_in_single_target(tl, ttree, i, assign):
     for (var, expr) in assign:
-        if not var_in_single_target(tl, i, var.name()):
+        if not var_in_single_target(tl, ttree, i, var.name()):
             return False
     return True
 
 def targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
-    
+    full_ttree = ttree
+
     def check(ttree):
         if ttree.proved:
             return True
@@ -270,11 +271,11 @@ def targets_proved(screen, tl, ttree):
                         unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies:
                         if dep == -1:
-                            if assign_vars_in_single_target(tl, i, assign):
+                            if assign_vars_in_single_target(tl, full_ttree, i, assign):
                                 mark_proved(screen, tl, ttree, ttree.num)
                                 break
                         else:
-                            if assign_vars_in_single_target(tl, i, assign):
+                            if assign_vars_in_single_target(tl, full_ttree, i, assign):
                                 if dep == ttree.num:
                                     mark_proved(screen, tl, ttree, ttree.num)
                                 else:
@@ -356,10 +357,10 @@ def check_contradictions(screen, tl, n, ttree):
                         mark_proved(screen, tl, ttree, d2)
     return len(tlist1)
 
-def var_in_single_target(tl, i, varname):
+def var_in_single_target(tl, ttree, i, varname):
     tlist2 = tl.tlist2.data
     for j in range(0, len(tlist2)):
-        if i != j:
+        if i != j and not deps_compatible(ttree, i, j) and not deps_compatible(ttree, j, i):
             mv = metavars_used(tlist2[j])
             if varname in mv:
                 return False
@@ -372,11 +373,11 @@ def check_tautologies(screen, tl, ttree):
         if isinstance(tree, EqNode):
             if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnNode)) \
                   and tree.left.is_metavar:
-                if var_in_single_target(tl, i, tree.left.name()):
+                if var_in_single_target(tl, ttree, i, tree.left.name()):
                     mark_proved(screen, tl, ttree, i)
             elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
                   and tree.right.is_metavar:
-                if var_in_single_target(tl, i, tree.right.name()):
+                if var_in_single_target(tl, ttree, i, tree.right.name()):
                     mark_proved(screen, tl, ttree, i)
             elif str(tree.left) == str(tree.right):
                 mark_proved(screen, tl, ttree, i)
