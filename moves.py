@@ -271,11 +271,11 @@ def targets_proved(screen, tl, ttree):
                         unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                     if unifies:
                         if dep == -1:
-                            if assign_vars_in_single_target(tl, full_ttree, i, assign):
+                            if assign_vars_in_single_target(tl, full_ttree, ttree.num, assign):
                                 mark_proved(screen, tl, ttree, ttree.num)
                                 break
                         else:
-                            if assign_vars_in_single_target(tl, full_ttree, i, assign):
+                            if assign_vars_in_single_target(tl, full_ttree, ttree.num, assign):
                                 if dep == ttree.num:
                                     mark_proved(screen, tl, ttree, ttree.num)
                                 else:

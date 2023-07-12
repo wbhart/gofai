@@ -1310,3 +1310,14 @@ Tags: #functions
 ------------------------------
 is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c c \in C \implies (\exists d d \in D \wedge f(d) = c)))
 
+Title: Composition of surjective functions is surjective
+Tags: #functions
+\forall S : Set, \forall T : Set, \forall U : Set, \forall f : S \to T, \forall g : T \to U
+------------------------------
+is_function(f, S, T)
+is_function(g, T, U)
+is_surjective(f)
+is_surjective(g)
+------------------------------
+is_surjective(g \circ f)
+
