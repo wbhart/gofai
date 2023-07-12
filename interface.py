@@ -174,12 +174,14 @@ class Pad:
             self.move_right(iswide)
 
     def cursor_down(self):
-        start = 1 if self.border else 0
         if self.cursor_line < self.height - 1:
             # just move the cursor
             self.cursor_line += 1
         else:
             self.scroll_line += 1
+        n = len(self.pad[self.scroll_line + self.cursor_line])
+        if self.scroll_char > n:
+            self.scroll_char = n
         self.cursor_adjust()
  
     def cursor_up(self):
