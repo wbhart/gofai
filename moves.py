@@ -8,6 +8,7 @@ from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
+from heapq import merge
 
 class TargetNode:
     def __init__(self, num, andlist=[]):
@@ -15,12 +16,35 @@ class TargetNode:
         self.proved = False # start in unproved state
         self.andlist = andlist # a list of targets that would prove this target
         self.deps = [] # other targets that the current proofs of this one depends on
+        self.metavars = [] # metavariables used by this target
+        self.unifies = [] # list of hyps this target unifies with on its own
 
     def __str__(self):
         if not self.andlist:
             return "("+str(self.num)+")"
         else:
             return "("+str(self.num)+", ["+", ".join([str(j) for j in self.andlist])+"])"
+
+def is_ground(tree): # an expression is ground if it contains no metavars
+    if tree == None:
+        return True
+    elif isinstance(tree, LRNode):
+        if not is_ground(tree.left):
+            return False 
+        return search(tree.right)
+    elif isinstance(tree, VarNode):
+        return not tree.is_metavar
+    elif isinstance(tree, FnNode):
+        if tree.is_metavar:
+            return False
+        for v in tree.args:
+            if not is_ground(v):
+                return False
+    elif isinstance(tree, TupleNode):
+        for v in tree.args:
+            if not is_ground(v):
+                return False
+    return True
 
 def metavars_used(tree):
     used = []
@@ -43,10 +67,151 @@ def metavars_used(tree):
                     used.append(name)
             for v in tree.args:
                 search(v)
-        return
-
+        elif isinstance(tree, TupleNode):
+            for v in tree.args:
+                search(v)
+        
     search(tree)
     return used
+
+def list_merge(list1, list2):
+    r = []
+    L = merge(list1, list2)
+    v = ''
+    for var in L:
+        if var != v:
+           r.append(var)
+        v = var
+    return r
+
+def annotate_ttree(screen, tl, ttree, hydras):
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    ttree_full = ttree
+    unification_count = [0 for i in range(len(tlist2))]
+    unifications = [[] for i in range(len(tlist2))]
+
+    def mark(ttree):
+        if ttree.proved:
+            return
+        if ttree.num != -1:
+            ttree.unifies = []
+            ttree.metavars = metavars_used(tlist2[ttree.num])
+            ttree.metavars.sort()
+            for i in range(len(tlist1)):
+                dep = tl.tlist1.dependency(i)
+                if deps_compatible(ttree_full, ttree.num, dep):
+                    unifies, assign, macros = unify(tlist2[ttree.num], tlist1[i])
+                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    if unifies:
+                        ttree.unifies.append(i)
+                        unification_count[ttree.num] += 1
+                        unifications[ttree.num].append(i)
+                        if ttree.metavars not in hydras:
+                            hydras.append(ttree.metavars)
+        for t in ttree.andlist:
+            mark(t)
+    
+    mark(ttree)
+    return unification_count, unifications
+
+def find_start_index(lst, chosen_set):
+    index = len(lst)
+    for i in reversed(range(len(lst))):
+        if lst[i] in chosen_set:
+            break
+        index = i
+    return index
+
+def generate_pairs(V, L, r, i=0, last_chosen_c=None):
+    if last_chosen_c is None:
+        last_chosen_c = []
+    if i == r:
+        yield []
+    else:
+        start_index = find_start_index(V[i], set(last_chosen_c))
+        for c_index in range(start_index, len(V[i])):
+            c = V[i][c_index]
+            last_chosen_c.append(c)
+            for d in range(L[c]):
+                for rest in generate_pairs(V, L, r, i+1, last_chosen_c):
+                    yield [(c, d)] + rest
+            last_chosen_c.remove(c)
+
+def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
+    hydra_heads = []
+    
+    def find(ttree, path, head_found, head_killable):
+        screen.dialog("mv = "+str(ttree.metavars))
+        screen.dialog("hydra = "+str(hydra))
+        head_found = head_found or any(item in hydra for item in ttree.metavars)
+        mv_ok = all(item in hydra for item in ttree.metavars)
+        screen.dialog("head_found = "+str(head_found))
+        screen.dialog("mv_ok = "+str(mv_ok))
+        if ttree.unifies and mv_ok:
+            path.append(ttree.num)
+            head_killable = True
+            screen.dialog("kill = "+str(head_killable))
+        if not mv_ok:
+            merged = list_merge(hydra, ttree.metavars)
+            if merged not in hydras_done and merged not in hydras_todo:
+                hydras_todo.append(merged)
+        if not ttree.andlist: # we are at a leaf node
+            if not head_found: # this path does not concern us
+                return True
+            if not head_killable:
+                screen.dialog("Nokill from : "+str(ttree.num))
+                return False
+            screen.dialog("Appended : "+str(path))
+            hydra_heads.append(deepcopy(path))
+            return True        
+        for t in ttree.andlist:
+             p = len(path)
+             killable = find(t, path, head_found, head_killable)
+             if not killable:
+                 screen.dialog("Nokill : "+str(ttree.num))
+                 return False
+             while len(path) > p:
+                 path.pop()
+        return True
+
+    if find(ttree, [], False, False):
+        screen.dialog("Hydra_heads : "+str(hydra_heads))
+        return hydra_heads
+    else:
+        return []
+
+def try_unifications(screen, tl, ttree, unifications, gen):
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with
+        assign = []
+        unifies = False
+        for (c, d) in v:
+            screen.dialog("Try : "+str(c)+", "+str(unifications[c][d]))
+            unifies, assign, macros = unify(tlist2[c], tlist1[unifications[c][d]], assign)
+            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+            if not unifies:
+                break
+        if unifies:
+            for (c, d) in v:
+                mark_proved(screen, tl, ttree, c)
+                
+def targets_proved(screen, tl, ttree):
+    hydras_done = []
+    hydras_todo = []
+    unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo)
+    screen.dialog("Counts : "+str(unification_count))
+    screen.dialog("Unifs. : "+str(unifications))
+    screen.dialog("Hydras : "+str(hydras_todo))
+    while hydras_todo:
+        hydra = hydras_todo.pop()
+        heads = find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra)
+        screen.dialog("heads : "+str(heads))
+        gen = generate_pairs(heads, unification_count, len(heads))
+        try_unifications(screen, tl, ttree, unifications, gen)
+        hydras_done.append(hydra)
+    return all(t.proved for t in ttree.andlist)
 
 def get_type(var, qz):
     tree = qz
@@ -217,7 +382,7 @@ def assign_vars_in_single_target(tl, ttree, i, assign):
             return False
     return True
 
-def targets_proved(screen, tl, ttree):
+def old_targets_proved(screen, tl, ttree):
     hyps = tl.tlist1.data
     tars = tl.tlist2.data
     full_ttree = ttree
