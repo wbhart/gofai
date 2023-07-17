@@ -109,6 +109,15 @@ def annotate_ttree(screen, tl, ttree, hydras):
                         unifications[ttree.num].append(i)
                         if ttree.metavars not in hydras:
                             hydras.append(ttree.metavars)
+            if isinstance(tlist2[ttree.num], EqNode): # equality may be a tautology
+                unifies, assign, macros = unify(tlist2[ttree.num].left, tlist2[ttree.num].right)
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                if unifies:
+                    ttree.unifies.append(-1) # -1 signifies tautology P = P
+                    unification_count[ttree.num] += 1
+                    unifications[ttree.num].append(-1)
+                    if ttree.metavars not in hydras:
+                        hydras.append(ttree.metavars)
         for t in ttree.andlist:
             mark(t)
     
@@ -189,7 +198,11 @@ def try_unifications(screen, tl, ttree, unifications, gen):
         unifies = False
         for (c, d) in v:
             screen.dialog("Try : "+str(c)+", "+str(unifications[c][d]))
-            unifies, assign, macros = unify(tlist2[c], tlist1[unifications[c][d]], assign)
+            hyp = unifications[c][d]
+            if hyp == -1: # signifies tautology P = P
+                unifies, assign, macros = unify(tlist2[c].left, tlist2[c].right, assign)
+            else:
+                unifies, assign, macros = unify(tlist2[c], tlist1[hyp], assign)
             unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
             if not unifies:
                 break
@@ -531,7 +544,7 @@ def var_in_single_target(tl, ttree, i, varname):
                 return False
     return True
 
-def check_tautologies(screen, tl, ttree):
+def old_check_tautologies(screen, tl, ttree):
     tlist2 = tl.tlist2.data
     for i in range(0, len(tlist2)):
         tree = tlist2[i]

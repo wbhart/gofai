@@ -7,7 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, check_tautologies, fill_macros, \
+     check_contradictions, library_load, fill_macros, \
      type_vars
 
 def main(stdscr):
@@ -105,7 +105,6 @@ def main(stdscr):
                 cleanup(screen, tl, ttree)
                 fill_macros(screen, tl)
                 num_checked = check_contradictions(screen, tl, num_checked, ttree)
-                check_tautologies(screen, tl, ttree)
                 if targets_proved(screen, tl, ttree):
                     screen.dialog("All targets proved")
                     started = False
