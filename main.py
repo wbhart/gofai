@@ -7,8 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     check_contradictions, library_load, fill_macros, \
-     type_vars
+     library_load, fill_macros, type_vars
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -16,13 +15,10 @@ def main(stdscr):
     ad = AutoDict() # get initial automation dictionary containing basic axioms
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
-    num_checked = 0 # number of hypotheses that have been checked for contradictions
     skip = False # whether to skip checking completion
     reset = False # whether to reset dependencies
 
     while True:
-        if not started:
-            num_checked = 0
         c = stdscr.getkey()
         if c == '\t': # TAB = switch window focus (and associated pad)
             skip = True
@@ -45,7 +41,6 @@ def main(stdscr):
         #    automate(screen, tl, ad)
         elif c == 'v': # equivalence
             equality(screen, tl)
-            num_checked = 0 # equivalence may cause something to contradict fresh
         elif c == 's': # start automated cleanup
             type_vars(screen, tl)
             started = True
@@ -74,7 +69,6 @@ def main(stdscr):
             clear_tableau(screen, tl)
             started = False
             ttree = None
-            num_checked = 0
             reset = True
         elif c == 'KEY_RIGHT':
             skip = True
@@ -104,7 +98,6 @@ def main(stdscr):
             if not skip:
                 cleanup(screen, tl, ttree)
                 fill_macros(screen, tl)
-                num_checked = check_contradictions(screen, tl, num_checked, ttree)
                 if targets_proved(screen, tl, ttree):
                     screen.dialog("All targets proved")
                     started = False

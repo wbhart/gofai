@@ -90,14 +90,24 @@ def annotate_ttree(screen, tl, ttree, hydras):
     ttree_full = ttree
     unification_count = [0 for i in range(len(tlist2))]
     unifications = [[] for i in range(len(tlist2))]
+    target_metavars = []
+    
+    def mvars(ttree, target_metavars):
+        if ttree.proved:
+            return target_metavars
+        if ttree.num != -1:
+            ttree.metavars = metavars_used(tlist2[ttree.num])
+            ttree.metavars.sort()
+            target_metavars = list_merge(target_metavars, ttree.metavars)
+        for t in ttree.andlist:
+            target_metavars = mvars(t, target_metavars)
+        return target_metavars
 
     def mark(ttree):
         if ttree.proved:
             return
         if ttree.num != -1:
             ttree.unifies = []
-            ttree.metavars = metavars_used(tlist2[ttree.num])
-            ttree.metavars.sort()
             for i in range(len(tlist1)):
                 dep = tl.tlist1.dependency(i)
                 if deps_compatible(ttree_full, ttree.num, dep):
@@ -118,9 +128,35 @@ def annotate_ttree(screen, tl, ttree, hydras):
                     unifications[ttree.num].append(-1)
                     if ttree.metavars not in hydras:
                         hydras.append(ttree.metavars)
+            for i in range(len(tlist1)):
+                d1 = tl.tlist1.dependency(i)
+                if ttree.num == d1: # a contradiction to hyp i would prove this target
+                    tree1 = complement_tree(tlist1[i])
+                    mv1 = metavars_used(tlist1[i])
+                    for j in range(len(tlist1)):
+                        if i != j:
+                            d2 = tl.tlist1.dependency(j)
+                            if d2 == -1 or deps_compatible(ttree, d1, d2):
+                                screen.dialog("Testing "+str((i, j)))
+                                tree2 = tlist1[j]
+                                unifies, assign, macros = unify(tree1, tree2)
+                                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                                if unifies:
+                                    screen.dialog("Unifies")
+                                    mv2 = metavars_used(tlist1[j])
+                                    if all(var in ttree.metavars or var not in target_metavars for var in mv1) and \
+                                       all(var in ttree.metavars or var not in target_metavars for var in mv2): # check no additional mvars involved
+                                        screen.dialog("Appended "+str((i, j)))
+                                        ttree.unifies.append((i, j)) # (i, j) signifies a contradiction between hyps i and j
+                                        unification_count[ttree.num] += 1
+                                        unifications[ttree.num].append((i, j))
+                                        if ttree.metavars not in hydras:
+                                            hydras.append(ttree.metavars)
+                    
         for t in ttree.andlist:
             mark(t)
     
+    target_metavars = mvars(ttree, target_metavars)
     mark(ttree)
     return unification_count, unifications
 
@@ -153,7 +189,7 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
     def find(ttree, path, head_found, head_killable):
         screen.dialog("mv = "+str(ttree.metavars))
         screen.dialog("hydra = "+str(hydra))
-        head_found = head_found or any(item in hydra for item in ttree.metavars)
+        head_found = head_found or any(item in hydra for item in ttree.metavars) or (not hydra and not ttree.metavars)
         mv_ok = all(item in hydra for item in ttree.metavars)
         screen.dialog("head_found = "+str(head_found))
         screen.dialog("mv_ok = "+str(mv_ok))
@@ -193,16 +229,24 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
 def try_unifications(screen, tl, ttree, unifications, gen):
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
-    for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with
+    for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with (or pair)
         assign = []
         unifies = False
+        screen.dialog("v = "+str(v))
         for (c, d) in v:
-            screen.dialog("Try : "+str(c)+", "+str(unifications[c][d]))
             hyp = unifications[c][d]
-            if hyp == -1: # signifies tautology P = P
-                unifies, assign, macros = unify(tlist2[c].left, tlist2[c].right, assign)
+            screen.dialog("Try : "+str(c)+", "+str(unifications[c][d]))
+            if isinstance(hyp, tuple):
+                (i, j) = hyp
+                tree1 = complement_tree(tlist1[i])
+                tree2 = tlist1[j]
+                unifies, assign, macros = unify(tree1, tree2, assign)
             else:
-                unifies, assign, macros = unify(tlist2[c], tlist1[hyp], assign)
+                hyp = unifications[c][d]
+                if hyp == -1: # signifies tautology P = P
+                    unifies, assign, macros = unify(tlist2[c].left, tlist2[c].right, assign)
+                else:
+                    unifies, assign, macros = unify(tlist2[c], tlist1[hyp], assign)
             unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
             if not unifies:
                 break
