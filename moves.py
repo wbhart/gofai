@@ -548,7 +548,7 @@ def deps_compatible(ttree, d1, d2):
     else:
         return False
 
-def check_contradictions(screen, tl, n, ttree):
+def old_check_contradictions(screen, tl, n, ttree):
     tlist1 = tl.tlist1.data
     for i in range(n, len(tlist1)):
         d1 = tl.tlist1.dependency(i)
@@ -1377,9 +1377,13 @@ def modus_ponens(screen, tl, ttree):
         stmt = substitute(deepcopy(tree1.left), assign)
         stmt = relabel(stmt, tl.vars)
         if line2 in tl.tars: # we already reasoned from this target
-            stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
+            screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
+            # stmt = complement_tree(stmt)
+            # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            # tlist1.dep[len(tlist1.data) - 1] = dep
         else:
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
@@ -1483,9 +1487,13 @@ def modus_tollens(screen, tl, ttree):
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         stmt = relabel(stmt, tl.vars)
         if line2 in tl.tars: # we already reasoned from this target
-            stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
+            screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
+            screen.restore_state()
+            screen.focus.refresh()
+            return
+            # stmt = complement_tree(stmt)
+            # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            # tlist1.dep[len(tlist1.data) - 1] = dep
         else:
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
