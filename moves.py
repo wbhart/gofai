@@ -529,6 +529,22 @@ def mark_proved(screen, tl, ttree, n):
         return True
     for P in ttree.andlist:
         if mark_proved(screen, tl, P, n):
+            if all(t.proved for t in ttree.andlist) and not ttree.proved:
+                ttree.proved = True
+                if ttree.num >= 0:
+                    screen.dialog("Target "+str(ttree.num)+" proved")
+                for i in range(0, len(tl.tlist1.data)):
+                    d1 = tl.tlist1.dependency(i)
+                    if d1 != -1 and (ttree.num == -1 or deps_compatible(ttree, d1, ttree.num)):
+                        tl.tlist1.data[i] = DeadNode()
+                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+                screen.pad1.refresh()
+                for i in range(0, len(tl.tlist2.data)):
+                    if ttree.num == -1 or deps_compatible(ttree, i, ttree.num): 
+                        tl.tlist2.data[i] = DeadNode()
+                        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+                screen.pad2.refresh()
+                screen.focus.refresh()
             return True
     return False
 
