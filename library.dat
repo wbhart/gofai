@@ -658,8 +658,8 @@ Tags: #sets #definition
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
 
-Title: #sets
-Tags: Subset of the empty set is empty
+Title: Subset of the empty set is empty
+Tags: #sets
 \forall S : Set
 ------------------------------
 S \subseteq \emptyset
