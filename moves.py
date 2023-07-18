@@ -189,7 +189,7 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
     def find(ttree, path, head_found, head_killable):
         screen.dialog("mv = "+str(ttree.metavars))
         screen.dialog("hydra = "+str(hydra))
-        head_found = head_found or any(item in hydra for item in ttree.metavars) or (not hydra and not ttree.metavars)
+        head_found = head_found or any(item in hydra for item in ttree.metavars)
         mv_ok = all(item in hydra for item in ttree.metavars)
         screen.dialog("head_found = "+str(head_found))
         screen.dialog("mv_ok = "+str(mv_ok))
@@ -254,9 +254,24 @@ def try_unifications(screen, tl, ttree, unifications, gen):
             for (c, d) in v:
                 mark_proved(screen, tl, ttree, c)
                 
+def check_identical(screen, tl, ttree):
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    for i in range(len(tlist2)):
+        for j in range(len(tlist1)):
+            if str(tlist2[i]) == str(tlist1[j]):
+                dep = tl.tlist1.dependency(j)
+                if dep == -1 or deps_compatible(ttree, i, dep):
+                    mark_proved(screen, tl, ttree, i)
+    for i in range(len(tlist2)):
+        if isinstance(tlist2[i], EqNode):
+            if str(tlist2[i].right) == str(tlist2[i].right):
+                mark_proved(screen, tl, ttree, i)
+    
 def targets_proved(screen, tl, ttree):
     hydras_done = []
     hydras_todo = []
+    check_identical(screen, tl, ttree)
     unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo)
     screen.dialog("Counts : "+str(unification_count))
     screen.dialog("Unifs. : "+str(unifications))
