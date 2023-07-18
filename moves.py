@@ -265,7 +265,7 @@ def check_identical(screen, tl, ttree):
                     mark_proved(screen, tl, ttree, i)
     for i in range(len(tlist2)):
         if isinstance(tlist2[i], EqNode):
-            if str(tlist2[i].right) == str(tlist2[i].right):
+            if str(tlist2[i].left) == str(tlist2[i].right):
                 mark_proved(screen, tl, ttree, i)
     
 def targets_proved(screen, tl, ttree):
