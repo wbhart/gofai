@@ -557,7 +557,7 @@ Tags: #sets #definition
 \forall A : Set \forall B : Set
 ------------------------------
 ------------------------------
-A \subseteq B \iff (\forall x : Set x \in A \implies x \in B)
+A \subseteq B \iff (\forall x x \in A \implies x \in B)
 
 Title: Definition of set equality
 Tags: #sets #definition
@@ -566,14 +566,14 @@ Tags: #sets #definition
 ------------------------------
 A = B \iff A \subseteq B \wedge B \subseteq A
 
-Title: Definition of strict subset relation
+Title: Definition of strict set inclusion
 Tags: #sets #definition
 \forall A : Set, \forall B : Set
 ------------------------------
 ------------------------------
 A \subsetneq B \iff A \subseteq B \wedge A \neq B
 
-Title: Transitivity of set containment
+Title: Transitivity of set inclusion
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -582,7 +582,7 @@ B \subseteq C
 ------------------------------
 A \subseteq C
 
-Title: Mixed transitivity of containment (right strict)
+Title: Mixed transitivity of set inclusion (right strict)
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -591,7 +591,7 @@ B \subsetneq C
 ------------------------------
 A \subsetneq C
 
-Title: Mixed transitivity of set containment (left strict)
+Title: Mixed transitivity of set inclusion (left strict)
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -600,7 +600,7 @@ B \subseteq C
 ------------------------------
 A \subsetneq C
 
-Title: Transitivity of strict containment
+Title: Transitivity of strict set inclusion
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -609,25 +609,25 @@ B \subsetneq C
 ------------------------------
 A \subsetneq C
 
-Title: An element of a set is an element of a superset
+Title: Element of a set is an element of a superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x : Set
+\forall A : Set, \forall B : Set, \forall x
 ------------------------------
 A \subseteq B
 x \in A
 ------------------------------
 x \in B
 
-Title: An element of a set is an element of a strict superset
+Title: Element of a set is an element of a strict superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x : Set
+\forall A : Set, \forall B : Set, \forall x
 ------------------------------
 A \subsetneq B
 x \in A
 ------------------------------
 x \in B
 
-Title: A cycle of set containments means equality of those sets
+Title: Cycle of set inclusions implies equality of those sets
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -639,12 +639,12 @@ A = B
 
 Title: Definition of empty set
 Tags: #sets
-\forall x : Set
+\forall x
 ------------------------------
 ------------------------------
 \neg(x \in \emptyset)
 
-Title: Every set contains the empty set
+Title: Empty set is a subset of every set
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -653,20 +653,20 @@ Tags: #sets
 
 Title: Definition of set union
 Tags: #sets #definition
-\forall S : Set \forall T : Set \forall x : Set
+\forall S : Set \forall T : Set \forall x
 ------------------------------
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
 
 Title: #sets
-Tags: If S is contained in the empty set it is empty
+Tags: Subset of the empty set is empty
 \forall S : Set
 ------------------------------
 S \subseteq \emptyset
 ------------------------------
 S = \emptyset
 
-Title: A set strictly containing the empty set contains an element
+Title: Empty set strictly included in set implies set has an element
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -674,9 +674,9 @@ Tags: #sets
 ------------------------------
 \exists s : Set s \in S
 
-Title: Problem : A set containing an element strictly contains the empty set
+Title: Problem : A set containing an element strictly includes the empty set
 Tags: #sets #tests
-\forall S : Set \forall s : Set
+\forall S : Set \forall s
 ------------------------------
 s \in S
 ------------------------------
@@ -689,14 +689,14 @@ Tags: #sets
 ------------------------------
 S \cup T = T \cup S
 
-Title: A union of sets contains the sets individually
+Title: Union of sets includes the sets individually
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
 S \subseteq S \cup T
 
-Title: If a union contains one of the sets, the other is contained in it
+Title: Union equal to one of the sets implies the other is included in it
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -704,7 +704,7 @@ S \cup T = S
 ------------------------------
 T \subseteq S
 
-Title: Set is subset of union if it is subset of either set
+Title: Subset of one of two sets is subset of their union
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -712,11 +712,11 @@ C \subseteq S \vee C \subseteq T
 ------------------------------
 C \subseteq S \cup T
 
-Title: If a set is contained in one of two then it is contained in their union
+Title: Subset of one of two sets is a subset of their union
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
-\forall c : Set c \in C \implies c \in S \vee c \in T
+\forall c c \in C \implies c \in S \vee c \in T
 ------------------------------
 C \subseteq S \cup T
 
@@ -727,22 +727,22 @@ Tags: #sets
 ------------------------------
 S \cup \emptyset = S
 
-Title: A union of a set with itself is trivial
+Title: Union of a set with itself is trivial
 Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
 S \cup S = S
 
-Title: If a union is nonempty one of the sets has an element
+Title: Union is nonempty implies one of the sets has an element
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 S \cup T \neq \emptyset
 ------------------------------
-\exists x : Set x \in S \vee x \in T
+\exists x x \in S \vee x \in T
 
-Title: If a union is empty the sets are empty
+Title: Union is empty implies the sets are empty
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -752,7 +752,7 @@ S = \emptyset \vee T = \emptyset
 
 Title: Definition of set intersection
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x : Set
+\forall S : Set, \forall T : Set, \forall x
 ------------------------------
 ------------------------------
 x \in S \cap T \iff x \in S \wedge x \in T
@@ -764,7 +764,7 @@ Tags: #sets
 ------------------------------
 S \cap T = T \cap S
 
-Title: An intersection of sets is contained in the sets
+Title: Intersection of sets is a subset of the sets
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -780,21 +780,21 @@ S \cap \emptyset = S
 
 Title: Problem : An element in one set of an empty intersection is not in the other
 Tags: #sets #tests 
-\forall S : Set, \forall T : Set, \forall s : Set
+\forall S : Set, \forall T : Set, \forall s
 ------------------------------
 S \cap T = \emptyset
 s \in S
 ------------------------------
 \neg(s \in T)
 
-Title: The intersection of a set with itself is itself
+Title: Intersection of a set with itself is itself
 Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
 S \cap S = S
 
-Title: A set contained in an intersection with another is contained in the other
+Title: Subset of intersection is subset of the second set
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -802,11 +802,11 @@ S \subseteq S \cap T
 ------------------------------
 S \subseteq T
 
-Title: Set contained in two others is contained in their intersection
+Title: Set included in two others is included in their intersection
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall C : Set
 ------------------------------
-\forall c : Set c \in C \implies c \in S \wedge c \in T
+\forall c c \in C \implies c \in S \wedge c \in T
 ------------------------------
 C \subseteq S \cap T
 
