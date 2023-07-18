@@ -84,13 +84,9 @@ def list_merge(list1, list2):
         v = var
     return r
 
-def annotate_ttree(screen, tl, ttree, hydras):
-    tlist1 = tl.tlist1.data
-    tlist2 = tl.tlist2.data
-    ttree_full = ttree
-    unification_count = [0 for i in range(len(tlist2))]
-    unifications = [[] for i in range(len(tlist2))]
+def target_metavars(screen, tl, ttree):
     target_metavars = []
+    tlist2 = tl.tlist2.data
     
     def mvars(ttree, target_metavars):
         if ttree.proved:
@@ -103,6 +99,15 @@ def annotate_ttree(screen, tl, ttree, hydras):
             target_metavars = mvars(t, target_metavars)
         return target_metavars
 
+    return mvars(ttree, target_metavars)
+
+def annotate_ttree(screen, tl, ttree, hydras, tarmv):
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    ttree_full = ttree
+    unification_count = [0 for i in range(len(tlist2))]
+    unifications = [[] for i in range(len(tlist2))]
+    
     def mark(ttree):
         if ttree.proved:
             return
@@ -144,8 +149,8 @@ def annotate_ttree(screen, tl, ttree, hydras):
                                 if unifies:
                                     screen.dialog("Unifies")
                                     mv2 = metavars_used(tlist1[j])
-                                    if all(var in ttree.metavars or var not in target_metavars for var in mv1) and \
-                                       all(var in ttree.metavars or var not in target_metavars for var in mv2): # check no additional mvars involved
+                                    if all(var in ttree.metavars or var not in tarmv for var in mv1) and \
+                                       all(var in ttree.metavars or var not in tarmv for var in mv2): # check no additional mvars involved
                                         screen.dialog("Appended "+str((i, j)))
                                         ttree.unifies.append((i, j)) # (i, j) signifies a contradiction between hyps i and j
                                         unification_count[ttree.num] += 1
@@ -156,7 +161,6 @@ def annotate_ttree(screen, tl, ttree, hydras):
         for t in ttree.andlist:
             mark(t)
     
-    target_metavars = mvars(ttree, target_metavars)
     mark(ttree)
     return unification_count, unifications
 
@@ -254,25 +258,36 @@ def try_unifications(screen, tl, ttree, unifications, gen):
             for (c, d) in v:
                 mark_proved(screen, tl, ttree, c)
                 
-def check_identical(screen, tl, ttree):
+def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
-    for i in range(len(tlist2)):
-        for j in range(len(tlist1)):
-            if str(tlist2[i]) == str(tlist1[j]):
-                dep = tl.tlist1.dependency(j)
-                if dep == -1 or deps_compatible(ttree, i, dep):
-                    mark_proved(screen, tl, ttree, i)
+    for i in range(len(tlist1)):
+        mv1 = metavars_used(tlist1[i])
+        if not any(v in tarmv for v in mv1):
+            for j in range(len(tlist2)):
+                mv2 = metavars_used(tlist2[j])
+                if not any(v in tarmv for v in mv2):
+                    dep = tl.tlist1.dependency(i)
+                    if dep == -1 or deps_compatible(ttree, j, dep):
+                        unifies, assign, macros = unify(tlist1[i], tlist2[j])
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        if unifies:
+                            mark_proved(screen, tl, ttree, j)
+    check_contradictions(screen, tl, ttree, tarmv)
     for i in range(len(tlist2)):
         if isinstance(tlist2[i], EqNode):
-            if str(tlist2[i].left) == str(tlist2[i].right):
-                mark_proved(screen, tl, ttree, i)
+            if not metavars_used(tlist2[i]):
+                unifies, assign, macros = unify(tlist2[i].left, tlist2[i].right)
+                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                if unifies:
+                    mark_proved(screen, tl, ttree, i)
     
 def targets_proved(screen, tl, ttree):
     hydras_done = []
     hydras_todo = []
-    check_identical(screen, tl, ttree)
-    unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo)
+    tarmv = target_metavars(screen, tl, ttree)
+    check_zero_metavar_unifications(screen, tl, ttree, tarmv)
+    unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo, tarmv)
     screen.dialog("Counts : "+str(unification_count))
     screen.dialog("Unifs. : "+str(unifications))
     screen.dialog("Hydras : "+str(hydras_todo))
@@ -579,36 +594,39 @@ def deps_compatible(ttree, d1, d2):
     else:
         return False
 
-def old_check_contradictions(screen, tl, n, ttree):
+def check_contradictions(screen, tl, ttree, tarmv):
     tlist1 = tl.tlist1.data
-    for i in range(n, len(tlist1)):
-        d1 = tl.tlist1.dependency(i)
-        tree1 = complement_tree(tlist1[i])
-        for j in range(0, i):
-            d2 = tl.tlist1.dependency(j)
-            if d1 < 0 or d2 < 0:
-                tree2 = tlist1[j]
-                unifies, assign, macros = unify(tree1, tree2)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
-                if unifies: # we found a contradiction
-                    if d1 >= 0:
-                        mark_proved(screen, tl, ttree, d1)
-                    else:
-                        mark_proved(screen, tl, ttree, d2)
-            elif d1 >= 0 and d2 >= 0:
-                if deps_compatible(ttree, d1, d2):
-                    tree2 = tlist1[j]
-                    unifies, assign, macros = unify(tree1, tree2)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
-                    if unifies: # we found a contradiction
-                        mark_proved(screen, tl, ttree, d1)
-                elif deps_compatible(ttree, d2, d1):
-                    tree2 = tlist1[j]
-                    unifies, assign, macros = unify(tree1, tree2)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
-                    if unifies: # we found a contradiction
-                        mark_proved(screen, tl, ttree, d2)
-    return len(tlist1)
+    for i in range(len(tlist1)):
+        mv1 = metavars_used(tlist1[i])
+        if not any(v in tarmv for v in mv1):
+            d1 = tl.tlist1.dependency(i)
+            tree1 = complement_tree(tlist1[i])
+            for j in range(0, i):
+                mv2 = metavars_used(tlist1[j])
+                if not any(v in tarmv for v in mv2):
+                    d2 = tl.tlist1.dependency(j)
+                    if d1 < 0 or d2 < 0:
+                        tree2 = tlist1[j]
+                        unifies, assign, macros = unify(tree1, tree2)
+                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        if unifies: # we found a contradiction
+                            if d1 >= 0:
+                                mark_proved(screen, tl, ttree, d1)
+                            else:
+                                mark_proved(screen, tl, ttree, d2)
+                    elif d1 >= 0 and d2 >= 0:
+                        if deps_compatible(ttree, d1, d2):
+                            tree2 = tlist1[j]
+                            unifies, assign, macros = unify(tree1, tree2)
+                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                            if unifies: # we found a contradiction
+                                mark_proved(screen, tl, ttree, d1)
+                        elif deps_compatible(ttree, d2, d1):
+                            tree2 = tlist1[j]
+                            unifies, assign, macros = unify(tree1, tree2)
+                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                            if unifies: # we found a contradiction
+                                mark_proved(screen, tl, ttree, d2)
 
 def var_in_single_target(tl, ttree, i, varname):
     tlist2 = tl.tlist2.data
