@@ -672,7 +672,7 @@ Tags: #sets
 ------------------------------
 \emptyset \subsetneq S
 ------------------------------
-\exists s : Set s \in S
+\exists s s \in S
 
 Title: Problem : A set containing an element strictly includes the empty set
 Tags: #sets #tests
