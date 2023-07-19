@@ -141,7 +141,7 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                     for j in range(len(tlist1)):
                         if i != j:
                             d2 = tl.tlist1.dependency(j)
-                            if d2 == -1 or deps_compatible(ttree, d1, d2):
+                            if d2 == -1 or deps_compatible(ttree, d2, d1):
                                 screen.dialog("Testing "+str((i, j)))
                                 tree2 = tlist1[j]
                                 unifies, assign, macros = unify(tree1, tree2)
