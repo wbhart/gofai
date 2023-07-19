@@ -682,7 +682,7 @@ s \in S
 ------------------------------
 \emptyset \subsetneq S
 
-Title: Commutativity of union
+Title: Commutativity of set union
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -712,7 +712,7 @@ C \subseteq S \vee C \subseteq T
 ------------------------------
 C \subseteq S \cup T
 
-Title: Subset of one of two sets is a subset of their union
+Title: Elements of set contained in two sets implies set is subset of their union
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -720,14 +720,14 @@ Tags: #sets
 ------------------------------
 C \subseteq S \cup T
 
-Title: Union with the empty set is trivial
+Title: Union of set with the empty set is the original set
 Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
 S \cup \emptyset = S
 
-Title: Union of a set with itself is trivial
+Title: Union of a set with itself is itself
 Tags: #sets
 \forall S : Set
 ------------------------------

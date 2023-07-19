@@ -142,16 +142,13 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                         if i != j:
                             d2 = tl.tlist1.dependency(j)
                             if d2 == -1 or deps_compatible(ttree, d2, d1):
-                                screen.dialog("Testing "+str((i, j)))
                                 tree2 = tlist1[j]
                                 unifies, assign, macros = unify(tree1, tree2)
                                 unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
                                 if unifies:
-                                    screen.dialog("Unifies")
                                     mv2 = metavars_used(tlist1[j])
                                     if all(var in ttree.metavars or var not in tarmv for var in mv1) and \
                                        all(var in ttree.metavars or var not in tarmv for var in mv2): # check no additional mvars involved
-                                        screen.dialog("Appended "+str((i, j)))
                                         ttree.unifies.append((i, j)) # (i, j) signifies a contradiction between hyps i and j
                                         unification_count[ttree.num] += 1
                                         unifications[ttree.num].append((i, j))
@@ -191,16 +188,11 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
     hydra_heads = []
     
     def find(ttree, path, head_found, head_killable):
-        screen.dialog("mv = "+str(ttree.metavars))
-        screen.dialog("hydra = "+str(hydra))
         head_found = head_found or any(item in hydra for item in ttree.metavars)
         mv_ok = all(item in hydra for item in ttree.metavars)
-        screen.dialog("head_found = "+str(head_found))
-        screen.dialog("mv_ok = "+str(mv_ok))
         if ttree.unifies and mv_ok:
             path.append(ttree.num)
             head_killable = True
-            screen.dialog("kill = "+str(head_killable))
         if not mv_ok:
             merged = list_merge(hydra, ttree.metavars)
             if merged not in hydras_done and merged not in hydras_todo:
@@ -209,23 +201,19 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
             if not head_found: # this path does not concern us
                 return True
             if not head_killable:
-                screen.dialog("Nokill from : "+str(ttree.num))
                 return False
-            screen.dialog("Appended : "+str(path))
             hydra_heads.append(deepcopy(path))
             return True        
         for t in ttree.andlist:
              p = len(path)
              killable = find(t, path, head_found, head_killable)
              if not killable:
-                 screen.dialog("Nokill : "+str(ttree.num))
                  return False
              while len(path) > p:
                  path.pop()
         return True
 
     if find(ttree, [], False, False):
-        screen.dialog("Hydra_heads : "+str(hydra_heads))
         return hydra_heads
     else:
         return []
@@ -236,10 +224,8 @@ def try_unifications(screen, tl, ttree, unifications, gen):
     for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with (or pair)
         assign = []
         unifies = False
-        screen.dialog("v = "+str(v))
         for (c, d) in v:
             hyp = unifications[c][d]
-            screen.dialog("Try : "+str(c)+", "+str(unifications[c][d]))
             if isinstance(hyp, tuple):
                 (i, j) = hyp
                 tree1 = complement_tree(tlist1[i])
@@ -288,13 +274,9 @@ def targets_proved(screen, tl, ttree):
     tarmv = target_metavars(screen, tl, ttree)
     check_zero_metavar_unifications(screen, tl, ttree, tarmv)
     unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo, tarmv)
-    screen.dialog("Counts : "+str(unification_count))
-    screen.dialog("Unifs. : "+str(unifications))
-    screen.dialog("Hydras : "+str(hydras_todo))
     while hydras_todo:
         hydra = hydras_todo.pop()
         heads = find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra)
-        screen.dialog("heads : "+str(heads))
         gen = generate_pairs(heads, unification_count, len(heads))
         try_unifications(screen, tl, ttree, unifications, gen)
         hydras_done.append(hydra)
