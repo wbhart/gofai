@@ -37,11 +37,11 @@ def is_predicate(tree):
     else:
         return False
 
-def node_signature(tree):
+def node_constraint(tree):
     if isinstance(tree, VarNode):
-        return tree.signature
+        return tree.constraint
     elif isinstance(tree, FnNode):
-        return tree.var.signature
+        return tree.var.constraint
     else:
         return None
 
@@ -102,16 +102,16 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
         return True, assign, macros
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
-        if (isinstance(node_signature(tree1), PredSignature) and is_predicate(tree2)) \
-              or (not isinstance(node_signature(tree1), PredSignature) and is_expression(tree2)
+        if (isinstance(node_constraint(tree1), PredSignature) and is_predicate(tree2)) \
+              or (not isinstance(node_constraint(tree1), PredSignature) and is_expression(tree2)
               and (tree1.is_binder or not tree_contains_binder(tree2))):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
-        if (isinstance(node_signature(tree2), PredSignature) and is_predicate(tree1)) \
-              or (not isinstance(node_signature(tree2), PredSignature) and is_expression(tree1)
+        if (isinstance(node_constraint(tree2), PredSignature) and is_predicate(tree1)) \
+              or (not isinstance(node_constraint(tree2), PredSignature) and is_expression(tree1)
               and (tree2.is_binder or not tree_contains_binder(tree1))):
             assign.append(deepcopy((tree2, tree1)))
         else:
@@ -168,7 +168,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
             if tree1.name() != tree2.name():
                 return False, [], []
             if tree1.name() == '\\emptyset':
-                unified, assign, macros = trees_unify(tree1.signature.universe, tree2.signature.universe, assign, macros)
+                unified, assign, macros = trees_unify(tree1.constraint.universe, tree2.constraint.universe, assign, macros)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, TupleNode):
@@ -213,6 +213,10 @@ def unify(tree1, tree2, assigned=[]):
 def subst(tree1, var, tree2):
     if tree1 == None:
         return tree1
+    if isinstance(tree1, ForallNode) or isinstance(tree1, ExistsNode):
+        tree1.var.constraint = subst(tree1.var.constraint, var, tree2)
+        tree1.left = subst(tree1.left, var, tree2)
+        return tree1
     if isinstance(tree1, VarNode):
         if tree1.name() == var.name():
             return deepcopy(tree2)
@@ -252,7 +256,7 @@ def subst(tree1, var, tree2):
         tree1.right = subst(tree1.right, var, tree2)
         return tree1
     elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
-        tree1.signature.universe = subst(tree1.signature.universe, var, tree2)
+        tree1.constraint.universe = subst(tree1.constraint.universe, var, tree2)
         return tree1
     else:
         return tree1

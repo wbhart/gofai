@@ -1,4 +1,4 @@
-from sorts import NumberSignature
+from sorts import NumberSignature, Signature
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -103,29 +103,29 @@ class DeadNode(LeafNode):
         return "----"
 
 class SymbolNode(LeafNode):
-    def __init__(self, name, const_signature):
+    def __init__(self, name, const_constraint):
         self._name = name
-        self.signature = const_signature
+        self.constraint = const_constraint
     
     def name(self):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and self.signature.universe.name() != "\\mathcal{U}":
-            return univar(self._name)+"("+str(self.signature.universe)+")"
+        if self.name() == "\\emptyset" and self.constraint.universe.name() != "\\mathcal{U}":
+            return univar(self._name)+"("+str(self.constraint.universe)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and self.signature.universe.name() != "\\mathcal{U}":
-            return self._name+"("+repr(self.signature.universe)+")"
+        if self.name() == "\\emptyset" and self.constraint.universe.name() != "\\mathcal{U}":
+            return self._name+"("+repr(self.constraint.universe)+")"
         else:
             return self._name
 
 class VarNode(LeafNode):
-    def __init__(self, name, var_signature=SymbolNode("\\mathcal{U}", None), is_metavar=False):
+    def __init__(self, name, var_constraint=SymbolNode("\\mathcal{U}", None), is_metavar=False):
         self._name = name
-        self.signature = var_signature
+        self.constraint = var_constraint
         self.is_metavar = is_metavar # whether this is a metavariable
         self.is_binder = False # whether this node is a binder variable
 
@@ -141,7 +141,7 @@ class VarNode(LeafNode):
 class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
-        self.signature = NumberSignature('\\mathbb{N}')
+        self.constraint = NumberSignature('\\mathbb{N}')
 
     def __str__(self):
         return str(self.value)
@@ -447,8 +447,10 @@ class ExistsNode(LRNode):
             expr = ""
         if is_universum(self.var.constraint):
             return "\u2203"+str(self.var)+expr
-        else:
+        elif isinstance(self.var.constraint, Signature):
             return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
+        else:
+            return "\u2203"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
 
     def __repr__(self):
         if self.left:
@@ -460,8 +462,10 @@ class ExistsNode(LRNode):
             expr = ""
         if is_universum(self.var.constraint):
             return "\\exists "+repr(self.var)+expr
-        else:
+        elif isinstance(self.var.constraint, Signature):
             return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
+        else:
+            return "\\exists "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
 
 class ForallNode(LRNode):
     def __init__(self, var, expr):
@@ -479,8 +483,10 @@ class ForallNode(LRNode):
             expr = ""
         if is_universum(self.var.constraint):
             return "\u2200"+str(self.var)+expr
-        else:
+        elif isinstance(self.var.constraint, Signature):
             return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
+        else:
+            return "\u2200"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
 
     def __repr__(self):
         if self.left:
@@ -492,8 +498,10 @@ class ForallNode(LRNode):
             expr = ""
         if is_universum(self.var.constraint):
             return "\\forall "+repr(self.var)+expr
-        else:
+        elif isinstance(self.var.constraint, Signature):
             return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
+        else:
+            return "\\forall "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
 
 class ElemNode(LRNode):
     def __str__(self):

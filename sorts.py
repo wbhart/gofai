@@ -21,7 +21,10 @@ sig_str = {"Natural" : "\u2115",
               "Real"    : "\u211d",
               "Complex" : "\u2102"}
 
-class NumberSignature:
+class Signature:
+    pass
+
+class NumberSignature(Signature):
     def __init__(self, name):
         self._name = sig_name[name]
 
@@ -34,14 +37,14 @@ class NumberSignature:
     def name(self):
         return self._name
 
-class PredSignature:
+class PredSignature(Signature):
     def __repr__(self):
        return "Pred"
 
     def __str__(self):
        return "Pred"
 
-class SetSignature:
+class SetSignature(Signature):
     def __init__(self, universe):
         self.universe = universe
 
@@ -57,7 +60,7 @@ class SetSignature:
         else:
             return "Set("+str(self.universe)+")"
             
-class FnSignature:
+class FnSignature(Signature):
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
@@ -74,7 +77,7 @@ class FnSignature:
          else:
              return str(self.domain)+" \u2192 "+str(self.codomain)
 
-class TupleSignature:
+class TupleSignature(Signature):
     def __init__(self, sets):
          self.sets = sets
 
