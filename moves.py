@@ -1,9 +1,9 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, ConstNode, LeafNode, TupleNode, EqNode, UnionNode, \
+     FnNode, LRNode, LeafNode, TupleNode, EqNode, UnionNode, \
      IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, DeadNode
-from type import FnType, TupleType, SetType
+from sorts import FnSignature, TupleSignature, SetSignature
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
@@ -282,51 +282,51 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
-def get_type(var, qz):
+def get_signature(var, qz):
     tree = qz
     name = var.name()
     while qz:
         if qz.var.name() == name:
-            return qz.var.type
+            return qz.var.signature
         qz = qz.left
-    raise Exception("Type not found for "+var.name())
+    raise Exception("Signature not found for "+var.name())
 
-def process_types(screen, tree, types, vars):
+def process_signatures(screen, tree, signatures, vars):
     def del_last(L, str):
         gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
         del L[next(gen, None)]
 
-    if isinstance(tree, ConstNode) or isinstance(tree, ForallNode) \
+    if isinstance(tree, ForallNode) \
          or isinstance(tree, ExistsNode):
         name = tree.var.name()
         vars.append(name)
-        types[tree.var.name()] = tree.var.type
-        process_types(screen, tree.left, types, vars)
+        signatures[tree.var.name()] = tree.var.signature
+        process_signatures(screen, tree.left, signatures, vars)
         del_last(vars, name)
     elif isinstance(tree, SetBuilderNode):
         name = tree.left.left.name()
         vars.append(name)
-        types[tree.left.left.name()] = tree.left.left.type
-        process_types(screen, tree.left, types, vars)
-        process_types(screen, tree.right, types, vars)
+        signatures[tree.left.left.name()] = tree.left.left.signature
+        process_signatures(screen, tree.left, signatures, vars)
+        process_signatures(screen, tree.right, signatures, vars)
         del_last(vars, name)
     elif isinstance(tree, VarNode):
         if not tree.name() in vars:
-            types[tree.name()] = SetType(SymbolNode("\\mathcal{U}", None))
+            signatures[tree.name()] = Setsignature(SymbolNode("\\mathcal{U}", None))
             vars.append(tree.name())
         else:
-            tree.type = types[tree.name()]
+            tree.signature = signatures[tree.name()]
     elif isinstance(tree, LRNode):
-        process_types(screen, tree.left, types, vars)
-        process_types(screen, tree.right, types, vars)
+        process_signatures(screen, tree.left, signatures, vars)
+        process_signatures(screen, tree.right, signatures, vars)
     elif isinstance(tree, FnNode):
-        process_types(screen, tree.var, types, vars)
+        process_signatures(screen, tree.var, signatures, vars)
         for v in tree.args:
-            process_types(screen, v, types, vars)
+            process_signatures(screen, v, signatures, vars)
         
 
 def type_vars(screen, tl):
-    types = dict()
+    signatures = dict()
     vars = []
 
     if len(tl.tlist0.data) > 0:
@@ -336,23 +336,23 @@ def type_vars(screen, tl):
 
     while qz != None:
         vars.append(qz.var.name())
-        types[qz.var.name()] = qz.var.type
+        signatures[qz.var.name()] = qz.var.signature
         qz = qz.left
 
     hyps = tl.tlist1.data
     for tree in hyps:
-        process_types(screen, tree, types, vars)
+        process_signatures(screen, tree, signatures, vars)
     tars = tl.tlist2.data
     for tree in tars:
-        process_types(screen, tree, types, vars)
+        process_signatures(screen, tree, signatures, vars)
 
 def universe(tree, qz):
     if isinstance(tree, VarNode):
         if tree.is_metavar:
             return None
         else:
-            t = get_type(tree, qz)
-            if not isinstance(t, SetType):
+            t = get_signature(tree, qz)
+            if not isinstance(t, Setsignature):
                 return SymbolNode("\\mathcal{U}", None)
             else:
                 return t.universe
@@ -362,7 +362,7 @@ def universe(tree, qz):
     elif isinstance(tree, FnNode) and tree.name() == 'complement':
         return universe(tree.args[0], qz)
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        return tree.type.universe
+        return tree.signature.universe
     else:
         return None # no universe
 
@@ -371,8 +371,8 @@ def domain(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            fn_type = get_type(tree, qz)
-            return fn_type.domain
+            fn_signature = get_signature(tree, qz)
+            return fn_signature.domain
     else:
         return None # no domain
 
@@ -381,8 +381,8 @@ def codomain(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            fn_type = get_type(tree, qz)
-            return fn_type.codomain
+            fn_signature = get_signature(tree, qz)
+            return fn_signature.codomain
     else:
         return None # no domain
         
@@ -658,7 +658,7 @@ def relabel(tree, tldict):
             vars_dict[name] = new_name
             process(tree.var)
             process(tree.left)
-            process(tree.var.type)
+            process(tree.var.signature)
         elif isinstance(tree, VarNode):
             if tree.name() in vars_dict:
                 tree._name = vars_dict[tree.name()]
@@ -677,7 +677,7 @@ def relabel(tree, tldict):
             process(tree.left)
             process(tree.right)
         elif isinstance(tree, FnNode):
-            # TODO : come up with a proper Pair type
+            # TODO : come up with a proper Pair signature
             # This is an unsound hack to allow pairs to be
             # treated like functions
             if isinstance(tree.var, VarNode) and tree.name() in vars_dict:
@@ -696,9 +696,9 @@ def relabel(tree, tldict):
             for v in tree.args:
                 process(v)
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                      isinstance(tree.type.universe, VarNode):
-            process(tree.type.universe)
-        elif isinstance(tree, FnType):
+                      isinstance(tree.signature.universe, VarNode):
+            process(tree.signature.universe)
+        elif isinstance(tree, Fnsignature):
             process(tree.domain)
             process(tree.codomain)
     t = tree
@@ -707,7 +707,7 @@ def relabel(tree, tldict):
         new_name = relabel_varname(name, tldict)
         vars_dict[name] = new_name
         t.var._name = new_name # TODO : allow assignment of name for FnNode
-        process(t.var.type)
+        process(t.var.signature)
         t = t.left
 
     process(t)
@@ -943,7 +943,7 @@ def clear_tableau(screen, tl):
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
 
-canonical_numtypes = { "\\N" : "\\mathbb{N}",
+canonical_numsignatures = { "\\N" : "\\mathbb{N}",
                        "\\Z" : "\\mathbb{Z}",
                        "\\Q" : "\\mathbb{Q}",
                        "\\R" : "\\mathbb{R}",
@@ -959,8 +959,8 @@ def canonicalise_tags(tags):
     taglist = tags_to_list(tags)
     for i in range(0, len(taglist)):
         tag = taglist[i][1:]
-        if tag in canonical_numtypes:
-            taglist[i] = "#"+canonical_numtypes[tag]
+        if tag in canonical_numsignatures:
+            taglist[i] = "#"+canonical_numsignatures[tag]
     return "Tags: "+' '.join(taglist)
 
 def filter_titles(titles, c):
@@ -974,7 +974,7 @@ def library_import(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with type shorthands
+    tags = canonicalise_tags(tags) # deal with signature shorthands
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -1058,10 +1058,10 @@ def library_import(screen, tl):
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
         pad1 = screen.pad1.pad
-        types = dict()
+        signatures = dict()
         vars = []
         stmt = relabel(tree, tl.vars)
-        process_types(screen, stmt, types, vars)
+        process_signatures(screen, stmt, signatures, vars)
         append_tree(pad1, tlist1, stmt)
         screen.pad1.refresh()
         screen.focus.refresh()
@@ -1071,7 +1071,7 @@ def library_load(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with type shorthands
+    tags = canonicalise_tags(tags) # deal with signature shorthands
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -1156,7 +1156,7 @@ def library_export(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with type shorthands
+    tags = canonicalise_tags(tags) # deal with signature shorthands
     library = open("library.dat", "a")
     library.write(title+"\n")
     library.write(tags+"\n")
@@ -1778,7 +1778,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
                     tree.var.is_metavar = True
                     deps.append(tree.var)
                     mv.append(tree.var.name())
-                    qz.append(ConstNode(tree.var, None))
+                    qz.append(ExistsNode(tree.var, None))
                 else:
                     is_blocked = True
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked or isinstance(tree.left, IffNode))
@@ -1788,25 +1788,25 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
         is_blocked = blocked
         if not blocked:
             sk.append((tree.var.name(), len(deps)))
-            domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
-            if len(domain_types) > 1:
-                fn_type = FnType(TupleType(domain_types), tree.var.type)
-            elif len(domain_types) == 1:
-                fn_type = FnType(domain_types[0], tree.var.type)
+            domain_signatures = [v.var.signature if isinstance(v, ForallNode) else v.signature for v in deps]
+            if len(domain_signatures) > 1:
+                fn_signature = FnSignature(Tuplesignature(domain_signatures), tree.var.signature)
+            elif len(domain_signatures) == 1:
+                fn_signature = FnSignature(domain_signatures[0], tree.var.signature)
             else:
-                fn_type = FnType(None, tree.var.type)
+                fn_signature = FnSignature(None, tree.var.signature)
             if positive:
                 if not blocked:
                     tree.var.is_metavar = True
                     mv.append(tree.var.name())
                 if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
-                    domain_types = [v.var.type if isinstance(v, ForallNode) else v.type for v in deps]
-                    qz.append(ConstNode(VarNode(tree.var.name(), fn_type, True), None))
+                    domain_signatures = [v.var.signature if isinstance(v, ForallNode) else v.signature for v in deps]
+                    qz.append(ExistsNode(VarNode(tree.var.name(), fn_signature, True), None))
                 else:
                     is_blocked = True
             else:
                 #deps.append(tree.var) # not needed? depends on all same things?
-                qz.append(ForallNode(VarNode(tree.var.name(), fn_type, False), None))
+                qz.append(ForallNode(VarNode(tree.var.name(), fn_signature, False), None))
         tree.left = skolemize_statement(tree.left, deps, sk, qz, mv, positive, is_blocked)
         rollback()
         return tree.left if not blocked else tree
@@ -1851,7 +1851,7 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
         if n == -1: # not a skolem variable
             return tree
         else:
-            fn_args = [VarNode(deps[i].name(), deps[i].type, deps[i].is_metavar) \
+            fn_args = [VarNode(deps[i].name(), deps[i].signature, deps[i].is_metavar) \
                     for i in range(0, n)]
             fn = FnNode(VarNode(tree.name()), fn_args)
             fn.is_skolem = True
@@ -1876,8 +1876,8 @@ def skolemize_statement(tree, deps, sk, qz, mv, positive, blocked=False):
             rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                    isinstance(tree.type.universe, VarNode):
-        tree.type.universe = skolemize_statement(tree.type.universe, deps, sk, qz, mv, positive, blocked)
+                    isinstance(tree.signature.universe, VarNode):
+        tree.signature.universe = skolemize_statement(tree.signature.universe, deps, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     else:

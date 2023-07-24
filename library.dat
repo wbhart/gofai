@@ -1,6 +1,6 @@
 Title: Addition on both sides of an equality
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a = b
 ------------------------------
@@ -8,7 +8,7 @@ a + c = b + c
 
 Title: Subtraction on both sides of an equality
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a = b
 ------------------------------
@@ -16,7 +16,7 @@ a - c = b - c
 
 Title: Multiplication on both sides of an equality
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a = b
 ------------------------------
@@ -24,7 +24,7 @@ a*c = b*c
 
 Title: Division on both sides of an equality
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a = b
 c \neq 0
@@ -33,7 +33,7 @@ a/c = b/c
 
 Title: Commutativity of equality
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a = b
 ------------------------------
@@ -41,35 +41,35 @@ b = a
 
 Title: Multiplication by zero
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 a*0 = 0
 
 Title: Multiplication by one
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 a*1 = a
 
 Title: Addition of zero
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 a + 0 = a
 
 Title: Commutativity of addition
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 a + b = b + a
 
 Title: Reciprocal of positive value less than 1
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 a > 0 \wedge a < 1
 ------------------------------
@@ -77,7 +77,7 @@ a > 0 \wedge a < 1
 
 Title: Reciprocal of value greater than 1
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 a > 1
 ------------------------------
@@ -86,21 +86,21 @@ a > 1
 
 Title: Commutativity of multiplication
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 a*b = b*a
 
 Title: Distributivity of multiplication over addition
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R} 
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R} 
 ------------------------------
 ------------------------------
 a*(b + c) = a*b + a*c
 
 Title: Less than equivalent to equality with addition of positive constant
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \exists \epsilon : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \exists \epsilon \in \mathbb{R}
 ------------------------------
 a < b
 ------------------------------
@@ -108,7 +108,7 @@ a < b
 
 Title: Less than or equal split into cases
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a \leq b
 ------------------------------
@@ -116,7 +116,7 @@ a < b \vee a = b
 
 Title: Not less than is greater than or equal
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 \neg(a < b)
 ------------------------------
@@ -124,7 +124,7 @@ a \geq b
 
 Title: Not less than or equal is greater than
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 \neg(a \leq b)
 ------------------------------
@@ -132,7 +132,7 @@ a > b
 
 Title: Value is less than itself plus a positive value
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall \epsilon : \mathbb{R}
+\forall a \in \mathbb{R} \forall \epsilon \in \mathbb{R}
 ------------------------------
 \epsilon > 0
 ------------------------------
@@ -140,7 +140,7 @@ a < a + \epsilon
 
 Title: Addition of value to both sides of a less than
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 ------------------------------
@@ -148,7 +148,7 @@ a + c < b + c
 
 Title: Subtraction of a value from both sides of a less than
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 ------------------------------
@@ -156,7 +156,7 @@ a - c < b - c
 
 Title: Multiplication of both sides of a less than by a positive value
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 c > 0
@@ -165,7 +165,7 @@ a*c < b*c
 
 Title: Multiplication of both sides of a less than by a negative value
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 c < 0
@@ -174,7 +174,7 @@ a*c > b*c
 
 Title: Division of both sides of a less than by a positive value
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 c > 0
@@ -183,7 +183,7 @@ a/c < b/c
 
 Title: Dividing both sides of a less than by a negative value
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 c < 0
@@ -192,7 +192,7 @@ a/c > b/c
 
 Title: Less than reversed is greater than
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a < b
 ------------------------------
@@ -200,7 +200,7 @@ b > a
 
 Title: Less than or equal reversed is greater than or equal
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a \leq b
 ------------------------------
@@ -208,7 +208,7 @@ b \geq a
 
 Title: Transitivity of less than
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 b < c
@@ -217,7 +217,7 @@ a < c
 
 Title: Relaxed transitivity of less than on first inequality
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a \leq b
 b < c
@@ -226,7 +226,7 @@ a < c
 
 Title: Relaxed transitivity of less than on second inequality
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a < b
 b \leq c
@@ -235,7 +235,7 @@ a < c
 
 Title: Transitivity of less than or equal
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R} \forall c : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 a \leq b
 b \leq c
@@ -244,7 +244,7 @@ a \leq c
 
 Title: Antisymmetry of less than or equal
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a \leq b
 b \leq a
@@ -253,14 +253,14 @@ a = b
 
 Title: Trichotomy of less than equals and greater than
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 a < b \vee a = b \vee a > b
 
 Title: Exclusivity of less than, equals and greater than
 Tags: #inequalities #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 \neg(a < b \wedge a = b)
@@ -268,7 +268,7 @@ Tags: #inequalities #\mathbb{R}
 
 Title: Value squared is zero iff value is zero
 Tags: #inequalities #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 a^2 = 0
 ------------------------------
@@ -276,7 +276,7 @@ a = 0
 
 Title: Value squared is positive iff value is nonzero
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 a^2 > 0
 ------------------------------
@@ -284,7 +284,7 @@ a \neq 0
 
 Title: Product is positive iff values have same sign
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a*b > 0
 ------------------------------
@@ -292,7 +292,7 @@ a > 0 \wedge b > 0 \vee a < 0 \wedge b < 0
 
 Title: Value less than or equal to all positive values is nonpositive
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \exists \epsilon : \mathbb{R}
+\forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
 ------------------------------
 \epsilon > 0 \implies a \leq \epsilon
 ------------------------------
@@ -300,7 +300,7 @@ a \leq 0
 
 Title: Value less than all positive values is nonpositive
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \exists \epsilon : \mathbb{R}
+\forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
 ------------------------------
 \epsilon > 0 \implies a < \epsilon
 ------------------------------
@@ -308,7 +308,7 @@ a \leq 0
 
 Title: Average of values is between values
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a \leq b
 ------------------------------
@@ -317,7 +317,7 @@ a \leq (a + b)/2
 
 Title: Average of two values is strictly between values if they are not equal
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a < b
 ------------------------------
@@ -326,14 +326,14 @@ a < (a + b)/2
 
 Title: Absolute value of a value is greater than or equal to zero
 Tags: #inequalities #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 |a| \geq 0
 
 Title: Absolute value is zero iff value is zero
 Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 |a| = 0
 ------------------------------
@@ -341,28 +341,28 @@ a = 0
 
 Title: Absolute value of product is product of absolute values
 Tags: #algebra #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 |ab| = |a|*|b|
 
 Title: Triangle inequality
 Tags: #inequalities #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 |a + b| \leq |a| + |b|
 
 Title: Absolute value is independent of sign
 Tags: #algebra #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 |-a| = |a|
 
 Title: Absolute value less than or equal inequality split into two inequalities
 Tags: #inequalities #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 |a| \leq b
 ------------------------------
@@ -371,7 +371,7 @@ a \leq b
 
 Title: Less than or equal inequalities for absolute value
 Tags: #inequalities #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 -|a| \leq a
@@ -379,7 +379,7 @@ a \leq |a|
 
 Title: Absolute value less than inequality split into two inequalities
 Tags: #inequalities #iff #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 |a| < b
 ------------------------------
@@ -388,7 +388,7 @@ a < b
 
 Title: Negation of both sides of an equality
 Tags: #algebra #iff #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 a = b
 ------------------------------
@@ -396,70 +396,70 @@ a = b
 
 Title: Multiplication by minus one negates a value
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 a*-1 = -a
 
 Title: Addition of negated value equal to difference of values
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 a + -b = a - b
 
 Title: Reverse triangle inequality
 Tags: #inequalities #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 ||a| - |b|| \leq |a - b|
 
 Title: Triangle inequality variant with subtraction
 Tags: #inequalities #absolutevalue #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 |a - b| \leq |a| + |b|
 
 Title: Expansion of negated sum
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 -(a + b) = -a - b
 
 Title: Expansion of negated difference
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 -(a - b) = -a + b
 
 Title: Expansion of negated difference, variant
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 -(-a + b) = a - b
 
 Title: Simplification of double negation
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R}
+\forall a \in \mathbb{R}
 ------------------------------
 ------------------------------
 --a = a
 
 Title: Expansion of negated difference, variant
 Tags: #algebra #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 -(-a - b) = a + b
 
 Title: Maximum is greater than or equal to its arguments
 Tags: #inequalities #max #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 max(a, b) \geq a
@@ -467,7 +467,7 @@ max(a, b) \geq b
 
 Title: Minimum is less than or equal to its arguments
 Tags: #inequalities #min #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 min(a, b) \leq a
@@ -475,21 +475,21 @@ min(a, b) \leq b
 
 Title: Maximum is equal to one of its arguments
 Tags: #inequalities #algebra #max #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 max(a, b) = a \vee max(a, b) = b
 
 Title: Minimum is equal to one of its arguments
 Tags: #inequalities #algebra #min #\mathbb{R}
-\forall a : \mathbb{R} \forall b : \mathbb{R}
+\forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
 min(a, b) = a \vee min(a, b) = b
 
 Title: Definition of upper bound
 Tags: #inequalities #definition #\mathbb{R}
-\forall S : Set \forall u : \mathbb{R} \forall x : \mathbb{R}
+\forall S : Set(\mathbb{R}) \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
 S \subseteq \mathbb{R}
 is_upper_bound(S, u)
@@ -498,7 +498,7 @@ x \in S \implies x \leq u
 
 Title: Definition of lower bound
 Tags: #inequalities #definition #\mathbb{R}
-\forall S : Set \forall l : \mathbb{R} \forall x : \mathbb{R}
+\forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
 S \subseteq \mathbb{R}
 is_lower_bound(S, l)
@@ -507,7 +507,7 @@ x \in S \implies x \geq l
 
 Title: Definition of bounded
 Tags: #inequalities #\mathbb{R}
-\forall S : Set \forall l : \mathbb{R} \forall u : \mathbb{R} \forall x : \mathbb{R}
+\forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
 S \subseteq \mathbb{R}
 is_bounded(S, l, s)
@@ -516,7 +516,7 @@ x \in S \implies x \leq u \wedge x \geq l
 
 Title: Definition of supremum
 Tags: #inequalities #definition #\mathbb{R}
-\forall U : Set \forall u : \mathbb{R} \exists v : \mathbb{R} \forall w : \mathbb{R}
+\forall U : Set(\mathbb{R}) \forall u \in \mathbb{R} \exists v \in \mathbb{R} \forall w \in \mathbb{R}
 ------------------------------
 U \subseteq \mathbb{R}
 is_supremum(U, u)
@@ -526,7 +526,7 @@ is_upper_bound(U, w) \implies u \leq w
 
 Title: Definition of infimum
 Tags: #inequalities #definition #\mathbb{R}
-\forall U : Set \forall l : \mathbb{R} \exists v : \mathbb{R} \forall w : \mathbb{R}
+\forall U : Set(\mathbb{R}) \forall l \in \mathbb{R} \exists v \in \mathbb{R} \forall w \in \mathbb{R}
 ------------------------------
 U \subseteq \mathbb{R}
 is_infimum(U, l)
@@ -536,7 +536,7 @@ is_lower_bound(U, w) \implies l \geq w
 
 Title: Every subset of the reals with an upper bound has a supremum
 Tags: #inequalities #iff #\mathbb{R}
-\forall U : Set \forall u : \mathbb{R} \exists v : \mathbb{R}
+\forall U : Set(\mathbb{R}) \forall u \in \mathbb{R} \exists v \in \mathbb{R}
 ------------------------------
 U \subseteq \mathbb{R}
 is_upper_bound(U, u)
@@ -545,7 +545,7 @@ is_supremum(U, v)
 
 Title: Every subset of the reals with a lower bound has an infimum
 Tags: #inequalities #iff \mathbb{R}
-\forall U : Set \forall l : \mathbb{R} \exists v : \mathbb{R}
+\forall U : Set(\mathbb{R}) \forall l \in \mathbb{R} \exists v \in \mathbb{R}
 ------------------------------
 U \subseteq \mathbb{R}
 is_lower_bound(U, l)
@@ -557,7 +557,7 @@ Tags: #sets #definition
 \forall A : Set \forall B : Set
 ------------------------------
 ------------------------------
-A \subseteq B \iff (\forall x x \in A \implies x \in B)
+A \subseteq B \iff (\forall x \in universe(A) x \in A \implies x \in B)
 
 Title: Definition of set equality
 Tags: #sets #definition
@@ -611,7 +611,7 @@ A \subsetneq C
 
 Title: Element of a set is an element of a superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x
+\forall A : Set, \forall B : Set, \forall x \in universe(A)
 ------------------------------
 A \subseteq B
 x \in A
@@ -620,7 +620,7 @@ x \in B
 
 Title: Element of a set is an element of a strict superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x
+\forall A : Set, \forall B : Set, \forall x \in universe(A)
 ------------------------------
 A \subsetneq B
 x \in A
@@ -639,10 +639,10 @@ A = B
 
 Title: Definition of empty set
 Tags: #sets
-\forall x
+\forall X : Set, \forall x \in X
 ------------------------------
 ------------------------------
-\neg(x \in \emptyset)
+\neg(x \in \emptyset(X))
 
 Title: Empty set is a subset of every set
 Tags: #sets
@@ -653,7 +653,7 @@ Tags: #sets
 
 Title: Definition of set union
 Tags: #sets #definition
-\forall S : Set \forall T : Set \forall x
+\forall S : Set \forall T : Set \forall x \in universe(S)
 ------------------------------
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
@@ -662,25 +662,25 @@ Title: Subset of the empty set is empty
 Tags: #sets
 \forall S : Set
 ------------------------------
-S \subseteq \emptyset
+S \subseteq \emptyset(universe(S))
 ------------------------------
-S = \emptyset
+S = \emptyset(universe(S))
 
 Title: Empty set strictly included in set implies set has an element
 Tags: #sets
 \forall S : Set
 ------------------------------
-\emptyset \subsetneq S
+\emptyset(universe(S)) \subsetneq S
 ------------------------------
-\exists s s \in S
+\exists s \in universe(S) s \in S
 
 Title: Problem : A set containing an element strictly includes the empty set
 Tags: #sets #tests
-\forall S : Set \forall s
+\forall S : Set \forall s \in universe(S)
 ------------------------------
 s \in S
 ------------------------------
-\emptyset \subsetneq S
+\emptyset(universe(S)) \subsetneq S
 
 Title: Commutativity of set union
 Tags: #sets
@@ -716,7 +716,7 @@ Title: Elements of set contained in two sets implies set is subset of their unio
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
-\forall c c \in C \implies c \in S \vee c \in T
+\forall c \in universe(C) c \in C \implies c \in S \vee c \in T
 ------------------------------
 C \subseteq S \cup T
 
@@ -740,19 +740,19 @@ Tags: #sets
 ------------------------------
 S \cup T \neq \emptyset
 ------------------------------
-\exists x x \in S \vee x \in T
+\exists x \in universe(S) x \in S \vee x \in T
 
 Title: Union is empty implies the sets are empty
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
-S \cup T = \emptyset
+S \cup T = \emptyset(universe(S))
 ------------------------------
-S = \emptyset \vee T = \emptyset
+S = \emptyset(universe(S)) \vee T = \emptyset(universe(S))
 
 Title: Definition of set intersection
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x
+\forall S : Set, \forall T : Set, \forall x \in universe(S)
 ------------------------------
 ------------------------------
 x \in S \cap T \iff x \in S \wedge x \in T
@@ -776,13 +776,13 @@ Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
-S \cap \emptyset = S
+S \cap \emptyset(universe(S)) = S
 
 Title: Problem : An element in one set of an empty intersection is not in the other
 Tags: #sets #tests 
-\forall S : Set, \forall T : Set, \forall s
+\forall S : Set, \forall T : Set, \forall s \in universe(S)
 ------------------------------
-S \cap T = \emptyset
+S \cap T = \emptyset(universe(S))
 s \in S
 ------------------------------
 \neg(s \in T)
@@ -806,7 +806,7 @@ Title: Set included in two others is included in their intersection
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall C : Set
 ------------------------------
-\forall c c \in C \implies c \in S \wedge c \in T
+\forall c \in universe(C) c \in C \implies c \in S \wedge c \in T
 ------------------------------
 C \subseteq S \cap T
 
@@ -824,54 +824,61 @@ Tags: #sets
 ------------------------------
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
-Title: Definition of pair
-Tags: #sets #definition
-\forall c : Set, \forall d : Set, \forall x : Set
+Title: Components of pair
+Tags: #sets
+\forall S : Set, \forall T : Set, \forall c \in S, \forall d \in T, \forall x \in S \times T
 ------------------------------
 ------------------------------
 x = (c, d) \implies x(0) = c \wedge x(1) = d
 
 Title: Equality of pairs
 Tags: #sets #definition
-\forall a : Set, \forall b : Set, \forall c : Set, \forall d : Set
+\forall S : Set, \forall T : Set, \forall a \in S, \forall b \in T, \forall \in universe(S), \forall d \in universe(T)
 ------------------------------
 ------------------------------
 (a, b) = (c, d) \iff a = c \wedge b = d
 
+Title: Definition of pair
+Tags: #sets #definition
+\forall S : Set, \forall T : Set, x \in S \times T
+------------------------------
+------------------------------
+is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x(0) \in S \wedge x(1) \in T
+
 Title: Definition of cartesian product
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x : Set
+\forall S : Set, \forall T : Set, \forall x \in S \times T
 ------------------------------
 ------------------------------
-(\exists c : Set, \exists d : Set x = (c , d)) \wedge x(0) \in S \wedge x(1) \in T \iff x \in S \times T
+is_pair(x, S, T) \iff x \in S \times T
 
 Title: Element of cartesian product has components in the sets
 Tags: #sets
-\forall S : Set, \forall T : Set, \forall x : Set
+\forall S : Set, \forall T : Set, \forall x \in S \times T
 ------------------------------
 ------------------------------
 x \in S \times T \implies x(0) \in S \wedge x(1) \in T
 
 Title: Pair in a cartesian product if elements in sets
 Tags: #sets
-\forall S : Set, \forall T : Set, \forall a : Set, \forall b : Set
+\forall S : Set, \forall T : Set, \forall a \in universe(S), \forall b \in universe(T)
 ------------------------------
 ------------------------------
 a \in S \wedge b \in T \iff (a, b) \in S \times T
 
 Title: Cartesian product with the empty set is empty (right)
 Tags: #sets
-\forall S : Set
+\forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-S \times \emptyset = \emptyset
+S \times \emptyset(T) = \emptyset(universe(S) \times T)
 
 Title: Cartesian product with the empty set is empty (left)
 Tags: #sets
-\forall S : Set
+\forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-\emptyset \times S = \emptyset
+\emptyset(S) \times T = \emptyset(S) \times universe(T))
 
 Title: Cartesian product on the right preserves subset relation
 Tags: #sets
@@ -902,17 +909,17 @@ Title: Cartesian product is empty implies one of the sets is empty
 Tags: #sets
 \forall A : Set, \forall B : Set
 ------------------------------
-A \times B = \emptyset
+A \times B = \emptyset(universe(A)) \times \emptyset(universe(B))
 ------------------------------
-A = \emptyset \vee B = \emptyset
+A = \emptyset(universe(A)) \vee B = \emptyset(universe(B))
 
 Title: Cartesian products are contained implies the sets are contained
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
 A \times B \subseteq C \times D
-A \neq \emptyset
-B \neq \emptyset
+A \neq \emptyset(universe(A))
+B \neq \emptyset(universe(B))
 ------------------------------
 A \subseteq C
 B \subseteq D
@@ -922,7 +929,7 @@ Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
 A \times B \subseteq C \times D
-B \neq \emptyset
+B \neq \emptyset(universe(B))
 ------------------------------
 A \subseteq C
 
@@ -931,8 +938,8 @@ Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
 A \times B \subsetneq C \times D
-A \neq \emptyset
-B \neq \emptyset
+A \neq \emptyset(universe(A))
+B \neq \emptyset(universe(B))
 ------------------------------
 A \subsetneq C \vee B \subsetneq D
 
@@ -962,7 +969,7 @@ Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
-S \in \mathcal{P}(\emptyset) \iff S = \emptyset
+S \in \mathcal{P}(\emptyset(universe(S))) \iff S = \emptyset(universe(S))
 
 Title: Power sets are contained if the sets are contained
 Tags: #sets
@@ -977,7 +984,7 @@ Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
-\emptyset \in \mathcal{P}(S)
+\emptyset(universe(S)) \in \mathcal{P}(S)
 
 Title: Power set of an intersection is the intersection of the power sets
 Tags: #sets
@@ -1004,14 +1011,14 @@ C \subseteq T
 
 Title: Definition of complement
 Tags: #sets #definition
-\forall S : Set, \forall x : Set
+\forall S : Set, \forall x \in universe(S)
 ------------------------------
 ------------------------------
 x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 
 Title: Definition of set universe
 Tags: #sets
-\forall S : Set, \forall x : Set
+\forall S : Set, \forall x \in universe(S)
 ------------------------------
 ------------------------------
 x \in S \implies x \in universe(S)
@@ -1042,7 +1049,7 @@ Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
-S \cap complement(S) = \emptyset
+S \cap complement(S) = \emptyset(universe(S))
 
 Title: Complement of a set equal to its universe is the empty set
 Tags: #sets
@@ -1156,28 +1163,28 @@ Tags: #sets
 \forall A : Set
 ------------------------------
 ------------------------------
-A \setminus A = \emptyset
+A \setminus A = \emptyset(universe(A))
 
 Title: Difference of any set with empty set is empty
 Tags: #sets
 \forall A : Set
 ------------------------------
 ------------------------------
-\emptyset \setminus A = \emptyset
+\emptyset \setminus A = \emptyset(universe(A))
 
 Title: Difference of empty set with any set is that set
 Tags: #sets
 \forall A : Set
 ------------------------------
 ------------------------------
-A \setminus \emptyset = A
+A \setminus \emptyset(universe(A)) = A
 
 Title: Difference of a set and its universe is the empty set
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-A \setminus universe(A) = \emptyset
+A \setminus universe(A) = \emptyset(universe(A))
 
 Title: Containment of sets is reverse upon taking differences with another set
 Tags: #sets
@@ -1211,10 +1218,10 @@ Tags: #sets
 
 Title: Definition of function
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : Set
+\forall A : Set, \forall B : Set, \forall f : A \to B
 ------------------------------
 ------------------------------
-is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a : Set a \in A \implies (\exists b : Set b \in B \wedge (a, b) \in f)) \wedge (\forall a : Set a \in A \implies (\forall b : Set, \forall c : Set (a, b) \in f \wedge (a, c) \in f \implies b = c))
+is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in universe(A) a \in A \implies (\exists b \in universe(B) b \in B \wedge (a, b) \in f)) \wedge (\forall a \in universe(A) a \in A \implies (\forall b \in universe(B), \forall c \in A \times B (a, b) \in f \wedge (a, c) \in f \implies b = c))
 
 Title: Definition of function value
 Tags: #sets #functions
@@ -1225,7 +1232,7 @@ is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
 Title: Function value in codomain
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : Set
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in universe(A)
 ------------------------------
 is_function(f, A, B) \wedge a \in A
 ------------------------------
@@ -1233,7 +1240,7 @@ f(a) \in B
 
 Title: Pair with function value in function
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a : Set
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in universe(A)
 ------------------------------
 is_function(f, A, B) \wedge a \in A
 ------------------------------
@@ -1241,12 +1248,12 @@ is_function(f, A, B) \wedge a \in A
 
 Title: Definition of function composition
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall x : Set
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall x \in A \times C
 ------------------------------
 is_function(f, A, B)
 is_function(g, B, C)
 ------------------------------
-x \in g \circ f \iff (\exists a : Set, \exists c : Set x = (a, c) \wedge a \in domain(f) \wedge c = g(f(a)))
+x \in g \circ f \iff (\exists a \in universe(A), \exists c \in universe(C) x = (a, c) \wedge a \in A \wedge c = g(f(a)))
 
 Title: Composition is function
 Tags: #functions
@@ -1259,7 +1266,7 @@ is_function(g \circ f, A, C)
 
 Title: Function values of composition
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall a : Set
+\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C, \forall a \in universe(A)
 ------------------------------
 is_function(f, A, B)
 is_function(g, B, C)
@@ -1273,7 +1280,7 @@ Tags: #sets #functions
 is_function(f, B, C)
 A \subseteq B
 ------------------------------
-\exists g : A \to C is_function(g, A, C) \wedge (\forall a a \in A \implies f(a) = g(a))
+\exists g : A \to C is_function(g, A, C) \wedge (\forall a \in universe(A) a \in A \implies f(a) = g(a))
 
 Title: Composition of functions is associative
 Tags: #functions
@@ -1290,7 +1297,7 @@ Tags: #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B
 ------------------------------
 ------------------------------
-is_function(f, A, B) \implies (is_injective(f) \iff (\forall a, \forall b a \in A \wedge b \in A \wedge f(a) = f(b) \implies a = b))
+is_function(f, A, B) \implies (is_injective(f) \iff (\forall a \in universe(A), \forall b \in universe(B) a \in A \wedge b \in A \wedge f(a) = f(b) \implies a = b))
 
 Title: Composition of injective functions is injective
 Tags: #functions
@@ -1308,7 +1315,7 @@ Tags: #functions
 \forall D : Set, \forall C : Set, \forall f : D \to C
 ------------------------------
 ------------------------------
-is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c c \in C \implies (\exists d d \in D \wedge f(d) = c)))
+is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c \in universe(C) c \in C \implies (\exists d \in universe(D) d \in D \wedge f(d) = c)))
 
 Title: Composition of surjective functions is surjective
 Tags: #functions

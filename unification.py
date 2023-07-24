@@ -5,10 +5,10 @@ from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   OrNode, ElemNode, EqNode, NeqNode, LtNode, GtNode, \
                   LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
-                  NotNode, ForallNode, ExistsNode, ConstNode, BoolNode, \
+                  NotNode, ForallNode, ExistsNode, BoolNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
 
-from type import PredType
+from sorts import PredSignature
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -32,16 +32,16 @@ def is_predicate(tree):
        or isinstance(tree, SupsetneqNode) or isinstance(tree, ImpliesNode) \
        or isinstance(tree, IffNode) or isinstance(tree, NotNode) \
        or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
-       or isinstance(tree, ConstNode) or isinstance(tree, BoolNode):
+       or isinstance(tree, BoolNode):
         return True
     else:
         return False
 
-def node_type(tree):
+def node_signature(tree):
     if isinstance(tree, VarNode):
-        return tree.type
+        return tree.signature
     elif isinstance(tree, FnNode):
-        return tree.var.type
+        return tree.var.signature
     else:
         return None
 
@@ -102,16 +102,16 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
         return True, assign, macros
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
-        if (isinstance(node_type(tree1), PredType) and is_predicate(tree2)) \
-              or (not isinstance(node_type(tree1), PredType) and is_expression(tree2)
+        if (isinstance(node_signature(tree1), PredSignature) and is_predicate(tree2)) \
+              or (not isinstance(node_signature(tree1), PredSignature) and is_expression(tree2)
               and (tree1.is_binder or not tree_contains_binder(tree2))):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
-        if (isinstance(node_type(tree2), PredType) and is_predicate(tree1)) \
-              or (not isinstance(node_type(tree2), PredType) and is_expression(tree1)
+        if (isinstance(node_signature(tree2), PredSignature) and is_predicate(tree1)) \
+              or (not isinstance(node_signature(tree2), PredSignature) and is_expression(tree1)
               and (tree2.is_binder or not tree_contains_binder(tree1))):
             assign.append(deepcopy((tree2, tree1)))
         else:
@@ -168,7 +168,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
             if tree1.name() != tree2.name():
                 return False, [], []
             if tree1.name() == '\\emptyset':
-                unified, assign, macros = trees_unify(tree1.type.universe, tree2.type.universe, assign, macros)
+                unified, assign, macros = trees_unify(tree1.signature.universe, tree2.signature.universe, assign, macros)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, TupleNode):
@@ -224,7 +224,7 @@ def subst(tree1, var, tree2):
             for i in range(0, len(tree1.args)):
                 p = subst(p, var.args[i], tree1.args[i])
             return p
-        # TODO : come up with a proper Pair type
+        # TODO : come up with a proper Pair signature
         # This is an unsound hack to allow pairs to be
         # treated like functions
         if tree1.name() == var.name() and isinstance(tree2, TupleNode):
@@ -252,7 +252,7 @@ def subst(tree1, var, tree2):
         tree1.right = subst(tree1.right, var, tree2)
         return tree1
     elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
-        tree1.type.universe = subst(tree1.type.universe, var, tree2)
+        tree1.signature.universe = subst(tree1.signature.universe, var, tree2)
         return tree1
     else:
         return tree1

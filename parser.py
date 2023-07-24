@@ -6,30 +6,30 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
-     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, ConstNode, NegNode, \
+     SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
      LambdaNode, LRNode
-from type import NumberType, FnType, TupleType, SetType, PredType
+from sorts import NumberSignature, FnSignature, TupleSignature, SetSignature, PredSignature
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
 statement = Grammar(
     r"""
-    statement = typed_constant / existential / exists / universal / forall / expression
-    typed_constant = typed_var space ","? space statement?
+    statement = existential / exists / universal / forall / expression
     existential = exists space ","? space statement
     universal = forall space ","? space statement
-    exists = "\\exists" space (typed_var / var)
-    forall = "\\forall" space (typed_var / var)
-    typed_var = var space ":" space type
-    type = fn_type / basic_type
-    basic_type = number_type / set_type / pred_type / set_expression
-    pred_type = "Pred"
-    fn_type = domain_type space "\\to" space basic_type
-    domain_type = tuple_type / basic_type / set_expression
-    tuple_type = "(" space (basic_type space "," space)* basic_type space ")"
-    set_type = "Set" ("(" space (var / number_type) space ")")?
-    number_type = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
+    exists = "\\exists" space (elem_var / set_var)
+    forall = "\\forall" space (elem_var / set_var)
+    elem_var = var space "\\in" space set_expression
+    set_var = var space ":" space signature
+    signature = fn_signature / basic_signature
+    basic_signature = number_signature / set_signature / pred_signature
+    pred_signature = "Pred"
+    fn_signature = domain_signature space "\\to" space basic_signature
+    domain_signature = tuple_signature / basic_signature / set_expression
+    tuple_signature = "(" space (basic_signature space "," space)* basic_signature space ")"
+    set_signature = "Set" ("(" space (var / number_signature) space ")")?
+    number_signature = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = bool / elem_relation / subset_relation / equality / alg_relation / neg_expression / pred_paren / fn_application
@@ -44,7 +44,7 @@ statement = Grammar(
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = universe / domain / codomain / complement / set_paren / var / number_type / empty_set / universum / powerset
+    set = universe / domain / codomain / complement / set_paren / var / number_signature / empty_set / universum / powerset
     set_paren = "(" set_expression ")"
     universe = "universe(" space set_expression space ")"
     domain = "domain(" space var space ")"
@@ -76,7 +76,7 @@ statement = Grammar(
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    empty_set = "\\emptyset" ("(" space (var / number_type) space ")")?
+    empty_set = "\\emptyset" ("(" space (var / number_signature) space ")")?
     universum = "\\mathcal{U}"
     space = ~"\s*"
     """)
@@ -127,11 +127,6 @@ class StatementVisitor(NodeVisitor):
         return visited_children or node
     def visit_statement(self, node, visited_children):
         return visited_children[0]
-    def visit_typed_constant(self, node, visited_children):
-        if isinstance(visited_children[4], Node):
-            return ConstNode(visited_children[0], None)
-        else:
-            return ConstNode(visited_children[0], visited_children[4][0])
     def visit_universal(self, node, visited_children):
         expr = visited_children[4]
         quantor = visited_children[0]
@@ -146,27 +141,30 @@ class StatementVisitor(NodeVisitor):
         return ForallNode(visited_children[2][0], None)
     def visit_exists(self, node, visited_children):
         return ExistsNode(visited_children[2][0], None)
-    def visit_typed_var(self, node, visited_children):
-        visited_children[0].type = visited_children[4]
+    def visit_elem_var(self, node, visited_children):
+        visited_children[0].constraint = visited_children[4]
         return visited_children[0]
-    def visit_type(self, node, visited_children):
+    def visit_set_var(self, node, visited_children):
+        visited_children[0].constraint = visited_children[4]
         return visited_children[0]
-    def visit_basic_type(self, node, visited_children):
+    def visit_signature(self, node, visited_children):
         return visited_children[0]
-    def visit_domain_type(self, node, visited_children):
+    def visit_basic_signature(self, node, visited_children):
         return visited_children[0]
-    def visit_tuple_type(self, node, visited_children):
-        types = [v[0] for v in visited_children[2]]
-        types.append(visited_children[3])
-        return TupleType(types)
-    def visit_set_type(self, node, visited_children):
+    def visit_domain_signature(self, node, visited_children):
+        return visited_children[0]
+    def visit_tuple_signature(self, node, visited_children):
+        sigs = [v[0] for v in visited_children[2]]
+        sigs.append(visited_children[3])
+        return TupleSignature(sigs)
+    def visit_set_signature(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            return SetType(SymbolNode("\\mathcal{U}", None))
+            return SetSignature(SymbolNode("\\mathcal{U}", None))
         else:
-            return SetType(params[0][2][0])
-    def visit_pred_type(self, node, visited_children):
-        return PredType()
+            return SetSignature(params[0][2][0])
+    def visit_pred_signature(self, node, visited_children):
+        return PredSignature()
     def visit_universe(self, node, visited_children):
         return FnNode(VarNode("universe"), [visited_children[2]])
     def visit_domain(self, node, visited_children):
@@ -175,10 +173,10 @@ class StatementVisitor(NodeVisitor):
         return FnNode(VarNode("codomain"), [visited_children[2]])
     def visit_complement(self, node, visited_children):
         return FnNode(VarNode("complement"), [visited_children[2]])
-    def visit_number_type(self, node, visited_children):
-        return NumberType(node.text)
-    def visit_fn_type(self, node, visited_children):
-        return FnType(visited_children[0], visited_children[4])
+    def visit_number_signature(self, node, visited_children):
+        return NumberSignature(node.text)
+    def visit_fn_signature(self, node, visited_children):
+        return FnSignature(visited_children[0], visited_children[4])
     def visit_predicate(self, node, visited_children):
         return visited_children[0]
     def visit_pred_paren(self, node, visited_children):
@@ -312,12 +310,12 @@ class StatementVisitor(NodeVisitor):
     def visit_empty_set(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            set_type = SetType(SymbolNode("\\mathcal{U}", None))
+            set_signature = SetSignature(SymbolNode("\\mathcal{U}", None))
         else:
-            set_type = SetType(params[0][2][0])
-        return SymbolNode("\\emptyset", set_type)
+            set_signature = SetSignature(params[0][2][0])
+        return SymbolNode("\\emptyset", set_signature)
     def visit_universum(self, node, visited_children):
-        return SymbolNode("\\mathcal{U}", SetType(SymbolNode("\\mathcal{U}", None)))
+        return SymbolNode("\\mathcal{U}", SetSignature(SymbolNode("\\mathcal{U}", None)))
 
 def to_ast(screen, string):
     try:

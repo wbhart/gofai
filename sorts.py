@@ -1,4 +1,4 @@
-type_name = {"\\mathbb{N}" : "Natural",
+sig_name = {"\\mathbb{N}" : "Natural",
              "\\mathbb{Z}" : "Integer",
              "\\mathbb{Q}" : "Rational",
              "\\mathbb{R}" : "Real",
@@ -9,49 +9,39 @@ type_name = {"\\mathbb{N}" : "Natural",
              "\\R" : "Real",
              "\\C" : "Complex"}
 
-type_repr = {"Natural" : "\\mathbb{N}",
+sig_repr = {"Natural" : "\\mathbb{N}",
               "Integer" : "\\mathbb{Z}",
               "Rational" : "\\mathbb{Q}",
               "Real"    : "\\mathbb{R}",
               "Complex" : "\\mathbb{C}"}
 
-type_str = {"Natural" : "\u2115",
+sig_str = {"Natural" : "\u2115",
               "Integer" : "\u2124",
               "Rational" : "\u211a",
               "Real"    : "\u211d",
               "Complex" : "\u2102"}
 
-class NumberType:
+class NumberSignature:
     def __init__(self, name):
-        self._name = type_name[name]
+        self._name = sig_name[name]
 
     def __repr__(self):
-        return type_repr[self._name]
+        return sig_repr[self._name]
 
     def __str__(self):
-        return type_str[self._name]
+        return sig_str[self._name]
 
     def name(self):
         return self._name
-        
-class NamedType:
-    def __init__(self, name):
-        self.name = name
 
-    def __repr__(self):
-         return self.name
-
-    def __str__(self):
-         return self.name
-
-class PredType:
+class PredSignature:
     def __repr__(self):
        return "Pred"
 
     def __str__(self):
        return "Pred"
 
-class SetType:
+class SetSignature:
     def __init__(self, universe):
         self.universe = universe
 
@@ -67,7 +57,7 @@ class SetType:
         else:
             return "Set("+str(self.universe)+")"
             
-class FnType:
+class FnSignature:
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
@@ -84,22 +74,22 @@ class FnType:
          else:
              return str(self.domain)+" \u2192 "+str(self.codomain)
 
-class TupleType:
-    def __init__(self, types):
-         self.types = types
+class TupleSignature:
+    def __init__(self, sets):
+         self.sets = sets
 
     def __repr__(self):
-         n = len(self.types)
+         n = len(self.sets)
          if n == 0:
              return "()"
          else:
-             return "("+', '.join([repr(self.types[i]) for i in range(0, n)])+")"
+             return "("+', '.join([repr(self.sets[i]) for i in range(0, n)])+")"
    
     def __str__(self):
-         n = len(self.types)
+         n = len(self.sets)
          if n == 0:
              return "()"
          else:
-             return "("+', '.join([str(self.types[i]) for i in range(0, n)])+")"
+             return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
 
     

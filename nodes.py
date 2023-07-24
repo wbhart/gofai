@@ -1,4 +1,4 @@
-from type import NumberType
+from sorts import NumberSignature
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -103,30 +103,29 @@ class DeadNode(LeafNode):
         return "----"
 
 class SymbolNode(LeafNode):
-    def __init__(self, name, const_type):
+    def __init__(self, name, const_signature):
         self._name = name
-        self.type = const_type
+        self.signature = const_signature
     
     def name(self):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
-            return univar(self._name)+"("+str(self.type.universe)+")"
+        if self.name() == "\\emptyset" and self.signature.universe.name() != "\\mathcal{U}":
+            return univar(self._name)+"("+str(self.signature.universe)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and self.type.universe.name() != "\\mathcal{U}":
-            return self._name+"("+repr(self.type.universe)+")"
+        if self.name() == "\\emptyset" and self.signature.universe.name() != "\\mathcal{U}":
+            return self._name+"("+repr(self.signature.universe)+")"
         else:
             return self._name
 
 class VarNode(LeafNode):
-    def __init__(self, name, var_type=SymbolNode("\\mathcal{U}", None), is_metavar=False):
+    def __init__(self, name, var_signature=SymbolNode("\\mathcal{U}", None), is_metavar=False):
         self._name = name
-        self.dbr = -1 # used for debruijn indices (-1 = not set)
-        self.type = var_type
+        self.signature = var_signature
         self.is_metavar = is_metavar # whether this is a metavariable
         self.is_binder = False # whether this node is a binder variable
 
@@ -142,7 +141,7 @@ class VarNode(LeafNode):
 class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
-        self.type = NumberType('\\mathbb{N}')
+        self.signature = NumberSignature('\\mathbb{N}')
 
     def __str__(self):
         return str(self.value)
@@ -225,34 +224,6 @@ class PowerSetNode(LRNode):
 
     def __repr__(self):
         return "\\mathcal{P}("+repr(self.left)+")"
-
-class ConstNode(LRNode):
-    def __init__(self, var, expr):
-        self.var = var
-        self.left = expr
-        self.right = None
-
-    def __str__(self):
-        if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
-                  expr = ", "+str(self.left)
-            else:
-               expr = " "+str(self.left)
-        else:
-            expr = ""
-        return str(self.var)+" : "+str(self.var.type)+expr
-
-    def __repr__(self):
-        if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
-                  expr = ", "+repr(self.left)
-            else:
-               expr = " "+repr(self.left)
-        else:
-            expr = ""
-        return repr(self.var)+" : "+repr(self.var.type)+expr
 
 class AddNode(LRNode):
     def __str__(self):
@@ -468,31 +439,29 @@ class ExistsNode(LRNode):
 
     def __str__(self):
         if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
                   expr = ", "+str(self.left)
             else:
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.type):
+        if is_universum(self.var.signature):
             return "\u2203"+str(self.var)+expr
         else:
-            return "\u2203"+str(self.var)+" : "+str(self.var.type)+expr
+            return "\u2203"+str(self.var)+" : "+str(self.var.signature)+expr
 
     def __repr__(self):
         if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
                   expr = ", "+repr(self.left)
             else:
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.type):
+        if is_universum(self.var.signature):
             return "\\exists "+repr(self.var)+expr
         else:
-            return "\\exists "+repr(self.var)+" : "+repr(self.var.type)+expr
+            return "\\exists "+repr(self.var)+" : "+repr(self.var.signature)+expr
 
 class ForallNode(LRNode):
     def __init__(self, var, expr):
@@ -502,31 +471,29 @@ class ForallNode(LRNode):
 
     def __str__(self):
         if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
                   expr = ", "+str(self.left)
             else:
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.type):
+        if is_universum(self.var.signature):
             return "\u2200"+str(self.var)+expr
         else:
-            return "\u2200"+str(self.var)+" : "+str(self.var.type)+expr
+            return "\u2200"+str(self.var)+" : "+str(self.var.signature)+expr
 
     def __repr__(self):
         if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode) or \
-               isinstance(self.left, ConstNode):
+            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
                   expr = ", "+repr(self.left)
             else:
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.type):
+        if is_universum(self.var.signature):
             return "\\forall "+repr(self.var)+expr
         else:
-            return "\\forall "+repr(self.var)+" : "+repr(self.var.type)+expr
+            return "\\forall "+repr(self.var)+" : "+repr(self.var.signature)+expr
 
 class ElemNode(LRNode):
     def __str__(self):
