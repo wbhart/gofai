@@ -445,10 +445,10 @@ class ExistsNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.signature):
+        if is_universum(self.var.constraint):
             return "\u2203"+str(self.var)+expr
         else:
-            return "\u2203"+str(self.var)+" : "+str(self.var.signature)+expr
+            return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
 
     def __repr__(self):
         if self.left:
@@ -458,10 +458,10 @@ class ExistsNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.signature):
+        if is_universum(self.var.constraint):
             return "\\exists "+repr(self.var)+expr
         else:
-            return "\\exists "+repr(self.var)+" : "+repr(self.var.signature)+expr
+            return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
 
 class ForallNode(LRNode):
     def __init__(self, var, expr):
@@ -477,10 +477,10 @@ class ForallNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.signature):
+        if is_universum(self.var.constraint):
             return "\u2200"+str(self.var)+expr
         else:
-            return "\u2200"+str(self.var)+" : "+str(self.var.signature)+expr
+            return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
 
     def __repr__(self):
         if self.left:
@@ -490,10 +490,10 @@ class ForallNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.signature):
+        if is_universum(self.var.constraint):
             return "\\forall "+repr(self.var)+expr
         else:
-            return "\\forall "+repr(self.var)+" : "+repr(self.var.signature)+expr
+            return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
 
 class ElemNode(LRNode):
     def __str__(self):

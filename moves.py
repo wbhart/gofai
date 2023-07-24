@@ -698,7 +698,7 @@ def relabel(tree, tldict):
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
                       isinstance(tree.signature.universe, VarNode):
             process(tree.signature.universe)
-        elif isinstance(tree, Fnsignature):
+        elif isinstance(tree, FnSignature):
             process(tree.domain)
             process(tree.codomain)
     t = tree
