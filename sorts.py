@@ -24,15 +24,21 @@ sig_str = {"Natural" : "\u2115",
 class Constraint:
     pass
 
-class Subset(Constraint):
+class Set(Constraint):
     def __init__(self, universe):
         self.sort = universe
 
     def __repr__(self):
-        return "Set("+repr(self.universe)+")"
+        if isinstance(self.sort, Universum):
+            return "Set"
+        else:
+            return "Set("+repr(self.sort)+")"
             
     def __str__(self):
-        return "Set("+str(self.universe)+")"
+        if isinstance(self.sort, Universum):
+            return "Set"
+        else:
+            return "Set("+str(self.sort)+")"
 
 class Function(Constraint):
     def __init__(self, domain, codomain):
@@ -71,17 +77,7 @@ class SetTuple(Constraint):
          else:
              return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
 
-class SetSort(Constraint):
-    def __init__(self):
-        self.sort = self
-
-    def __repr__(self):
-        return "Set"
-
-    def __str__(self):
-        return "Set"
-
-class Universum(SetSort):
+class Universum(Constraint):
     def __init__(self):
         self.sort = self
 

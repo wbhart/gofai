@@ -1,4 +1,4 @@
-from sorts import NumberSort, Constraint
+from sorts import NumberSort, Constraint, Universum
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -114,19 +114,19 @@ class SymbolNode(LeafNode):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and self.constraint.universe.name() != "\\mathcal{U}":
-            return univar(self._name)+"("+str(self.constraint.universe)+")"
+        if self.name() == "\\emptyset" and isinstance(self.sort, Universum):
+            return univar(self._name)+"("+str(self.sort)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and self.constraint.universe.name() != "\\mathcal{U}":
-            return self._name+"("+repr(self.constraint.universe)+")"
+        if self.name() == "\\emptyset" and isinstance(self.sort, Universum):
+            return self._name+"("+repr(self.sort)+")"
         else:
             return self._name
 
 class VarNode(LeafNode):
-    def __init__(self, name, constraint=None, is_metavar=False):
+    def __init__(self, name, constraint=Universum(), is_metavar=False):
         self._name = name
         self.constraint = constraint
         self.sort = None

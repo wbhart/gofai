@@ -3,7 +3,7 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode, LeafNode, TupleNode, EqNode, UnionNode, \
      IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, DeadNode
-from sorts import Function, SetTuple, Subset, Universum, SetSort
+from sorts import Function, SetTuple, Set, Universum
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
@@ -378,7 +378,7 @@ def universe(tree, qz):
     elif isinstance(tree, FnNode) and tree.name() == 'complement':
         return universe(tree.args[0], qz)
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        return tree.constraint.universe
+        return tree.constraint
     else:
         return None # no universe
 
@@ -718,8 +718,8 @@ def relabel(tree, tldict):
             for v in tree.args:
                 process(v)
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                      isinstance(tree.constraint.universe, VarNode):
-            process(tree.constraint.universe)
+                      isinstance(tree.sort, VarNode):
+            process(tree.sort)
         elif isinstance(tree, Function):
             process(tree.domain)
             process(tree.codomain)
@@ -1903,8 +1903,8 @@ def skolemize_statement(screen, tree, deps, sk, qz, mv, positive, blocked=False)
             rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                    isinstance(tree.constraint.universe, VarNode):
-        tree.constraint.universe = skolemize_statement(screen, tree.constraint.universe, deps, sk, qz, mv, positive, blocked)
+                    isinstance(tree.sort, VarNode):
+        tree.sort = skolemize_statement(screen, tree.sort, deps, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     else:

@@ -9,8 +9,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
      LambdaNode, LRNode
-from sorts import NumberSort, SetSort, TupleSort, PredSort, \
-                  Function, SetTuple, Subset, Universum
+from sorts import NumberSort, Set, TupleSort, PredSort, \
+                  Function, SetTuple, Universum
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -19,8 +19,8 @@ statement = Grammar(
     statement = existential / exists / universal / forall / expression
     existential = exists space ","? space statement
     universal = forall space ","? space statement
-    exists = "\\exists" space (elem_var / set_var)
-    forall = "\\forall" space (elem_var / set_var)
+    exists = "\\exists" space (elem_var / set_var / var)
+    forall = "\\forall" space (elem_var / set_var / var)
     elem_var = var space "\\in" space set_expression
     set_var = var space ":" space constraint
     constraint = fn_constraint / basic_constraint
@@ -161,9 +161,9 @@ class StatementVisitor(NodeVisitor):
     def visit_set_constraint(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            return SetSort()
+            return Set(Universum())
         else:
-            return Subset(params[0][2][0])
+            return Set(params[0][2][0])
     def visit_pred_constraint(self, node, visited_children):
         return PredSort()
     def visit_universe(self, node, visited_children):
@@ -311,9 +311,9 @@ class StatementVisitor(NodeVisitor):
     def visit_empty_set(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            set_constraint = Universum()
+            set_constraint = Set(Universum())
         else:
-            set_constraint = Subset(params[0][2][0])
+            set_constraint = Set(params[0][2][0])
         return SymbolNode("\\emptyset", set_constraint)
     def visit_universum(self, node, visited_children):
         return Universum()
