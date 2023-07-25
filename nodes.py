@@ -1,4 +1,4 @@
-from sorts import NumberSignature, UniversumSignature, Signature
+from sorts import NumberSort, Constraint
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -108,9 +108,7 @@ class SymbolNode(LeafNode):
         self._name = name
         self.sort = None
         if name == "\\emptyset":
-            self.sort = constraint.universe
-        elif name == "\\mathcal{U}":
-            self.sort = UniversumSignature()
+            self.sort = constraint
 
     def name(self):
         return self._name
@@ -128,7 +126,7 @@ class SymbolNode(LeafNode):
             return self._name
 
 class VarNode(LeafNode):
-    def __init__(self, name, constraint=SymbolNode("\\mathcal{U}", None), is_metavar=False):
+    def __init__(self, name, constraint=None, is_metavar=False):
         self._name = name
         self.constraint = constraint
         self.sort = None
@@ -147,7 +145,7 @@ class VarNode(LeafNode):
 class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
-        self.constraint = NumberSignature('\\mathbb{N}')
+        self.constraint = NumberSort('\\mathbb{N}')
         self.sort = self.constraint
 
     def __str__(self):
@@ -453,9 +451,7 @@ class ExistsNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.constraint):
-            return "\u2203"+str(self.var)+expr
-        elif isinstance(self.var.constraint, Signature):
+        if isinstance(self.var.constraint, Constraint):
             return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2203"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
@@ -468,9 +464,7 @@ class ExistsNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.constraint):
-            return "\\exists "+repr(self.var)+expr
-        elif isinstance(self.var.constraint, Signature):
+        if isinstance(self.var.constraint, Constraint):
             return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\exists "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
@@ -489,9 +483,7 @@ class ForallNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if is_universum(self.var.constraint):
-            return "\u2200"+str(self.var)+expr
-        elif isinstance(self.var.constraint, Signature):
+        if isinstance(self.var.constraint, Constraint):
             return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2200"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
@@ -504,9 +496,7 @@ class ForallNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if is_universum(self.var.constraint):
-            return "\\forall "+repr(self.var)+expr
-        elif isinstance(self.var.constraint, Signature):
+        if isinstance(self.var.constraint, Constraint):
             return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\forall "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
@@ -563,9 +553,6 @@ dual_associative = {AndNode:True, SubNode:False, MulNode:True,
                  DivNode:False, ExpNode:False, CircNode:False,
                  UnionNode:False, IntersectNode:False,
                  ImpliesNode:False, IffNode:False}
-
-def is_universum(t):
-    return isinstance(t, SymbolNode) and t.name() ==  "\\mathcal{U}"
 
 def mark_binder_vars(tree, var):
     if isinstance(tree, VarNode):

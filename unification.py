@@ -8,7 +8,7 @@ from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
 
-from sorts import PredSignature
+from sorts import PredSort
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -102,16 +102,16 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
         return True, assign, macros
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
            and tree1.is_metavar:
-        if (isinstance(node_constraint(tree1), PredSignature) and is_predicate(tree2)) \
-              or (not isinstance(node_constraint(tree1), PredSignature) and is_expression(tree2)
+        if (isinstance(node_constraint(tree1), PredSort) and is_predicate(tree2)) \
+              or (not isinstance(node_constraint(tree1), PredSort) and is_expression(tree2)
               and (tree1.is_binder or not tree_contains_binder(tree2))):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
            and tree2.is_metavar:
-        if (isinstance(node_constraint(tree2), PredSignature) and is_predicate(tree1)) \
-              or (not isinstance(node_constraint(tree2), PredSignature) and is_expression(tree1)
+        if (isinstance(node_constraint(tree2), PredSort) and is_predicate(tree1)) \
+              or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
               and (tree2.is_binder or not tree_contains_binder(tree1))):
             assign.append(deepcopy((tree2, tree1)))
         else:

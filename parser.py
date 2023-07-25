@@ -9,7 +9,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
      LambdaNode, LRNode
-from sorts import NumberSignature, FnSignature, TupleSignature, SetSignature, PredSignature
+from sorts import NumberSort, SetSort, TupleSort, PredSort, \
+                  Function, SetTuple, Subset, Universum
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -21,15 +22,15 @@ statement = Grammar(
     exists = "\\exists" space (elem_var / set_var)
     forall = "\\forall" space (elem_var / set_var)
     elem_var = var space "\\in" space set_expression
-    set_var = var space ":" space signature
-    signature = fn_signature / basic_signature
-    basic_signature = number_signature / set_signature / pred_signature
-    pred_signature = "Pred"
-    fn_signature = domain_signature space "\\to" space basic_signature
-    domain_signature = tuple_signature / basic_signature / set_expression
-    tuple_signature = "(" space (basic_signature space "," space)* basic_signature space ")"
-    set_signature = "Set" ("(" space (var / number_signature) space ")")?
-    number_signature = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
+    set_var = var space ":" space constraint
+    constraint = fn_constraint / basic_constraint
+    basic_constraint = number_constraint / set_constraint / pred_constraint
+    pred_constraint = "Pred"
+    fn_constraint = domain_constraint space "\\to" space basic_constraint
+    domain_constraint = tuple_constraint / basic_constraint / set_expression
+    tuple_constraint = "(" space (basic_constraint space "," space)* basic_constraint space ")"
+    set_constraint = "Set" ("(" space (var / number_constraint) space ")")?
+    number_constraint = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
     relation = bool / elem_relation / subset_relation / equality / alg_relation / neg_expression / pred_paren / fn_application
@@ -44,7 +45,7 @@ statement = Grammar(
     set_diff = set_union space "\\setminus" space set_union
     set_union = (set_cartesian space ("\\cup" / "\\cap") space)* set_cartesian
     set_cartesian = (set space "\\times" space)* set
-    set = universe / domain / codomain / complement / set_paren / var / number_signature / empty_set / universum / powerset
+    set = universe / domain / codomain / complement / set_paren / var / number_constraint / empty_set / universum / powerset
     set_paren = "(" set_expression ")"
     universe = "universe(" space set_expression space ")"
     domain = "domain(" space var space ")"
@@ -76,7 +77,7 @@ statement = Grammar(
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    empty_set = "\\emptyset" ("(" space (var / number_signature) space ")")?
+    empty_set = "\\emptyset" ("(" space (var / number_constraint) space ")")?
     universum = "\\mathcal{U}"
     space = ~"\s*"
     """)
@@ -147,24 +148,24 @@ class StatementVisitor(NodeVisitor):
     def visit_set_var(self, node, visited_children):
         visited_children[0].constraint = visited_children[4]
         return visited_children[0]
-    def visit_signature(self, node, visited_children):
+    def visit_constraint(self, node, visited_children):
         return visited_children[0]
-    def visit_basic_signature(self, node, visited_children):
+    def visit_basic_constraint(self, node, visited_children):
         return visited_children[0]
-    def visit_domain_signature(self, node, visited_children):
+    def visit_domain_constraint(self, node, visited_children):
         return visited_children[0]
-    def visit_tuple_signature(self, node, visited_children):
+    def visit_tuple_constraint(self, node, visited_children):
         sigs = [v[0] for v in visited_children[2]]
         sigs.append(visited_children[3])
-        return TupleSignature(sigs)
-    def visit_set_signature(self, node, visited_children):
+        return SetTuple(sigs)
+    def visit_set_constraint(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            return SetSignature(SymbolNode("\\mathcal{U}", None))
+            return SetSort()
         else:
-            return SetSignature(params[0][2][0])
-    def visit_pred_signature(self, node, visited_children):
-        return PredSignature()
+            return Subset(params[0][2][0])
+    def visit_pred_constraint(self, node, visited_children):
+        return PredSort()
     def visit_universe(self, node, visited_children):
         return FnNode(VarNode("universe"), [visited_children[2]])
     def visit_domain(self, node, visited_children):
@@ -173,10 +174,10 @@ class StatementVisitor(NodeVisitor):
         return FnNode(VarNode("codomain"), [visited_children[2]])
     def visit_complement(self, node, visited_children):
         return FnNode(VarNode("complement"), [visited_children[2]])
-    def visit_number_signature(self, node, visited_children):
-        return NumberSignature(node.text)
-    def visit_fn_signature(self, node, visited_children):
-        return FnSignature(visited_children[0], visited_children[4])
+    def visit_number_constraint(self, node, visited_children):
+        return NumberSort(node.text)
+    def visit_fn_constraint(self, node, visited_children):
+        return Function(visited_children[0], visited_children[4])
     def visit_predicate(self, node, visited_children):
         return visited_children[0]
     def visit_pred_paren(self, node, visited_children):
@@ -310,12 +311,12 @@ class StatementVisitor(NodeVisitor):
     def visit_empty_set(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            set_signature = SetSignature(SymbolNode("\\mathcal{U}", None))
+            set_constraint = Universum()
         else:
-            set_signature = SetSignature(params[0][2][0])
-        return SymbolNode("\\emptyset", set_signature)
+            set_constraint = Subset(params[0][2][0])
+        return SymbolNode("\\emptyset", set_constraint)
     def visit_universum(self, node, visited_children):
-        return SymbolNode("\\mathcal{U}", SetSignature(SymbolNode("\\mathcal{U}", None)))
+        return Universum()
 
 def to_ast(screen, string):
     try:

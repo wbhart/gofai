@@ -21,51 +21,20 @@ sig_str = {"Natural" : "\u2115",
               "Real"    : "\u211d",
               "Complex" : "\u2102"}
 
-class Signature:
+class Constraint:
     pass
 
-class NumberSignature(Signature):
-    def __init__(self, name):
-        self._name = sig_name[name]
-        self.sort = self
-
-    def __repr__(self):
-        return sig_repr[self._name]
-
-    def __str__(self):
-        return sig_str[self._name]
-
-    def name(self):
-        return self._name
-
-class PredSignature(Signature):
-    def __init__(self):
-       self.sort = self
-
-    def __repr__(self):
-       return "Pred"
-
-    def __str__(self):
-       return "Pred"
-
-class SetSignature(Signature):
+class Subset(Constraint):
     def __init__(self, universe):
-        self.universe = universe
-        self.sort = self if universe.name() == '\\mathcal{U}' else universe
+        self.sort = universe
 
     def __repr__(self):
-        if self.universe.name() == '\\mathcal{U}':
-            return "Set"
-        else:
-            return "Set("+repr(self.universe)+")"
+        return "Set("+repr(self.universe)+")"
             
     def __str__(self):
-        if self.universe.name() == '\\mathcal{U}':
-            return "Set"
-        else:
-            return "Set("+str(self.universe)+")"
-            
-class FnSignature(Signature):
+        return "Set("+str(self.universe)+")"
+
+class Function(Constraint):
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
@@ -83,7 +52,7 @@ class FnSignature(Signature):
          else:
              return str(self.domain)+" \u2192 "+str(self.codomain)
 
-class TupleSignature(Signature):
+class SetTuple(Constraint):
     def __init__(self, sets):
          self.sets = sets
          self.sort = TupleSort([v.sort for v in sets])
@@ -102,7 +71,41 @@ class TupleSignature(Signature):
          else:
              return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
 
-class TupleSort(Signature):
+class SetSort(Constraint):
+    def __init__(self):
+        self.sort = self
+
+    def __repr__(self):
+        return "Set"
+
+    def __str__(self):
+        return "Set"
+
+class Universum(SetSort):
+    def __init__(self):
+        self.sort = self
+
+    def __repr__(self):
+        return "\\mathcal{U}"
+
+    def __str__(self):
+        return "\u03a9"
+
+class NumberSort(Constraint):
+    def __init__(self, name):
+        self._name = sig_name[name]
+        self.sort = self
+
+    def __repr__(self):
+        return sig_repr[self._name]
+
+    def __str__(self):
+        return sig_str[self._name]
+
+    def name(self):
+        return self._name
+
+class TupleSort(Constraint):
     def __init__(self, sets):
          self.sets = sets
          self.sort = self
@@ -121,14 +124,12 @@ class TupleSort(Signature):
          else:
              return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
 
-class UniversumSignature(Signature):
+class PredSort(Constraint):
     def __init__(self):
-        self.sort = self
+       self.sort = self
 
     def __repr__(self):
-        return "\\mathcal{U}"
+       return "Pred"
 
     def __str__(self):
-        return "\u03a9"
-      
-    
+       return "Pred"

@@ -3,7 +3,7 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnNode, LRNode, LeafNode, TupleNode, EqNode, UnionNode, \
      IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, DeadNode
-from sorts import FnSignature, TupleSignature, SetSignature
+from sorts import Function, SetTuple, Subset, Universum, SetSort
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
@@ -282,16 +282,16 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
-def get_signature(var, qz):
+def get_constraint(var, qz):
     tree = qz
     name = var.name()
     while qz:
         if qz.var.name() == name:
             return qz.var.constraint
         qz = qz.left
-    raise Exception("Signature not found for "+var.name())
+    raise Exception("Binder not found for "+var.name())
 
-def process_signatures(screen, tree, signatures, vars):
+def process_constraints(screen, tree, constraints, vars):
     def del_last(L, str):
         gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
         del L[next(gen, None)]
@@ -300,32 +300,48 @@ def process_signatures(screen, tree, signatures, vars):
          or isinstance(tree, ExistsNode):
         name = tree.var.name()
         vars.append(name)
-        signatures[tree.var.name()] = tree.var.constraint
-        process_signatures(screen, tree.left, signatures, vars)
+        constraints[tree.var.name()] = tree.var.constraint
+        ok = process_constraints(screen, tree.left, constraints, vars)
         del_last(vars, name)
+        if not ok:
+            return False
     elif isinstance(tree, SetBuilderNode):
         name = tree.left.left.name()
         vars.append(name)
-        signatures[tree.left.left.name()] = tree.left.left.constraint
-        process_signatures(screen, tree.left, signatures, vars)
-        process_signatures(screen, tree.right, signatures, vars)
+        constraints[tree.left.left.name()] = tree.left.left.constraint
+        ok = process_constraints(screen, tree.left, constraints, vars)
+        if not ok:
+            del_last(vars, name)
+            return False
+        ok = process_constraints(screen, tree.right, constraints, vars)
         del_last(vars, name)
+        if not ok:
+            return False
     elif isinstance(tree, VarNode):
         if not tree.name() in vars:
-            signatures[tree.name()] = SetSignature(SymbolNode("\\mathcal{U}", None))
-            vars.append(tree.name())
+            screen.dialog(f"Unknown variable {tree.name()}")
+            return False
         else:
-            tree.constraint = signatures[tree.name()]
+            tree.constraint = constraints[tree.name()]
     elif isinstance(tree, LRNode):
-        process_signatures(screen, tree.left, signatures, vars)
-        process_signatures(screen, tree.right, signatures, vars)
+        ok = process_constraints(screen, tree.left, constraints, vars)
+        if not ok:
+            return False
+        ok = process_constraints(screen, tree.right, constraints, vars)
+        if not ok:
+            return False
     elif isinstance(tree, FnNode):
-        process_signatures(screen, tree.var, signatures, vars)
+        ok = process_constraints(screen, tree.var, constraints, vars)
+        if not ok:
+            return False
         for v in tree.args:
-            process_signatures(screen, v, signatures, vars)
-        
+            ok = process_constraints(screen, v, constraints, vars)
+            if not ok:
+                return False
+    return True
+
 def type_vars(screen, tl):
-    signatures = dict()
+    constraints = dict()
     vars = []
 
     if len(tl.tlist0.data) > 0:
@@ -335,26 +351,27 @@ def type_vars(screen, tl):
 
     while qz != None:
         vars.append(qz.var.name())
-        signatures[qz.var.name()] = qz.var.constraint
+        constraints[qz.var.name()] = qz.var.constraint
         qz = qz.left
 
     hyps = tl.tlist1.data
     for tree in hyps:
-        process_signatures(screen, tree, signatures, vars)
+        ok = process_constraints(screen, tree, constraints, vars)
+        if not ok:
+            return
     tars = tl.tlist2.data
     for tree in tars:
-        process_signatures(screen, tree, signatures, vars)
+        ok = process_constraints(screen, tree, constraints, vars)
+        if not ok:
+            return
 
 def universe(tree, qz):
     if isinstance(tree, VarNode):
         if tree.is_metavar:
             return None
         else:
-            t = get_signature(tree, qz)
-            if not isinstance(t, SetSignature):
-                return SymbolNode("\\mathcal{U}", None)
-            else:
-                return t.universe
+            t = get_constraint(tree, qz)
+            return t.sort
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
          isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
         return universe(tree.left, qz)
@@ -370,8 +387,8 @@ def domain(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            fn_signature = get_signature(tree, qz)
-            return fn_signature.domain
+            fn_constraint = get_constraint(tree, qz)
+            return fn_constraint.domain
     else:
         return None # no domain
 
@@ -380,8 +397,8 @@ def codomain(tree, qz):
         if tree.is_metavar:
             return None
         else:
-            fn_signature = get_signature(tree, qz)
-            return fn_signature.codomain
+            fn_constraint = get_constraint(tree, qz)
+            return fn_constraint.codomain
     else:
         return None # no domain
         
@@ -685,9 +702,6 @@ def relabel(tree, tldict):
             process(tree.left)
             process(tree.right)
         elif isinstance(tree, FnNode):
-            # TODO : come up with a proper Pair signature
-            # This is an unsound hack to allow pairs to be
-            # treated like functions
             if isinstance(tree.var, VarNode) and tree.name() in vars_dict:
                 tree.var._name = vars_dict[tree.name()] # TODO : add setter for assignment
             elif tree.is_metavar:
@@ -706,7 +720,7 @@ def relabel(tree, tldict):
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
                       isinstance(tree.constraint.universe, VarNode):
             process(tree.constraint.universe)
-        elif isinstance(tree, FnSignature):
+        elif isinstance(tree, Function):
             process(tree.domain)
             process(tree.codomain)
     t = tree
@@ -951,7 +965,7 @@ def clear_tableau(screen, tl):
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
 
-canonical_numsignatures = { "\\N" : "\\mathbb{N}",
+canonical_numconstraints = { "\\N" : "\\mathbb{N}",
                        "\\Z" : "\\mathbb{Z}",
                        "\\Q" : "\\mathbb{Q}",
                        "\\R" : "\\mathbb{R}",
@@ -967,8 +981,8 @@ def canonicalise_tags(tags):
     taglist = tags_to_list(tags)
     for i in range(0, len(taglist)):
         tag = taglist[i][1:]
-        if tag in canonical_numsignatures:
-            taglist[i] = "#"+canonical_numsignatures[tag]
+        if tag in canonical_numconstraints:
+            taglist[i] = "#"+canonical_numconstraints[tag]
     return "Tags: "+' '.join(taglist)
 
 def filter_titles(titles, c):
@@ -982,7 +996,7 @@ def library_import(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with signature shorthands
+    tags = canonicalise_tags(tags) # deal with constraint shorthands
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -1066,10 +1080,10 @@ def library_import(screen, tl):
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
         pad1 = screen.pad1.pad
-        signatures = dict()
+        constraints = dict()
         vars = []
         stmt = relabel(tree, tl.vars)
-        process_signatures(screen, stmt, signatures, vars)
+        process_constraints(screen, stmt, constraints, vars)
         append_tree(pad1, tlist1, stmt)
         screen.pad1.refresh()
         screen.focus.refresh()
@@ -1079,7 +1093,7 @@ def library_load(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with signature shorthands
+    tags = canonicalise_tags(tags) # deal with constraint shorthands
     taglist = tags_to_list(tags)
     library = open("library.dat", "r")
     filtered_titles = []
@@ -1164,7 +1178,7 @@ def library_export(screen, tl):
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
-    tags = canonicalise_tags(tags) # deal with signature shorthands
+    tags = canonicalise_tags(tags) # deal with constraint shorthands
     library = open("library.dat", "a")
     library.write(title+"\n")
     library.write(tags+"\n")
@@ -1797,25 +1811,25 @@ def skolemize_statement(screen, tree, deps, sk, qz, mv, positive, blocked=False)
         is_blocked = blocked
         if not blocked:
             sk.append((tree.var.name(), len(deps)))
-            domain_signatures = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps]
-            if len(domain_signatures) > 1:
-                fn_signature = FnSignature(Tuplesignature(domain_signatures), tree.var.constraint)
-            elif len(domain_signatures) == 1:
-                fn_signature = FnSignature(domain_signatures[0], tree.var.constraint)
+            domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps]
+            if len(domain_constraints) > 1:
+                fn_constraint = Function(SetTuple(domain_constraints), tree.var.constraint)
+            elif len(domain_constraints) == 1:
+                fn_constraint = Function(domain_constraints[0], tree.var.constraint)
             else:
-                fn_signature = FnSignature(None, tree.var.constraint)
+                fn_constraint = Function(None, tree.var.constraint)
             if positive:
                 if not blocked:
                     tree.var.is_metavar = True
                     mv.append(tree.var.name())
                 if not isinstance(tree.left, ImpliesNode) and not isinstance(tree.left, OrNode):
-                    domain_signatures = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps]
-                    qz.append(ExistsNode(VarNode(tree.var.name(), fn_signature, True), None))
+                    domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps]
+                    qz.append(ExistsNode(VarNode(tree.var.name(), fn_constraint, True), None))
                 else:
                     is_blocked = True
             else:
                 #deps.append(tree.var) # not needed? depends on all same things?
-                qz.append(ForallNode(VarNode(tree.var.name(), fn_signature, False), None))
+                qz.append(ForallNode(VarNode(tree.var.name(), fn_constraint, False), None))
         tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, sk, qz, mv, positive, is_blocked)
         tree.left = skolemize_statement(screen, tree.left, deps, sk, qz, mv, positive, is_blocked)
         rollback()
