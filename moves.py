@@ -324,7 +324,6 @@ def process_signatures(screen, tree, signatures, vars):
         for v in tree.args:
             process_signatures(screen, v, signatures, vars)
         
-
 def type_vars(screen, tl):
     signatures = dict()
     vars = []

@@ -27,6 +27,7 @@ class Signature:
 class NumberSignature(Signature):
     def __init__(self, name):
         self._name = sig_name[name]
+        self.sort = self
 
     def __repr__(self):
         return sig_repr[self._name]
@@ -38,6 +39,9 @@ class NumberSignature(Signature):
         return self._name
 
 class PredSignature(Signature):
+    def __init__(self):
+       self.sort = self
+
     def __repr__(self):
        return "Pred"
 
@@ -47,6 +51,7 @@ class PredSignature(Signature):
 class SetSignature(Signature):
     def __init__(self, universe):
         self.universe = universe
+        self.sort = self if universe.name() == '\\mathcal{U}' else universe
 
     def __repr__(self):
         if self.universe.name() == '\\mathcal{U}':
@@ -64,6 +69,7 @@ class FnSignature(Signature):
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
+         self.sort = TupleSort([domain.sort, codomain.sort])
 
     def __repr__(self):
          if self.domain == None:
@@ -80,6 +86,7 @@ class FnSignature(Signature):
 class TupleSignature(Signature):
     def __init__(self, sets):
          self.sets = sets
+         self.sort = TupleSort([v.sort for v in sets])
 
     def __repr__(self):
          n = len(self.sets)
@@ -95,4 +102,33 @@ class TupleSignature(Signature):
          else:
              return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
 
+class TupleSort(Signature):
+    def __init__(self, sets):
+         self.sets = sets
+         self.sort = self
+
+    def __repr__(self):
+         n = len(self.sets)
+         if n == 0:
+             return "()"
+         else:
+             return "("+', '.join([repr(self.sets[i]) for i in range(0, n)])+")"
+   
+    def __str__(self):
+         n = len(self.sets)
+         if n == 0:
+             return "()"
+         else:
+             return "("+', '.join([str(self.sets[i]) for i in range(0, n)])+")"
+
+class UniversumSignature(Signature):
+    def __init__(self):
+        self.sort = self
+
+    def __repr__(self):
+        return "\\mathcal{U}"
+
+    def __str__(self):
+        return "\u03a9"
+      
     

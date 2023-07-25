@@ -1,4 +1,4 @@
-from sorts import NumberSignature, Signature
+from sorts import NumberSignature, UniversumSignature, Signature
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -38,7 +38,8 @@ class LRNode:
         self.left = left
         self.right = right
         self.paren = False # for temporary marking as in parentheses during parsing
-    
+        self.sort = None
+
     def paren_str(self, child):
         if not isatomic(child) and precedence[type(child)] > precedence[type(self)]:
             return '('+str(child)+')'
@@ -103,10 +104,14 @@ class DeadNode(LeafNode):
         return "----"
 
 class SymbolNode(LeafNode):
-    def __init__(self, name, const_constraint):
+    def __init__(self, name, constraint):
         self._name = name
-        self.constraint = const_constraint
-    
+        self.sort = None
+        if name == "\\emptyset":
+            self.sort = constraint.universe
+        elif name == "\\mathcal{U}":
+            self.sort = UniversumSignature()
+
     def name(self):
         return self._name
 
@@ -123,9 +128,10 @@ class SymbolNode(LeafNode):
             return self._name
 
 class VarNode(LeafNode):
-    def __init__(self, name, var_constraint=SymbolNode("\\mathcal{U}", None), is_metavar=False):
+    def __init__(self, name, constraint=SymbolNode("\\mathcal{U}", None), is_metavar=False):
         self._name = name
-        self.constraint = var_constraint
+        self.constraint = constraint
+        self.sort = None
         self.is_metavar = is_metavar # whether this is a metavariable
         self.is_binder = False # whether this node is a binder variable
 
@@ -142,6 +148,7 @@ class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
         self.constraint = NumberSignature('\\mathbb{N}')
+        self.sort = self.constraint
 
     def __str__(self):
         return str(self.value)
@@ -167,7 +174,7 @@ class FnNode:
     def __init__(self, var, args):
         self.var = var # the function symbol (could be an expr like f \circ g)
         self.args = args
-        self.dbr = -1 # debruijn indices (-1 = not set)
+        self.sort = None
         self.is_skolem = False # Whether this is a skolem function
         self.is_metavar = False # Whether this is a metavariable
         self.is_binder = False # whether this function is a binder variable
@@ -207,6 +214,7 @@ class TupleNode:
     def __init__(self, args):
         self.name = '_'
         self.args = args
+        self.sort = None
 
     def __str__(self):
         return "("+', '.join([str(s) for s in self.args])+")"
