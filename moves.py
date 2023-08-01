@@ -7,8 +7,8 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      SubseteqNode, SubsetneqNode, SupseteqNode, SupsetneqNode, \
      CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
      LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, DeadNode
-from sorts import Function, SetTuple, SetSort, NumberSort, TupleSort, PredSort, \
-     Universum
+from sorts import FunctionConstraint, DomainTuple, SetSort, NumberSort, TupleSort, \
+     PredSort, Universum
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
      FieldClass, OrderedRingClass
@@ -421,7 +421,7 @@ def propagate_sorts(screen, tl, tree0):
             ok = propagate(tree.var)
             if not ok:
                 return False
-        if isinstance(tree, Function):
+        if isinstance(tree, FunctionConstraint):
             ok = propagate(tree.domain)
             if not ok:
                 return False
@@ -467,7 +467,7 @@ def propagate_sorts(screen, tl, tree0):
                 lsort = tree.constraint.left.sort.sort
                 rsort = tree.constraint.right.sort.sort
                 tree.sort = TupleSort([lsort, rsort])
-            elif isinstance(tree.constraint, Function):
+            elif isinstance(tree.constraint, FunctionConstraint):
                 tree.sort = SetSort(tree.constraint.sort)
         elif isinstance(tree, TupleComponentNode):
             lsort = tree.left.sort
@@ -1129,7 +1129,7 @@ def relabel(tree, tldict):
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
                       isinstance(tree.sort, VarNode):
             process(tree.sort)
-        elif isinstance(tree, Function):
+        elif isinstance(tree, FunctionConstraint):
             process(tree.domain)
             process(tree.codomain)
     t = tree
@@ -2228,11 +2228,11 @@ def skolemize_statement(screen, tree, deps, sk, qz, mv, positive, blocked=False)
             sk.append((tree.var.name(), len(deps)))
             domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps]
             if len(domain_constraints) > 1:
-                fn_constraint = Function(SetTuple(domain_constraints), tree.var.constraint)
+                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), tree.var.constraint)
             elif len(domain_constraints) == 1:
-                fn_constraint = Function(domain_constraints[0], tree.var.constraint)
+                fn_constraint = FunctionConstraint(domain_constraints[0], tree.var.constraint)
             else:
-                fn_constraint = Function(None, tree.var.constraint)
+                fn_constraint = FunctionConstraint(None, tree.var.constraint)
             if positive:
                 if not blocked:
                     tree.var.is_metavar = True

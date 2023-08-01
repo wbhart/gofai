@@ -9,8 +9,8 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
      LambdaNode, TupleComponentNode, LRNode
-from sorts import NumberSort, SetSort, TupleSort, PredSort, Function, SetTuple, \
-     Universum
+from sorts import NumberSort, SetSort, TupleSort, PredSort, FunctionConstraint, \
+     DomainTuple, Universum
 from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
      CompleteOrderedFieldClass, CompleteFieldClass
 
@@ -176,7 +176,7 @@ class StatementVisitor(NodeVisitor):
     def visit_tuple_constraint(self, node, visited_children):
         sigs = [v[0] for v in visited_children[2]]
         sigs.append(visited_children[3])
-        return SetTuple(sigs)
+        return DomainTuple(sigs)
     def visit_set_constraint(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
@@ -199,7 +199,7 @@ class StatementVisitor(NodeVisitor):
     def visit_number_constraint(self, node, visited_children):
         return NumberSort(node.text, number_class[node.text])
     def visit_fn_constraint(self, node, visited_children):
-        return Function(visited_children[0], visited_children[4])
+        return FunctionConstraint(visited_children[0], visited_children[4])
     def visit_predicate(self, node, visited_children):
         return visited_children[0]
     def visit_pred_paren(self, node, visited_children):

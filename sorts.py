@@ -29,7 +29,7 @@ class Constraint:
 class Sort(Constraint):
     pass
 
-class Function(Constraint):
+class FunctionConstraint(Constraint):
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
@@ -52,7 +52,7 @@ class Function(Constraint):
          else:
              return str(self.domain)+" \u2192 "+str(self.codomain)
 
-class SetTuple(Constraint):
+class DomainTuple(Constraint):
     def __init__(self, sets):
          self.sets = sets
          # sort is that of a tuple to be passed to a function
