@@ -469,6 +469,8 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = TupleSort([lsort, rsort])
             elif isinstance(tree.constraint, FunctionConstraint):
                 tree.sort = SetSort(tree.constraint.sort)
+            elif isinstance(tree.constraint, NumberSort):
+                tree.sort = tree.constraint
         elif isinstance(tree, TupleComponentNode):
             lsort = tree.left.sort
             if not isinstance(lsort, TupleSort):

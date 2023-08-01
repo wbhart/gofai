@@ -1,4 +1,4 @@
-from sorts import NumberSort, Constraint, Universum, SetSort, TupleSort
+from sorts import NumberSort, Constraint, Universum, SetSort, TupleSort, PredSort
 from typeclass import OrderedSemiringClass
 
 def isatomic(node):
@@ -463,10 +463,10 @@ class ExistsNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Constraint):
-            if isinstance(self.var.constraint, Universum):
+        if isinstance(self.var.constraint, Universum):
                 return "\u2203"+str(self.var)+expr
-            else:
+        elif isinstance(self.var.constraint, SetSort) or \
+             isinstance(self.var.constraint, PredSort):
                 return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2203"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
@@ -479,10 +479,10 @@ class ExistsNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Constraint):
-            if isinstance(self.var.constraint, Universum):
-                return "\\exists"+str(self.var)+expr
-            else:
+        if isinstance(self.var.constraint, Universum):
+                return "\\exists"+repr(self.var)+expr
+        elif isinstance(self.var.constraint, SetSort) or \
+             isinstance(self.var.constraint, PredSort):
                 return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\exists "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
@@ -501,10 +501,10 @@ class ForallNode(LRNode):
                expr = " "+str(self.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Constraint):
-            if isinstance(self.var.constraint, Universum):
+        if isinstance(self.var.constraint, Universum):
                 return "\u2200"+str(self.var)+expr
-            else:
+        elif isinstance(self.var.constraint, SetSort) or \
+             isinstance(self.var.constraint, PredSort):
                 return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2200"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
@@ -517,10 +517,10 @@ class ForallNode(LRNode):
                expr = " "+repr(self.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Constraint):
-            if isinstance(self.var.constraint, Universum):
-                return "\\forall"+str(self.var)+expr
-            else:
+        if isinstance(self.var.constraint, Universum):
+                return "\\forall"+repr(self.var)+expr
+        elif isinstance(self.var.constraint, SetSort) or \
+             isinstance(self.var.constraint, PredSort):
                 return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\forall "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
