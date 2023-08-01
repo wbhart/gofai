@@ -8,9 +8,11 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
-     LambdaNode, LRNode
-from sorts import NumberSort, Set, TupleSort, PredSort, \
-                  Function, SetTuple, Universum
+     LambdaNode, TupleCompNode, LRNode
+from sorts import NumberSort, SetSort, TupleSort, PredSort, Function, SetTuple, \
+     Universum
+from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
+     CompleteOrderedFieldClass, CompleteFieldClass
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -26,10 +28,11 @@ statement = Grammar(
     constraint = fn_constraint / basic_constraint
     basic_constraint = number_constraint / set_constraint / pred_constraint
     pred_constraint = "Pred"
-    fn_constraint = domain_constraint space "\\to" space basic_constraint
+    fn_constraint = domain_constraint space "\\to" space codomain_constraint
     domain_constraint = tuple_constraint / basic_constraint / set_expression
+    codomain_constraint = basic_constraint / set_expression
     tuple_constraint = "(" space (basic_constraint space "," space)* basic_constraint space ")"
-    set_constraint = "Set" ("(" space (var / number_constraint) space ")")?
+    set_constraint = "Set" ("(" space (set_cartesian / universe / var / number_constraint) space ")")?
     number_constraint = "\\mathbb{N}" / "\\mathbb{Z}" / "\\mathbb{Q}" / "\\mathbb{R}" / "\\mathbb{C}" / "\\N" / "\\Z" / "\\Q" / "\\R" / "\\C"
     expression = (and_expression space ("\\implies" / "\\iff") space)* and_expression
     and_expression = (relation space ("\\wedge" / "\\vee") space)* relation
@@ -66,18 +69,19 @@ statement = Grammar(
     fn_paren = "(" circ_expression ")"
     exp_expression = terminal (space "^" space terminal)*
     terminal = alg_terminal / var
-    alg_terminal = tuple_expression / paren_expression / abs_expression / fn_application / composite_fn_app / natural
+    alg_terminal = tuple_expression / paren_expression / abs_expression / tuple_comp / fn_application / composite_fn_app / natural
     bool = ("True" / "False")
     tuple_expression = "(" (add_expression space "," space)+ add_expression ")"
     paren_expression = "(" space alg_expression space ")"
     abs_expression = "|" add_expression "|"
     pred_fn = pred_name "(" (add_expression space "," space)* add_expression ")"
     fn_application = var "(" (any_expression space "," space)* any_expression ")"
+    tuple_comp = var "[" natural "]"
     composite_fn_app = fn_paren "(" (any_expression space "," space)* any_expression ")"
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    var = ~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
-    empty_set = "\\emptyset" ("(" space (var / number_constraint) space ")")?
+    var = !"complement" (~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi")
+    empty_set = "\\emptyset" ("(" space (universe / set_cartesian / var / number_constraint) space ")")?
     universum = "\\mathcal{U}"
     space = ~"\s*"
     """)
@@ -105,6 +109,19 @@ node_dict = {
     "\\supseteq" : SupseteqNode,
     "\\times" : CartesianNode,
     "\\circ" : CircNode
+}
+
+number_class = {
+   "\\mathbb{N}" : OrderedSemiringClass(),
+   "\\N" : OrderedSemiringClass(),
+   "\\mathbb{Z}" : OrderedRingClass(),
+   "\\Z" : OrderedRingClass(),
+   "\\mathbb{Q}" : OrderedFieldClass(),
+   "\\Q" : OrderedFieldClass(),
+   "\\mathbb{R}" : CompleteOrderedFieldClass(),
+   "\\R" : CompleteOrderedFieldClass(),
+   "\\mathbb{C}" : CompleteFieldClass(),
+   "\\C" : CompleteFieldClass()
 }
 
 def is_alg_left_node(tree):
@@ -154,6 +171,8 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_domain_constraint(self, node, visited_children):
         return visited_children[0]
+    def visit_codomain_constraint(self, node, visited_children):
+        return visited_children[0]
     def visit_tuple_constraint(self, node, visited_children):
         sigs = [v[0] for v in visited_children[2]]
         sigs.append(visited_children[3])
@@ -161,9 +180,12 @@ class StatementVisitor(NodeVisitor):
     def visit_set_constraint(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            return Set(Universum())
+            return SetSort(Universum())
+        constraint = params[0][2][0]
+        if isinstance(constraint, CartesianNode):
+            return SetSort(TupleSort([constraint.left, constraint.right]))
         else:
-            return Set(params[0][2][0])
+            return SetSort(constraint)
     def visit_pred_constraint(self, node, visited_children):
         return PredSort()
     def visit_universe(self, node, visited_children):
@@ -175,7 +197,7 @@ class StatementVisitor(NodeVisitor):
     def visit_complement(self, node, visited_children):
         return FnNode(VarNode("complement"), [visited_children[2]])
     def visit_number_constraint(self, node, visited_children):
-        return NumberSort(node.text)
+        return NumberSort(node.text, number_class[node.text])
     def visit_fn_constraint(self, node, visited_children):
         return Function(visited_children[0], visited_children[4])
     def visit_predicate(self, node, visited_children):
@@ -264,6 +286,8 @@ class StatementVisitor(NodeVisitor):
         entries = [v[0] for v in visited_children[1]]
         entries.append(visited_children[2])
         return TupleNode(entries)
+    def visit_tuple_comp(self, node, visited_children):
+        return TupleCompNode(visited_children[0], visited_children[2])
     def visit_paren_expression(self, node, visited_children):
         t = visited_children[2]
         if isinstance(t, LRNode):
@@ -311,9 +335,13 @@ class StatementVisitor(NodeVisitor):
     def visit_empty_set(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            set_constraint = Set(Universum())
+            set_constraint = SetSort(Universum())
         else:
-            set_constraint = Set(params[0][2][0])
+            constraint = params[0][2][0]
+            if isinstance(constraint, CartesianNode):
+                set_constraint = SetSort(TupleSort([constraint.left, constraint.right]))
+            else:
+                set_constraint = SetSort(constraint)
         return SymbolNode("\\emptyset", set_constraint)
     def visit_universum(self, node, visited_children):
         return Universum()

@@ -829,11 +829,11 @@ Tags: #sets
 \forall S : Set, \forall T : Set, \forall c \in S, \forall d \in T, \forall x \in S \times T
 ------------------------------
 ------------------------------
-x = (c, d) \implies x(0) = c \wedge x(1) = d
+x = (c, d) \implies x[0] = c \wedge x[1] = d
 
 Title: Equality of pairs
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall a \in S, \forall b \in T, \forall \in universe(S), \forall d \in universe(T)
+\forall S : Set, \forall T : Set, \forall a \in S, \forall b \in T, \forall c \in universe(S), \forall d \in universe(T)
 ------------------------------
 ------------------------------
 (a, b) = (c, d) \iff a = c \wedge b = d
@@ -843,7 +843,7 @@ Tags: #sets #definition
 \forall S : Set, \forall T : Set, x \in S \times T
 ------------------------------
 ------------------------------
-is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x(0) \in S \wedge x(1) \in T
+is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
 
 Title: Definition of cartesian product
 Tags: #sets #definition
@@ -857,7 +857,7 @@ Tags: #sets
 \forall S : Set, \forall T : Set, \forall x \in S \times T
 ------------------------------
 ------------------------------
-x \in S \times T \implies x(0) \in S \wedge x(1) \in T
+x \in S \times T \implies x[0] \in S \wedge x[1] \in T
 
 Title: Pair in a cartesian product if elements in sets
 Tags: #sets
@@ -871,14 +871,14 @@ Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-S \times \emptyset(T) = \emptyset(universe(S) \times T)
+S \times \emptyset(T) = \emptyset(S \times T)
 
 Title: Cartesian product with the empty set is empty (left)
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-\emptyset(S) \times T = \emptyset(S) \times universe(T))
+\emptyset(S) \times T = \emptyset(S \times T)
 
 Title: Cartesian product on the right preserves subset relation
 Tags: #sets
@@ -1088,7 +1088,7 @@ Tags: #sets #definition
 ------------------------------
 S \setminus T = S \cap complement(T)
 
-Title: Problem : Complement of set difference is complement first union second set
+Title: Problem : Complement of set difference is complement of first set union second set
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1232,7 +1232,7 @@ is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
 Title: Function value in codomain
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in universe(A)
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
 ------------------------------
 is_function(f, A, B) \wedge a \in A
 ------------------------------
@@ -1240,7 +1240,7 @@ f(a) \in B
 
 Title: Pair with function value in function
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in universe(A)
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
 ------------------------------
 is_function(f, A, B) \wedge a \in A
 ------------------------------

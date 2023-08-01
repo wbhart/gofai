@@ -1,4 +1,5 @@
-from sorts import NumberSort, Constraint, Universum
+from sorts import NumberSort, Constraint, Universum, SetSort, TupleSort
+from typeclass import OrderedSemiringClass
 
 def isatomic(node):
     if isinstance(node, LRNode):
@@ -114,14 +115,14 @@ class SymbolNode(LeafNode):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and isinstance(self.sort, Universum):
-            return univar(self._name)+"("+str(self.sort)+")"
+        if self.name() == "\\emptyset" and not isinstance(self.sort.sort, Universum):
+            return univar(self._name)+"("+str(self.sort.sort)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and isinstance(self.sort, Universum):
-            return self._name+"("+repr(self.sort)+")"
+        if self.name() == "\\emptyset" and not isinstance(self.sort.sort, Universum):
+            return self._name+"("+repr(self.sort.sort.sort)+")"
         else:
             return self._name
 
@@ -145,7 +146,7 @@ class VarNode(LeafNode):
 class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
-        self.constraint = NumberSort('\\mathbb{N}')
+        self.constraint = NumberSort('\\mathbb{N}', OrderedSemiringClass)
         self.sort = self.constraint
 
     def __str__(self):
@@ -219,6 +220,17 @@ class TupleNode:
 
     def __repr__(self):
         return "("+', '.join([repr(s) for s in self.args])+")"
+
+class TupleCompNode(LRNode):
+    def __init__(self, var, idx):
+        self.left = var
+        self.right = idx
+
+    def __str__(self):
+        return str(self.left)+"["+str(self.right)+"]"
+
+    def __repr__(self):
+        return repr(self.left)+"["+repr(self.right)+"]"
 
 class PowerSetNode(LRNode):
     def __init__(self, arg):
@@ -452,7 +464,10 @@ class ExistsNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Constraint):
-            return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
+            if isinstance(self.var.constraint, Universum):
+                return "\u2203"+str(self.var)+expr
+            else:
+                return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2203"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
 
@@ -465,7 +480,10 @@ class ExistsNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Constraint):
-            return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
+            if isinstance(self.var.constraint, Universum):
+                return "\\exists"+str(self.var)+expr
+            else:
+                return "\\exists "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\exists "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
 
@@ -484,7 +502,10 @@ class ForallNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Constraint):
-            return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
+            if isinstance(self.var.constraint, Universum):
+                return "\u2200"+str(self.var)+expr
+            else:
+                return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
         else:
             return "\u2200"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
 
@@ -497,7 +518,10 @@ class ForallNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Constraint):
-            return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
+            if isinstance(self.var.constraint, Universum):
+                return "\\forall"+str(self.var)+expr
+            else:
+                return "\\forall "+repr(self.var)+" : "+repr(self.var.constraint)+expr
         else:
             return "\\forall "+repr(self.var)+" \\in "+repr(self.var.constraint)+expr
 
@@ -540,7 +564,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               MulNode:3, DivNode:3,
               NegNode:2,
               ExpNode:1,
-              NaturalNode:0, VarNode:0, FnNode:0, AbsNode:0}
+              NaturalNode:0, VarNode:0, FnNode:0, AbsNode:0, TupleCompNode:0}
 
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,

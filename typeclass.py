@@ -10,6 +10,12 @@ class TotalOrderClass(PosetClass):
 class MonoidClass(SetClass):
     pass
 
+class SemiringClass(MonoidClass):
+    pass
+
+class OrderedSemiringClass(SemiringClass, TotalOrderClass):
+    pass
+
 class SemigroupClass(MonoidClass):
     pass
 
@@ -19,13 +25,25 @@ class GroupClass(SemigroupClass):
 class AbelianGroupClass(GroupClass):
     pass
 
-class RingClass(AbelianGroupClass):
+class RingClass(AbelianGroupClass, SemiringClass):
+    pass
+
+class OrderedRingClass(RingClass, TotalOrderClass):
     pass
 
 class FieldClass(RingClass):
     pass
 
-class OrderedFieldClass(FieldClass, TotalOrderClass):
+class CompleteFieldClass(FieldClass):
+    pass
+
+class ValuedFieldClass(FieldClass):
+    pass
+
+class CompleteValuedFieldClass(ValuedFieldClass, CompleteFieldClass):
+    pass
+
+class OrderedFieldClass(FieldClass, OrderedRingClass, TotalOrderClass):
     pass
 
 class CompleteOrderedFieldClass(OrderedFieldClass):
@@ -67,3 +85,5 @@ class HausdorffTopologicalSpaceClass(TopologicalSpaceClass):
 class TopologicalGroupClass(GroupClass, TopologicalSpaceClass):
     pass
 
+class FunctionClass(SetClass):
+    pass

@@ -36,6 +36,7 @@ class TreeList:
         self.focus = self.tlist0
         self.vars = dict() # variables used
         self.tars = dict() # targets used
+        self.stree = None # sort hierarchy
 
     def switch_list(self):
         if self.focus == self.tlist0:

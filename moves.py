@@ -1,14 +1,25 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, LeafNode, TupleNode, EqNode, UnionNode, \
-     IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, DeadNode
-from sorts import Function, SetTuple, Set, Universum
+     FnNode, LRNode, LeafNode, TupleNode, EqNode, ElemNode, UnionNode, \
+     IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, \
+     NaturalNode, ExpNode, AddNode, SubNode, MulNode, DivNode, \
+     SubseteqNode, SubsetneqNode, SupseteqNode, SupsetneqNode, \
+     CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
+     LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleCompNode, DeadNode
+from sorts import Function, SetTuple, SetSort, NumberSort, TupleSort, PredSort, \
+     Universum
+from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
+     OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
+     FieldClass, OrderedRingClass
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
 from heapq import merge
+
+system_functions = ['complement']
+system_predicates = ['is_function', 'is_injective', 'is_surjective', 'is_bijective']
 
 class TargetNode:
     def __init__(self, num, andlist=[]):
@@ -282,6 +293,388 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
+def sort_type_class(sort):
+    if isinstance(sort, VarNode):
+        return sort.constraint.typeclass
+    elif isinstance(sort, NumberSort):
+        return sort.typeclass
+    else:
+        raise Exception("Not a valid sort")
+    
+def is_function_type(sort):
+   return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
+                   len(sort.sort.sets) == 2
+
+def sorts_equal(s1, s2):
+    if type(s1) != type(s2):
+        return False
+    elif isinstance(s1, VarNode) or isinstance(s1, NumberSort):
+        return s1.name() == s2.name()
+    elif isinstance(s1, SetSort):
+        return sorts_equal(s1.sort, s2.sort)
+    elif isinstance(s1, TupleSort):
+        if len(s1.sets) != len(s2.sets):
+            return False
+        for i in range(len(s1.sets)):
+            if not sorts_equal(s1.sets[i], s2.sets[i]):
+                return False
+        return True
+    elif isinstance(s1, PredSort) or isinstance(s1, Universum):
+        return True
+    return False
+
+class SortNode:
+    def __init__(self, sort):
+        self.sort = sort
+        self.subsorts = []
+
+def find_sort(screen, tl, stree, s):
+        if sorts_equal(s, stree.sort):
+            return stree
+        for t in stree.subsorts:
+            r = find_sort(screen, tl, t, s)
+            if r:
+                return r
+        return None
+
+def insert_sort(screen, tl, s1, s2):
+    # make s2 a subsort of s1
+    r = find_sort(screen, tl, tl.stree, s1)
+    r.subsorts.append(SortNode(s2))
+
+def initialise_sorts(screen, tl):
+    stree = SortNode(Universum())
+    tl.stree = stree 
+    C = NumberSort("\\mathbb{C}", CompleteValuedFieldClass())
+    R = NumberSort("\\mathbb{R}", CompleteOrderedFieldClass())
+    Q = NumberSort("\\mathbb{Q}", FieldClass())
+    Z = NumberSort("\\mathbb{Z}", OrderedRingClass())
+    N = NumberSort("\\mathbb{N}", OrderedSemiringClass())
+    insert_sort(screen, tl, Universum(), C)
+    insert_sort(screen, tl, C, R)
+    insert_sort(screen, tl, R, Q)
+    insert_sort(screen, tl, Q, Z)
+    insert_sort(screen, tl, Z, N)   
+
+def coerce_sorts(screen, tl, s1, s2):
+    # if s2 can be coerced to s1, return s1, else None
+    if sorts_equal(s1, s2):
+        return s1
+    b = find_sort(screen, tl, tl.stree, s1)
+    if b:
+        r = find_sort(screen, tl, b, s2)
+        if r:
+            return s1
+    return None # not coercible
+    
+def sorts_compatible(screen, tl, s1, s2):
+    t1 = isinstance(s1, TupleSort)
+    t2 = isinstance(s2, TupleSort)
+    if (t1 and not t2) or (t2 and not t1):
+        return False
+    if t1:
+        if len(s1.sets) != len(s2.sets):
+            return False 
+        compatible = True
+        for i in range(len(s1.sets)):
+            if not coerce_sorts(screen, tl, s1.sets[i], s2.sets[i]):
+                compatible = False
+                break
+        if not compatible:
+            compatible = True
+            for i in range(len(s1.sets)):
+                if not coerce_sorts(screen, tl, s2.sets[i], s1.sets[i]):
+                    compatible = False
+                    break
+        return compatible
+    c1 = isinstance(s1, SetSort)
+    c2 = isinstance(s2, SetSort)
+    if (c1 and not c2) or (c2 and not c1):
+         return False
+    if c1:
+         return sorts_compatible(screen, tl, s1.sort, s2.sort)
+    if coerce_sorts(screen, tl, s1, s2):
+        return True
+    if coerce_sorts(screen, tl, s2, s1):
+        return True
+    return False
+
+def propagate_sorts(screen, tl, tree0):
+    stree = tl.stree
+
+    def propagate(tree):
+        if tree == None:
+            return True
+        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
+            ok = propagate(tree.var.constraint)
+            if not ok:
+                return False
+            ok = propagate(tree.var)
+            if not ok:
+                return False
+        if isinstance(tree, FnNode) or isinstance(tree, TupleNode):
+            for v in tree.args:
+                ok = propagate(v)
+                if not ok:
+                    return False
+        if isinstance(tree, FnNode):
+            ok = propagate(tree.var)
+            if not ok:
+                return False
+        if isinstance(tree, Function):
+            ok = propagate(tree.domain)
+            if not ok:
+                return False
+            ok = propagate(tree.codomain)
+            if not ok:
+                return False
+            if tree.domain:
+                tree.sort = TupleSort([tree.domain.sort, tree.codomain.sort])
+            else:
+                tree.sort = tree.codomain.sort
+        if isinstance(tree, LRNode):
+            if not propagate(tree.left):
+                return False
+            if not propagate(tree.right):
+                return False
+        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            if not propagate(tree.var.constraint):
+                return False
+        if isinstance(tree, SymbolNode):
+            if tree.name() == "\\emptyset":
+                 if not isinstance(tree.sort, SetSort):
+                     screen.dialog("Invalid universe for empty set")
+                     return False
+        elif isinstance(tree, VarNode):
+            if isinstance(tree.constraint, SetSort): # this variable is a set
+                insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
+                tree.sort = tree.constraint
+            elif isinstance(tree.constraint, PredSort): # this variable is a pred
+                tree.sort = tree.constraint
+            elif isinstance(tree.constraint, FnNode): # check it is a universe of metavar
+                if tree.constraint.name() != "universe":
+                    screen.dialog(f"Variable {tree.name()} has invalid contraint")
+                    return False
+                # leave sort as None
+            elif isinstance(tree.constraint, VarNode): # check it is in a set
+                if not isinstance(tree.constraint.constraint, SetSort):
+                    screen.dialog(f"Variable {tree.name()} has invalid constraint")
+                    return False
+                tree.sort = tree.constraint
+            elif isinstance(tree.constraint, Universum): # variable is in universum
+                tree.sort = tree.constraint
+            elif isinstance(tree.constraint, CartesianNode):
+                lsort = tree.constraint.left.sort.sort
+                rsort = tree.constraint.right.sort.sort
+                tree.sort = TupleSort([lsort, rsort])
+            elif isinstance(tree.constraint, Function):
+                tree.sort = SetSort(tree.constraint.sort)
+        elif isinstance(tree, TupleCompNode):
+            lsort = tree.left.sort
+            if not isinstance(lsort, TupleSort):
+                screen.dialog("Invalid tuple in component operation")
+                return False
+            idx = tree.right.value
+            if idx < 0 or idx >= len(lsort.sets):
+                screen.dialog("Invalid tuple index")
+                return False
+            tree.sort = lsort.sets[idx]
+        elif isinstance(tree, CartesianNode):
+            if not isinstance(tree.left.sort, SetSort) or \
+               not isinstance(tree.right.sort, SetSort):
+                screen.dialog("Cartesian product requires sets")
+                return False
+            tree.sort = SetSort(TupleSort([tree.left.sort.sort, tree.right.sort.sort]))
+        elif isinstance(tree, NaturalNode):
+            pass # dealt with by constructor
+        elif isinstance(tree, ExpNode):
+            if isinstance(tree.left.sort, Sort) and not isinstance(tree.left.sort, NumberSort):
+                screen.dialog("Cannot raise {str(tree.left)} to power")
+                return False
+            elif not isinstance(sort_typeclass(tree.left.sort), SemiringClass):
+                    screen.dialog("Cannot raise {str(tree.left)} to power")
+                    return False
+            if not isinstance(tree.right.sort, NumberType) or tree.right.sort.name != "\\mathbb{N}":
+                    screen.dialog("Powering operation not supported")
+                    return False
+            tree.sort = tree.left.sort
+        elif isinstance(tree, CircNode):
+            lsort = tree.left.sort
+            rsort = tree.right.sort
+            if not is_function_type(lsort) or \
+               not is_function_type(rsort):    
+                screen.dialog("Not a function in composition")
+                return False
+            if not sorts_equal(lsort.sort.sets[1], rsort.sort.sets[0]):
+                screen.dialog("Type mismatch in function composition")
+                return False
+            tree.sort = SetSort(TupleSort([lsort.sort.sets[0], rsort.sort.sets[1]]))
+        elif isinstance(tree, FnNode):
+            if tree.name() in system_functions:
+                tree.sort = tree.args[0].sort
+            elif tree.name() in system_predicates:
+                tree.sort = PredSort()
+            else:
+                fn_sort = tree.var.sort
+                domain_sort = fn_sort.sort.sets[0]
+                codomain_sort = fn_sort.sort.sets[1]
+                if not isinstance(domain_sort, SetSort) or \
+                   not isinstance(domain_sort.sort, TupleSort):
+                    if len(tree.args) != 1:
+                        screen.dialog(f"Wrong number of arguments to function {tree.name()}")
+                        return False
+                    if not coerce_sorts(screen, tl, domain_sort, tree.args[0].sort):
+                        screen.dialog(f"Type mismatch for argument {0} of {tree.name()}")
+                        return False
+                else:
+                    if len(tree.args) != len(domain_sort.sort.sets):
+                        screen.dialog(f"Wrong number of arguments to function {tree.name()}")
+                        return False
+                    for i in range(len(tree.args)):
+                        if not coerce_sorts(screen, tl, domain_sort.sort.sets[i], tree.args[i].sort):
+                            screen.dialog(f"Type mismatch for argument {i} of {tree.name()}")
+                            return False
+                tree.sort = codomain_sort
+        elif isinstance(tree, LambdaNode):
+            # can only be created by the system
+            tree.sort = SetSort(TupleSort([tree.left.sort, tree.right.sort]))
+        elif isinstance(tree, TupleNode):
+            # will be used for all sorts of things, so no point checking anything
+            tree.sort = TupleSort([v.sort for v in tree.args])
+        elif isinstance(tree, PowerSetNode):
+            if not isinstance(tree.left.sort, SetSort):
+                screen.dialog("Argument to power set not a set")
+                return False
+            tree.sort = SetSort(tree.left.sort)
+        elif isinstance(tree, AddNode):
+            if not sorts_equal(tree.left.sort, tree.right.sort):
+                screen.dialog("Type mismatch in addition")
+                return False
+            if not isinstance(sort_type_class(tree.left.sort), MonoidClass):
+                screen.dialog("Invalid type for addition")
+                return False
+            tree.sort = tree.left.sort
+        elif isinstance(tree, MulNode) or isinstance(tree, SubNode) or \
+             isinstance(tree, DivNode):
+            if not sorts_equal(tree.left.sort, tree.right.sort):
+                screen.dialog("Type mismatch in arithmetic operation")
+                return False
+            if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
+                screen.dialog("Invalid type for arithmetic operation")
+                return False
+            tree.sort = tree.left.sort
+        elif isinstance(tree, LtNode) or isinstance(tree, GtNode) or \
+             isinstance(tree, LeqNode) or isinstance(tree, GeqNode):
+            if not sorts_equal(tree.left.sort, tree.right.sort):
+                screen.dialog("Type mismatch in order relation")
+                return False
+            if not isinstance(sort_type_class(tree.left.sort), PosetClass):
+                screen.dialog("Invalid types for order relation")
+                return False
+            tree.sort = PredSort()
+        elif isinstance(tree, EqNode) or isinstance(tree, NeqNode):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
+                screen.dialog("Type mismatch in equality relation")
+                return False
+            # many things can be assigned/compared equal, so can't restrict types
+            tree.sort = PredSort()
+        elif isinstance(tree, ImpliesNode) or isinstance(tree, IffNode) or \
+             isinstance(tree, AndNode) or isinstance(tree, OrNode):
+            if not isinstance(tree.left.sort, PredSort) or \
+               not isinstance(tree.right.sort, PredSort):
+                screen.dialog("Logical operator requires predicates")
+                return False
+            tree.sort = PredSort()
+        elif isinstance(tree, CartesianNode):
+            lsort = tree.left.sort
+            rsort = tree.right.sort
+            if not isinstance(lsort, SetSort) or \
+               not isinstance(rsort, SetSort):
+                screen.dialog("Arguments to cartesian product are not sets")
+                return False
+            tree.sort = SetSort(TupleSort([lsort.sort, rsort.sort]))
+        elif isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) or \
+             isinstance(tree, DiffNode):
+            lsort = tree.left.sort
+            rsort = tree.right.sort
+            if not isinstance(lsort, SetSort) or \
+               not isinstance(rsort, SetSort):
+                screen.dialog("Arguments to set operation are not sets")
+                return False
+            if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
+                screen.dialog("Incompatible sets in set operation")
+                return False
+            tree.sort = lsort
+        elif isinstance(tree, SubsetneqNode) or isinstance(tree, SubseteqNode) or \
+             isinstance(tree, SupsetneqNode) or isinstance(tree, SupseteqNode):
+            lsort = tree.left.sort
+            rsort = tree.right.sort
+            if not isinstance(lsort, SetSort) or \
+               not isinstance(rsort, SetSort):
+                screen.dialog("Arguments to set relation are not sets")
+                return False
+            if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
+                screen.dialog("Incompatible sets in set relation")
+                return False
+            tree.sort = PredSort()
+        elif isinstance(tree, SetBuilderNode):
+            if not isinstance(tree.left.right.sort, SetSort):
+                screen.dialog("Set comprehension must range over set")
+                return False
+            tree.sort = tree.left.right.sort
+        elif isinstance(tree, AbsNode):
+            if isinstance(tree.left.sort, SetSort):
+                screen.dialog("Cannot take absolute value of set")
+                return False
+            if not isinstance(sort_typeclass(tree.left.sort), ValuedFieldClass):
+                screen.dialog("Incompatible argument type in absolute value")
+                return False
+            tree.sort = tree.left.sort
+        elif isinstance(tree, NegNode):
+            if isinstance(tree.left.sort, SetSort):
+                screen.dialog("Cannot negate a set")
+                return False
+            if isinstance(tree.left.sort, PredSort):
+                screen.dialog("Cannot negate a predicate")
+                return False
+            if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
+                screen.dialog("Invalid type for arithmetic operation")
+                return False
+            tree.sort = tree.left.sort
+        elif isinstance(tree, NotNode):
+            if not isinstance(tree.left.sort, PredSort):
+                screen.dialog("Logical negation requires predicate")
+                return False
+            tree.sort = PredSort()
+        elif isinstance(tree, BoolNode):
+            tree.sort = PredSort()
+        elif isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
+            tree.sort = PredSort()
+        elif isinstance(tree, ElemNode):
+            if not isinstance(tree.right.sort, SetSort):
+                screen.dialog("Not a set in element relation")
+                return False
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort):
+                screen.dialog("Type mismatch in element relation")
+                return False
+            tree.sort = PredSort()
+        return True
+    return propagate(tree0)
+
+def process_sorts(screen, tl):
+    ok = propagate_sorts(screen, tl, tl.tlist0.data[0])
+    if not ok:
+        return False
+    for tree in tl.tlist1.data:
+        ok = propagate_sorts(screen, tl, tree)
+        if not ok:
+            return False
+    for tree in tl.tlist2.data:
+        ok = propagate_sorts(screen, tl, tree)
+        if not ok:
+            return False
+    return True
+    
 def get_constraint(var, qz):
     tree = qz
     name = var.name()
@@ -301,6 +694,9 @@ def process_constraints(screen, tree, constraints, vars):
         name = tree.var.name()
         vars.append(name)
         constraints[tree.var.name()] = tree.var.constraint
+        ok = process_constraints(screen, tree.var.constraint, constraints, vars)
+        if not ok:
+            return False
         ok = process_constraints(screen, tree.left, constraints, vars)
         del_last(vars, name)
         if not ok:
@@ -319,8 +715,10 @@ def process_constraints(screen, tree, constraints, vars):
             return False
     elif isinstance(tree, VarNode):
         if not tree.name() in vars:
-            screen.dialog(f"Unknown variable {tree.name()}")
-            return False
+            if tree.name() not in system_functions and \
+               tree.name() not in system_predicates:
+               screen.dialog(f"Unknown variable/function {tree.name()}")
+               return False
         else:
             tree.constraint = constraints[tree.name()]
     elif isinstance(tree, LRNode):
@@ -334,6 +732,11 @@ def process_constraints(screen, tree, constraints, vars):
         ok = process_constraints(screen, tree.var, constraints, vars)
         if not ok:
             return False
+        for v in tree.args:
+            ok = process_constraints(screen, v, constraints, vars)
+            if not ok:
+                return False
+    elif isinstance(tree, TupleNode):
         for v in tree.args:
             ok = process_constraints(screen, v, constraints, vars)
             if not ok:
@@ -352,6 +755,9 @@ def type_vars(screen, tl):
     while qz != None:
         vars.append(qz.var.name())
         constraints[qz.var.name()] = qz.var.constraint
+        ok = process_constraints(screen, qz.var.constraint, constraints, vars)
+        if not ok:
+            return False
         qz = qz.left
 
     hyps = tl.tlist1.data
@@ -430,6 +836,9 @@ def fill_macros(screen, tl):
         elif isinstance(tree, LRNode):
             tree.left = fill(tree.left)
             tree.right = fill(tree.right)
+            return tree
+        elif isinstance(tree, SymbolNode):
+            tree.sort = SetSort(fill(tree.sort.sort))
             return tree
         elif isinstance(tree, LeafNode):
             return tree
@@ -1027,10 +1436,13 @@ def library_import(screen, tl):
                 i = 0
                 if filtered_titles2:
                     screen.status(filtered_titles2[i][1])
+                else:
+                    screen.status("")
             elif c == '\n':
-                screen.status('')
-                screen.focus.refresh()
-                break
+                if filtered_titles2:
+                    screen.status('')
+                    screen.focus.refresh()
+                    break
             elif c == 'KEY_LEFT' or c == 'KEY_RIGHT' or c == '\t':
                 continue
             else:
@@ -1124,10 +1536,13 @@ def library_load(screen, tl):
                 i = 0
                 if filtered_titles2:
                     screen.status(filtered_titles2[i][1])
+                else:
+                    screen.status("")
             elif c == '\n':
-                screen.status('')
-                screen.focus.refresh()
-                break
+                if filtered_titles2:
+                    screen.status('')
+                    screen.focus.refresh()
+                    break
             else:
                 library.close()
                 screen.status('')

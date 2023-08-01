@@ -7,7 +7,7 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     library_load, fill_macros, type_vars
+     library_load, fill_macros, type_vars, process_sorts, initialise_sorts
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -42,10 +42,14 @@ def main(stdscr):
         elif c == 'v': # equivalence
             equality(screen, tl)
         elif c == 's': # start automated cleanup
+            fill_macros(screen, tl)
             type_vars(screen, tl)
-            started = True
-            skip = False
-            ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+            initialise_sorts(screen, tl)
+            ok = process_sorts(screen, tl)
+            if ok:
+               started = True
+               skip = False
+               ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
             modus_ponens(screen, tl, ttree)
         elif c == 't': # modus tollens
