@@ -93,7 +93,7 @@ a*b = b*a
 
 Title: Distributivity of multiplication over addition
 Tags: #algebra #\mathbb{R}
-\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R} 
+\forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
 ------------------------------
 a*(b + c) = a*b + a*c
@@ -344,7 +344,7 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
 ------------------------------
-|ab| = |a|*|b|
+|a*b| = |a|*|b|
 
 Title: Triangle inequality
 Tags: #inequalities #absolutevalue #\mathbb{R}
@@ -510,7 +510,7 @@ Tags: #inequalities #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
 S \subseteq \mathbb{R}
-is_bounded(S, l, s)
+is_bounded(S, l, u)
 ------------------------------
 x \in S \implies x \leq u \wedge x \geq l
 

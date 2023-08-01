@@ -12,7 +12,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
 from sorts import NumberSort, SetSort, TupleSort, PredSort, FunctionConstraint, \
      DomainTuple, Universum
 from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
-     CompleteOrderedFieldClass, CompleteFieldClass
+     CompleteOrderedFieldClass, CompleteFieldClass, CompleteOrderedValuedFieldClass
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -60,16 +60,16 @@ statement = Grammar(
     left_alg_expression = terminal space ("+" / "-" / "*" / "/") space add_expression
     right_alg_expression = terminal space ("^" / "_dummyxxx") space exp_expression
     add_expression = (mult_expression space ("+" / "-") space)* mult_expression
-    mult_expression = mult_expression1 / mult_expression2 / minus_expression
+    mult_expression = mult_expression1 / mult_expression2
     mult_expression1 = natural mult_expression2
     mult_expression2 = (exp_expression space ("*" / "/") space)* exp_expression
-    minus_expression = "-" mult_expression
+    minus_expression = ("-")+ mult_expression
     circ_expression = (fn_expression space ("\\circ" / "_dummyyyy") space)+ fn_expression
     fn_expression = var / fn_paren
     fn_paren = "(" circ_expression ")"
     exp_expression = terminal (space "^" space terminal)*
     terminal = alg_terminal / var
-    alg_terminal = tuple_expression / paren_expression / abs_expression / tuple_comp / fn_application / composite_fn_app / natural
+    alg_terminal = minus_expression / tuple_expression / paren_expression / abs_expression / tuple_comp / fn_application / composite_fn_app / natural
     bool = ("True" / "False")
     tuple_expression = "(" (add_expression space "," space)+ add_expression ")"
     paren_expression = "(" space alg_expression space ")"
@@ -91,6 +91,7 @@ node_dict = {
     "-" : SubNode,
     "*" : MulNode,
     "/" : DivNode,
+    "^" : ExpNode,
     "<" : LtNode,
     ">" : GtNode,
     "\\leq" : LeqNode,
@@ -118,8 +119,8 @@ number_class = {
    "\\Z" : OrderedRingClass(),
    "\\mathbb{Q}" : OrderedFieldClass(),
    "\\Q" : OrderedFieldClass(),
-   "\\mathbb{R}" : CompleteOrderedFieldClass(),
-   "\\R" : CompleteOrderedFieldClass(),
+   "\\mathbb{R}" : CompleteOrderedValuedFieldClass(),
+   "\\R" : CompleteOrderedValuedFieldClass(),
    "\\mathbb{C}" : CompleteFieldClass(),
    "\\C" : CompleteFieldClass()
 }
@@ -275,7 +276,10 @@ class StatementVisitor(NodeVisitor):
         expr = visited_children[1]
         return left_rec(visited_children[0], expr)
     def visit_minus_expression(self, node, visited_children):
-        return NegNode(visited_children[1])
+        expr = visited_children[1]
+        for v in visited_children[0]:
+            expr = NegNode(expr)
+        return expr
     def visit_var(self, node, visited_children):
         return VarNode(node.text)
     def visit_terminal(self, node, visited_children):

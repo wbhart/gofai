@@ -49,6 +49,9 @@ class OrderedFieldClass(FieldClass, OrderedRingClass, TotalOrderClass):
 class CompleteOrderedFieldClass(OrderedFieldClass):
     pass
 
+class CompleteOrderedValuedFieldClass(CompleteOrderedFieldClass, ValuedFieldClass):
+    pass
+    
 class VectorSpaceClass(AbelianGroupClass):
     pass
 

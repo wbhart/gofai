@@ -8,18 +8,19 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
      LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, DeadNode
 from sorts import FunctionConstraint, DomainTuple, SetSort, NumberSort, TupleSort, \
-     PredSort, Universum
+     PredSort, Universum, Sort
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
-     FieldClass, OrderedRingClass, PosetClass
+     CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
 from heapq import merge
 
-system_functions = ['complement']
-system_predicates = ['is_function', 'is_injective', 'is_surjective', 'is_bijective']
+system_unary_functions = ['complement']
+system_binary_functions = ['min', 'max']
+system_predicates = ['is_bounded', 'is_upper_bound', 'is_lower_bound', 'is_supremum', 'is_infimum', 'is_function', 'is_injective', 'is_surjective', 'is_bijective']
 
 class TargetNode:
     def __init__(self, num, andlist=[]):
@@ -302,8 +303,11 @@ def sort_type_class(sort):
         raise Exception("Not a valid sort")
     
 def is_function_type(sort):
-   return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
+    return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
                    len(sort.sort.sets) == 2
+
+def is_set_sort(sort):
+    return isinstance(sort, SetSort) or isinstance(sort, NumberSort)
 
 def sorts_equal(s1, s2):
     if type(s1) != type(s2):
@@ -346,7 +350,7 @@ def initialise_sorts(screen, tl):
     stree = SortNode(Universum())
     tl.stree = stree 
     C = NumberSort("\\mathbb{C}", CompleteValuedFieldClass())
-    R = NumberSort("\\mathbb{R}", CompleteOrderedFieldClass())
+    R = NumberSort("\\mathbb{R}", CompleteOrderedValuedFieldClass())
     Q = NumberSort("\\mathbb{Q}", FieldClass())
     Z = NumberSort("\\mathbb{Z}", OrderedRingClass())
     N = NumberSort("\\mathbb{N}", OrderedSemiringClass())
@@ -493,10 +497,10 @@ def propagate_sorts(screen, tl, tree0):
             if isinstance(tree.left.sort, Sort) and not isinstance(tree.left.sort, NumberSort):
                 screen.dialog("Cannot raise {str(tree.left)} to power")
                 return False
-            elif not isinstance(sort_typeclass(tree.left.sort), SemiringClass):
+            elif not isinstance(sort_type_class(tree.left.sort), SemiringClass):
                     screen.dialog("Cannot raise {str(tree.left)} to power")
                     return False
-            if not isinstance(tree.right.sort, NumberType) or tree.right.sort.name != "\\mathbb{N}":
+            if not isinstance(tree.right.sort, NumberSort) or tree.right.sort.name() != "Natural":
                     screen.dialog("Powering operation not supported")
                     return False
             tree.sort = tree.left.sort
@@ -512,7 +516,7 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             tree.sort = SetSort(TupleSort([lsort.sort.sets[0], rsort.sort.sets[1]]))
         elif isinstance(tree, FnApplNode):
-            if tree.name() in system_functions:
+            if tree.name() in system_unary_functions or tree.name() in system_binary_functions:
                 tree.sort = tree.args[0].sort
             elif tree.name() in system_predicates:
                 tree.sort = PredSort()
@@ -544,7 +548,7 @@ def propagate_sorts(screen, tl, tree0):
             # will be used for all sorts of things, so no point checking anything
             tree.sort = TupleSort([v.sort for v in tree.args])
         elif isinstance(tree, PowerSetNode):
-            if not isinstance(tree.left.sort, SetSort):
+            if not is_set_sort(tree.left.sort):
                 screen.dialog("Argument to power set not a set")
                 return False
             tree.sort = SetSort(tree.left.sort)
@@ -596,8 +600,8 @@ def propagate_sorts(screen, tl, tree0):
         elif isinstance(tree, CartesianNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
-            if not isinstance(lsort, SetSort) or \
-               not isinstance(rsort, SetSort):
+            if not is_set_sort(lsort) or \
+               not is_set_sort(rsort):
                 screen.dialog("Arguments to cartesian product are not sets")
                 return False
             tree.sort = SetSort(TupleSort([lsort.sort, rsort.sort]))
@@ -605,8 +609,8 @@ def propagate_sorts(screen, tl, tree0):
              isinstance(tree, DiffNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
-            if not isinstance(lsort, SetSort) or \
-               not isinstance(rsort, SetSort):
+            if not is_set_sort(lsort) or \
+               not is_set_sort(rsort):
                 screen.dialog("Arguments to set operation are not sets")
                 return False
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
@@ -617,8 +621,8 @@ def propagate_sorts(screen, tl, tree0):
              isinstance(tree, SupsetneqNode) or isinstance(tree, SupseteqNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
-            if not isinstance(lsort, SetSort) or \
-               not isinstance(rsort, SetSort):
+            if not is_set_sort(lsort) or \
+               not is_set_sort(rsort):
                 screen.dialog("Arguments to set relation are not sets")
                 return False
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
@@ -626,7 +630,7 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             tree.sort = PredSort()
         elif isinstance(tree, SetBuilderNode):
-            if not isinstance(tree.left.right.sort, SetSort):
+            if not is_set_sort(tree.left.right.sort):
                 screen.dialog("Set comprehension must range over set")
                 return False
             tree.sort = tree.left.right.sort
@@ -634,7 +638,7 @@ def propagate_sorts(screen, tl, tree0):
             if isinstance(tree.left.sort, SetSort):
                 screen.dialog("Cannot take absolute value of set")
                 return False
-            if not isinstance(sort_typeclass(tree.left.sort), ValuedFieldClass):
+            if not isinstance(sort_type_class(tree.left.sort), ValuedFieldClass):
                 screen.dialog("Incompatible argument type in absolute value")
                 return False
             tree.sort = tree.left.sort
@@ -723,7 +727,8 @@ def process_constraints(screen, tree, constraints, vars):
             return False
     elif isinstance(tree, VarNode):
         if not tree.name() in vars:
-            if tree.name() not in system_functions and \
+            if tree.name() not in system_unary_functions and \
+               tree.name() not in system_binary_functions and \
                tree.name() not in system_predicates:
                screen.dialog(f"Unknown variable/function {tree.name()}")
                return False
@@ -924,7 +929,7 @@ def old_targets_proved(screen, tl, ttree):
                         if dep not in ttree.deps:
                             ttree.deps.append(dep)
                             if ttree.num != -1:
-                                screen.dialog("Target "+str(ttree.num)+"  with dependency on "+str(dep))
+                                screen.dialog("Target "+str(ttree.num)+" with dependency on "+str(dep))
         if not ttree.proved and ttree.num != -1:
             for i in range(0, len(hyps)):
                 P = hyps[i]
