@@ -549,7 +549,7 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             tree.sort = SetSort(tree.left.sort)
         elif isinstance(tree, AddNode):
-            if not sorts_equal(tree.left.sort, tree.right.sort):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
                 screen.dialog("Type mismatch in addition")
                 return False
             if not isinstance(sort_type_class(tree.left.sort), MonoidClass):
@@ -558,7 +558,7 @@ def propagate_sorts(screen, tl, tree0):
             tree.sort = tree.left.sort
         elif isinstance(tree, MulNode) or isinstance(tree, SubNode) or \
              isinstance(tree, DivNode):
-            if not sorts_equal(tree.left.sort, tree.right.sort):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
                 screen.dialog("Type mismatch in arithmetic operation")
                 return False
             if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
@@ -567,7 +567,7 @@ def propagate_sorts(screen, tl, tree0):
             tree.sort = tree.left.sort
         elif isinstance(tree, LtNode) or isinstance(tree, GtNode) or \
              isinstance(tree, LeqNode) or isinstance(tree, GeqNode):
-            if not sorts_equal(tree.left.sort, tree.right.sort):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
                 screen.dialog("Type mismatch in order relation")
                 return False
             if not isinstance(sort_type_class(tree.left.sort), PosetClass):
