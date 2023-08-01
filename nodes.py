@@ -146,7 +146,7 @@ class VarNode(LeafNode):
 class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
-        self.constraint = NumberSort('\\mathbb{N}', OrderedSemiringClass)
+        self.constraint = NumberSort('\\mathbb{N}', OrderedSemiringClass())
         self.sort = self.constraint
 
     def __str__(self):

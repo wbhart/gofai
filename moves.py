@@ -11,7 +11,7 @@ from sorts import FunctionConstraint, DomainTuple, SetSort, NumberSort, TupleSor
      PredSort, Universum
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
-     FieldClass, OrderedRingClass
+     FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate
 from editor import edit
 from parser import to_ast
@@ -555,6 +555,9 @@ def propagate_sorts(screen, tl, tree0):
             if not isinstance(sort_type_class(tree.left.sort), MonoidClass):
                 screen.dialog("Invalid type for addition")
                 return False
+            if not isinstance(sort_type_class(tree.right.sort), MonoidClass):
+                screen.dialog("Invalid type for addition")
+                return False
             tree.sort = tree.left.sort
         elif isinstance(tree, MulNode) or isinstance(tree, SubNode) or \
              isinstance(tree, DivNode):
@@ -562,6 +565,9 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Type mismatch in arithmetic operation")
                 return False
             if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
+                screen.dialog("Invalid type for arithmetic operation")
+                return False
+            if not isinstance(sort_type_class(tree.right.sort), SemiringClass):
                 screen.dialog("Invalid type for arithmetic operation")
                 return False
             tree.sort = tree.left.sort
