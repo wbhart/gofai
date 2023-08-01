@@ -169,7 +169,7 @@ class CircNode(LRNode):
     def __repr__(self):
         return self.paren_repr(self.left)+" \\circ "+self.paren_repr(self.right)
 
-class FnNode:
+class FnApplNode:
     def __init__(self, var, args):
         self.var = var # the function symbol (could be an expr like f \circ g)
         self.args = args
@@ -180,13 +180,13 @@ class FnNode:
 
     def name(self): # only used to compare against constant names
         return self.var.name() if isinstance(self.var, VarNode) or \
-               isinstance(self.var, FnNode) else str(self.var)
+               isinstance(self.var, FnApplNode) else str(self.var)
 
     def __str__(self):
         if isinstance(self.var, VarNode):
             fn_name = self.var.name()
             name = univar(fn_name)+"\u0307" if self.is_metavar else univar(fn_name)
-        elif isinstance(self.var, FnNode):
+        elif isinstance(self.var, FnApplNode):
             name = str(self.var)
         else:
             name = "("+str(self.var)+")"
@@ -221,7 +221,7 @@ class TupleNode:
     def __repr__(self):
         return "("+', '.join([repr(s) for s in self.args])+")"
 
-class TupleCompNode(LRNode):
+class TupleComponentNode(LRNode):
     def __init__(self, var, idx):
         self.left = var
         self.right = idx
@@ -564,7 +564,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               MulNode:3, DivNode:3,
               NegNode:2,
               ExpNode:1,
-              NaturalNode:0, VarNode:0, FnNode:0, AbsNode:0, TupleCompNode:0}
+              NaturalNode:0, VarNode:0, FnApplNode:0, AbsNode:0, TupleComponentNode:0}
 
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,
@@ -585,7 +585,7 @@ def mark_binder_vars(tree, var):
     elif isinstance(tree, LRNode):
         mark_binder_vars(tree.left, var)
         mark_binder_vars(tree.right, var)
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         if tree.name() == var.name():
             tree.is_binder = True
         for i in range(0, len(tree.args)):

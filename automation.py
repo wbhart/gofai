@@ -1,5 +1,5 @@
 from nodes import NaturalNode, AddNode, SubNode, MulNode, DivNode, \
-                  ExpNode, EqNode, BoolNode, ImpliesNode, FnNode, \
+                  ExpNode, EqNode, BoolNode, ImpliesNode, FnApplNode, \
                   ExistsNode, ForallNode, VarNode, LRNode
 
 from functools import reduce
@@ -170,7 +170,7 @@ def get_vars(data):
         elif isinstance(data, LRNode):
             traverse(data.left)
             traverse(data.right)
-        elif isinstance(data, FnNode):
+        elif isinstance(data, FnApplNode):
             for p in data.args:
                 traverse(p)
     
@@ -190,7 +190,7 @@ def is_constant_expr(c):
        isinstance(c, MulNode) or isinstance(c, DivNode) or \
        isinstance(c, ExpNode):
         return is_constant_expr(c.left) and is_constant_expr(c.right)
-    elif isinstance(c, FnNode):
+    elif isinstance(c, FnApplNode):
         for p in c.args:
             if not is_constant_expr(p):
                 return False
@@ -323,7 +323,7 @@ def find_common_subexpressions(root):
             # Traverse left and right subtrees
             traverse(node.left)
             traverse(node.right)
-        elif isinstance(node, FnNode):
+        elif isinstance(node, FnApplNode):
             for n in node.args:
                 traverse(n)
         elif isinstance(node, ExistsNode) or isinstance(node, ForallNode):

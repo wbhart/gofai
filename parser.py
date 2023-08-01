@@ -3,12 +3,12 @@ from parsimonious.nodes import NodeVisitor, Node
 from parsimonious import exceptions
 from pprint import pprint
 from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
-     ElemNode, EqNode, ExistsNode, ExpNode, FnNode, ForallNode, GeqNode, \
+     ElemNode, EqNode, ExistsNode, ExpNode, FnApplNode, ForallNode, GeqNode, \
      GtNode, IffNode, ImpliesNode, IntersectNode, LeqNode, LtNode, MulNode, \
      NotNode, NeqNode, OrNode, SubNode, SubsetneqNode, SubseteqNode, SupsetneqNode, \
      SupseteqNode, UnionNode, VarNode, BoolNode, AbsNode, NegNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
-     LambdaNode, TupleCompNode, LRNode
+     LambdaNode, TupleComponentNode, LRNode
 from sorts import NumberSort, SetSort, TupleSort, PredSort, Function, SetTuple, \
      Universum
 from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
@@ -189,13 +189,13 @@ class StatementVisitor(NodeVisitor):
     def visit_pred_constraint(self, node, visited_children):
         return PredSort()
     def visit_universe(self, node, visited_children):
-        return FnNode(VarNode("universe"), [visited_children[2]])
+        return FnApplNode(VarNode("universe"), [visited_children[2]])
     def visit_domain(self, node, visited_children):
-        return FnNode(VarNode("domain"), [visited_children[2]])
+        return FnApplNode(VarNode("domain"), [visited_children[2]])
     def visit_codomain(self, node, visited_children):
-        return FnNode(VarNode("codomain"), [visited_children[2]])
+        return FnApplNode(VarNode("codomain"), [visited_children[2]])
     def visit_complement(self, node, visited_children):
-        return FnNode(VarNode("complement"), [visited_children[2]])
+        return FnApplNode(VarNode("complement"), [visited_children[2]])
     def visit_number_constraint(self, node, visited_children):
         return NumberSort(node.text, number_class[node.text])
     def visit_fn_constraint(self, node, visited_children):
@@ -287,7 +287,7 @@ class StatementVisitor(NodeVisitor):
         entries.append(visited_children[2])
         return TupleNode(entries)
     def visit_tuple_comp(self, node, visited_children):
-        return TupleCompNode(visited_children[0], visited_children[2])
+        return TupleComponentNode(visited_children[0], visited_children[2])
     def visit_paren_expression(self, node, visited_children):
         t = visited_children[2]
         if isinstance(t, LRNode):
@@ -300,13 +300,13 @@ class StatementVisitor(NodeVisitor):
         for v in visited_children[2]:
             args.append(v[0])
         args.append(visited_children[3])
-        return FnNode(visited_children[0], args)
+        return FnApplNode(visited_children[0], args)
     def visit_composite_fn_app(self, node, visited_children):
         args = []
         for v in visited_children[2]:
             args.append(v[0])
         args.append(visited_children[3])
-        return FnNode(visited_children[0], args)
+        return FnApplNode(visited_children[0], args)
     def visit_fn_expression(self, node, visited_children):
         return visited_children[0]
     def visit_fn_paren(self, node, visited_children):
@@ -316,7 +316,7 @@ class StatementVisitor(NodeVisitor):
         for v in visited_children[2]:
             args.append(v[0])
         args.append(visited_children[3])
-        return FnNode(visited_children[0], args)
+        return FnApplNode(visited_children[0], args)
     def visit_pred_name(self, node, visited_children):
         return node.text
     def visit_exp_expression(self, node, visited_children):

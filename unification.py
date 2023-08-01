@@ -1,23 +1,24 @@
 from copy import deepcopy
-from nodes import LRNode, VarNode, NaturalNode, FnNode, ExpNode, AddNode, \
+from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   SubNode, MulNode, DivNode, IntersectNode, UnionNode, \
                   DiffNode, SymbolNode, TupleNode, PowerSetNode, AndNode, \
                   OrNode, ElemNode, EqNode, NeqNode, LtNode, GtNode, \
                   LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
-                  NotNode, ForallNode, ExistsNode, BoolNode, \
+                  NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
 
 from sorts import PredSort
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
-       or isinstance(tree, FnNode) or isinstance(tree, ExpNode) \
+       or isinstance(tree, FnApplNode) or isinstance(tree, ExpNode) \
        or isinstance(tree, AddNode) or isinstance(tree, SubNode) \
        or isinstance(tree, MulNode) or isinstance(tree, DivNode) \
        or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
        or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
-       or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode):
+       or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode) \
+       or isinstance(tree, TupleComponentNode):
         return True
     else:
         return True
@@ -40,7 +41,7 @@ def is_predicate(tree):
 def node_constraint(tree):
     if isinstance(tree, VarNode):
         return tree.constraint
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         return tree.var.constraint
     else:
         return None
@@ -56,7 +57,7 @@ def tree_contains_binder(tree, ignorevars=[]):
     elif isinstance(tree, LRNode):
         return tree_contains_binder(tree.left, ignore) or \
                tree_contains_binder(tree.right, ignore)
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         if tree.is_binder and tree.name() not in ignore:
             return True
         for i in range(0, len(tree.args)):
@@ -72,15 +73,15 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
     assign = deepcopy(assigned) # default params are mutable
     macros = deepcopy(macro)
     # special case to deal with unexpanded macros
-    if isinstance(tree1, FnNode) and (tree1.name() == 'universe' \
+    if isinstance(tree1, FnApplNode) and (tree1.name() == 'universe' \
                    or tree1.name == 'domain' or tree1.name == 'codomain'):
         macros.append((tree2, tree1))
         return True, assign, macros
-    if isinstance(tree2, FnNode) and (tree2.name() == 'universe'\
+    if isinstance(tree2, FnApplNode) and (tree2.name() == 'universe'\
                    or tree2.name == 'domain' or tree2.name == 'codomain'):
         macros.append((tree1, tree2))
         return True, assign, macros
-    if isinstance(tree1, FnNode) and isinstance(tree2, FnNode) \
+    if isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode) \
            and tree1.is_metavar:
         if len(tree1.args) != len(tree2.args):
             return False, [], []
@@ -90,7 +91,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
                 return False, [], []
         assign.append(deepcopy((tree1.var, tree2.var)))
         return True, assign, macros
-    if isinstance(tree1, FnNode) and isinstance(tree2, FnNode) \
+    if isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode) \
            and tree2.is_metavar:
         if len(tree1.args) != len(tree2.args):
             return False, [], []
@@ -100,7 +101,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
                 return False, [], []
         assign.append(deepcopy((tree2.var, tree1.var)))
         return True, assign, macros
-    if (isinstance(tree1, VarNode) or isinstance(tree1, FnNode)) \
+    if (isinstance(tree1, VarNode) or isinstance(tree1, FnApplNode)) \
            and tree1.is_metavar:
         if (isinstance(node_constraint(tree1), PredSort) and is_predicate(tree2)) \
               or (not isinstance(node_constraint(tree1), PredSort) and is_expression(tree2)
@@ -108,7 +109,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
             assign.append(deepcopy((tree1, tree2)))
         else:
             return False, [], []
-    elif (isinstance(tree2, VarNode) or isinstance(tree2, FnNode)) \
+    elif (isinstance(tree2, VarNode) or isinstance(tree2, FnApplNode)) \
            and tree2.is_metavar:
         if (isinstance(node_constraint(tree2), PredSort) and is_predicate(tree1)) \
               or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
@@ -121,7 +122,7 @@ def trees_unify(tree1, tree2, assigned=[], macro=[]):
             return False, [], []
         if tree1.name() != tree2.name(): # if not metavars check names
             return False, [], []
-    elif isinstance(tree1, FnNode) and isinstance(tree2, FnNode):
+    elif isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode):
         unified, assign, macros = trees_unify(tree1.var, tree2.var, assign, macros)
         if not unified:
             return False, [], []
@@ -222,7 +223,7 @@ def subst(tree1, var, tree2):
             return deepcopy(tree2)
         else:
             return tree1
-    elif isinstance(tree1, FnNode):
+    elif isinstance(tree1, FnApplNode):
         if tree1.name() == var.name() and is_predicate(tree2):
             p = deepcopy(tree2)
             for i in range(0, len(tree1.args)):
@@ -241,7 +242,7 @@ def subst(tree1, var, tree2):
                 raise Exception("Tuple is not a general function")
         p = deepcopy(tree1)
         p.var = subst(p.var, var, tree2)
-        if not isinstance(p.var, VarNode) and not isinstance(p.var, FnNode):
+        if not isinstance(p.var, VarNode) and not isinstance(p.var, FnApplNode):
             p.is_metavar = False
         elif tree1.name() == var.name(): # we did substitution
             p.is_metavar = tree2.is_metavar

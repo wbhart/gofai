@@ -1,12 +1,12 @@
 from copy import deepcopy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
-     FnNode, LRNode, LeafNode, TupleNode, EqNode, ElemNode, UnionNode, \
+     FnApplNode, LRNode, LeafNode, TupleNode, EqNode, ElemNode, UnionNode, \
      IntersectNode, DiffNode, CartesianNode, SymbolNode, SetBuilderNode, \
      NaturalNode, ExpNode, AddNode, SubNode, MulNode, DivNode, \
      SubseteqNode, SubsetneqNode, SupseteqNode, SupsetneqNode, \
      CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
-     LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleCompNode, DeadNode
+     LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, DeadNode
 from sorts import Function, SetTuple, SetSort, NumberSort, TupleSort, PredSort, \
      Universum
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
@@ -45,7 +45,7 @@ def is_ground(tree): # an expression is ground if it contains no metavars
         return search(tree.right)
     elif isinstance(tree, VarNode):
         return not tree.is_metavar
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         if tree.is_metavar:
             return False
         for v in tree.args:
@@ -71,7 +71,7 @@ def metavars_used(tree):
                 name = tree.name()
                 if name not in used:
                     used.append(name)
-        elif isinstance(tree, FnNode):
+        elif isinstance(tree, FnApplNode):
             if tree.is_metavar:
                 name = tree.name()
                 if name not in used:
@@ -412,12 +412,12 @@ def propagate_sorts(screen, tl, tree0):
             ok = propagate(tree.var)
             if not ok:
                 return False
-        if isinstance(tree, FnNode) or isinstance(tree, TupleNode):
+        if isinstance(tree, FnApplNode) or isinstance(tree, TupleNode):
             for v in tree.args:
                 ok = propagate(v)
                 if not ok:
                     return False
-        if isinstance(tree, FnNode):
+        if isinstance(tree, FnApplNode):
             ok = propagate(tree.var)
             if not ok:
                 return False
@@ -451,7 +451,7 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, PredSort): # this variable is a pred
                 tree.sort = tree.constraint
-            elif isinstance(tree.constraint, FnNode): # check it is a universe of metavar
+            elif isinstance(tree.constraint, FnApplNode): # check it is a universe of metavar
                 if tree.constraint.name() != "universe":
                     screen.dialog(f"Variable {tree.name()} has invalid contraint")
                     return False
@@ -469,7 +469,7 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = TupleSort([lsort, rsort])
             elif isinstance(tree.constraint, Function):
                 tree.sort = SetSort(tree.constraint.sort)
-        elif isinstance(tree, TupleCompNode):
+        elif isinstance(tree, TupleComponentNode):
             lsort = tree.left.sort
             if not isinstance(lsort, TupleSort):
                 screen.dialog("Invalid tuple in component operation")
@@ -509,7 +509,7 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Type mismatch in function composition")
                 return False
             tree.sort = SetSort(TupleSort([lsort.sort.sets[0], rsort.sort.sets[1]]))
-        elif isinstance(tree, FnNode):
+        elif isinstance(tree, FnApplNode):
             if tree.name() in system_functions:
                 tree.sort = tree.args[0].sort
             elif tree.name() in system_predicates:
@@ -728,7 +728,7 @@ def process_constraints(screen, tree, constraints, vars):
         ok = process_constraints(screen, tree.right, constraints, vars)
         if not ok:
             return False
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         ok = process_constraints(screen, tree.var, constraints, vars)
         if not ok:
             return False
@@ -781,7 +781,7 @@ def universe(tree, qz):
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
          isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
         return universe(tree.left, qz)
-    elif isinstance(tree, FnNode) and tree.name() == 'complement':
+    elif isinstance(tree, FnApplNode) and tree.name() == 'complement':
         return universe(tree.args[0], qz)
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
         return tree.constraint
@@ -812,7 +812,7 @@ def fill_macros(screen, tl):
     def fill(tree):
         if tree == None:
             return None
-        if isinstance(tree, FnNode):
+        if isinstance(tree, FnApplNode):
             if tree.name() == 'universe':
                 if not isinstance(tree.args[0], VarNode) or not tree.args[0].is_metavar:
                     return universe(tree.args[0], tl.tlist0.data[0])
@@ -1057,11 +1057,11 @@ def old_check_tautologies(screen, tl, ttree):
     for i in range(0, len(tlist2)):
         tree = tlist2[i]
         if isinstance(tree, EqNode):
-            if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnNode)) \
+            if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnApplNode)) \
                   and tree.left.is_metavar:
                 if var_in_single_target(tl, ttree, i, tree.left.name()):
                     mark_proved(screen, tl, ttree, i)
-            elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnNode)) \
+            elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnApplNode)) \
                   and tree.right.is_metavar:
                 if var_in_single_target(tl, ttree, i, tree.right.name()):
                     mark_proved(screen, tl, ttree, i)
@@ -1110,7 +1110,7 @@ def relabel(tree, tldict):
         elif isinstance(tree, LRNode):
             process(tree.left)
             process(tree.right)
-        elif isinstance(tree, FnNode):
+        elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode) and tree.name() in vars_dict:
                 tree.var._name = vars_dict[tree.name()] # TODO : add setter for assignment
             elif tree.is_metavar:
@@ -1137,7 +1137,7 @@ def relabel(tree, tldict):
         name = t.var.name()
         new_name = relabel_varname(name, tldict)
         vars_dict[name] = new_name
-        t.var._name = new_name # TODO : allow assignment of name for FnNode
+        t.var._name = new_name # TODO : allow assignment of name for FnApplNode
         process(t.var.constraint)
         t = t.left
 
@@ -1273,12 +1273,12 @@ def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
         return found, tree, occur
     elif isinstance(tree, LeafNode):
         return found, tree, occur
-    elif isinstance(tree, TupleNode) or isinstance (tree, FnNode):
+    elif isinstance(tree, TupleNode) or isinstance (tree, FnApplNode):
         for i in range(0, len(tree.args)):
             found, tree.args[i], occur = apply_equality(screen, tl, tree.args[i], string, n, subst, occur)
             if found:
                 break
-        if not found and isinstance(tree, FnNode):
+        if not found and isinstance(tree, FnApplNode):
             found, tree.var, occur = apply_equality(screen, tl, tree.var, string, n, subst, occur)
         return found, tree, occur
     raise Exception("Node not dealt with : "+str(type(tree)))
@@ -2295,12 +2295,12 @@ def skolemize_statement(screen, tree, deps, sk, qz, mv, positive, blocked=False)
         else:
             fn_args = [VarNode(deps[i].name(), deps[i].constraint, deps[i].is_metavar) \
                     for i in range(0, n)]
-            fn = FnNode(VarNode(tree.name()), fn_args)
+            fn = FnApplNode(VarNode(tree.name()), fn_args)
             fn.is_skolem = True
             if is_meta:
                 fn.is_metavar = True
             return fn
-    elif isinstance(tree, FnNode):
+    elif isinstance(tree, FnApplNode):
         if tree.name() in mv:
             tree.is_metavar = True
             tree.var.is_metavar = True
