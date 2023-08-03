@@ -748,7 +748,7 @@ Tags: #sets
 ------------------------------
 S \cup T = \emptyset(universe(S))
 ------------------------------
-S = \emptyset(universe(S)) \vee T = \emptyset(universe(S))
+S = \emptyset(universe(S)) \wedge T = \emptyset(universe(S))
 
 Title: Definition of set intersection
 Tags: #sets #definition
@@ -840,7 +840,7 @@ Tags: #sets #definition
 
 Title: Definition of pair
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, x \in S \times T
+\forall S : Set, \forall T : Set, \forall x \in S \times T
 ------------------------------
 ------------------------------
 is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
@@ -1186,7 +1186,7 @@ Tags: #sets
 ------------------------------
 A \setminus universe(A) = \emptyset(universe(A))
 
-Title: Containment of sets is reverse upon taking differences with another set
+Title: Containment of sets is reversed upon taking differences with another set
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1204,7 +1204,7 @@ B \setminus A \subseteq C
 
 Title: Definition of set builder
 Tags: #sets #definition
-\forall X : Set, \forall x : Set, \forall P : Pred
+\forall X : Set, \forall x \in X, \forall P : Pred
 ------------------------------
 ------------------------------
 (x \in {y \in X | P(y)}) \iff P(x) \wedge x \in X
@@ -1221,11 +1221,11 @@ Tags: #sets #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B
 ------------------------------
 ------------------------------
-is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in universe(A) a \in A \implies (\exists b \in universe(B) b \in B \wedge (a, b) \in f)) \wedge (\forall a \in universe(A) a \in A \implies (\forall b \in universe(B), \forall c \in A \times B (a, b) \in f \wedge (a, c) \in f \implies b = c))
+is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in universe(A) a \in A \implies (\exists b \in universe(B) b \in B \wedge (a, b) \in f)) \wedge (\forall a \in universe(A) a \in A \implies (\forall b \in universe(B), \forall c \in universe(B) (a, b) \in f \wedge (a, c) \in f \implies b = c))
 
 Title: Definition of function value
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall c : Set, \forall d : Set
+\forall A : Set, \forall B : Set, \forall f : A \to B, \forall c \in universe(A), \forall d \in universe(B)
 ------------------------------
 ------------------------------
 is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)

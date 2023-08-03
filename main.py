@@ -7,7 +7,8 @@ from tree import TreeList
 from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
-     library_load, fill_macros, type_vars, process_sorts, initialise_sorts
+     library_load, fill_macros, type_vars, process_sorts, initialise_sorts, \
+     update_constraints
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
@@ -17,7 +18,7 @@ def main(stdscr):
     ttree = None # track which targets have been proved
     skip = False # whether to skip checking completion
     reset = False # whether to reset dependencies
-
+    
     while True:
         c = stdscr.getkey()
         if c == '\t': # TAB = switch window focus (and associated pad)
@@ -40,7 +41,8 @@ def main(stdscr):
         # elif c == 'a': # a = automate
         #    automate(screen, tl, ad)
         elif c == 'v': # equivalence
-            equality(screen, tl)
+            if started:
+                equality(screen, tl)
         elif c == 's': # start automated cleanup
             fill_macros(screen, tl)
             type_vars(screen, tl)
@@ -51,9 +53,11 @@ def main(stdscr):
                skip = False
                ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
         elif c == 'p': # modus ponens
-            modus_ponens(screen, tl, ttree)
+            if started:
+                modus_ponens(screen, tl, ttree)
         elif c == 't': # modus tollens
-            modus_tollens(screen, tl, ttree)
+            if started:
+                modus_tollens(screen, tl, ttree)
         # elif c == 'n': # negate target
         #    negate_target(screen, tl)
         elif c == 'w': # write to library
@@ -61,7 +65,8 @@ def main(stdscr):
             if not started:
                 library_export(screen, tl)
         elif c == 'r': # read from library
-            library_import(screen, tl)
+            if started:
+                library_import(screen, tl)
         elif c == 'l': # load from library as tableau
             reset = True
             # check tableau is currently empty
@@ -102,9 +107,15 @@ def main(stdscr):
             if not skip:
                 cleanup(screen, tl, ttree)
                 fill_macros(screen, tl)
-                if targets_proved(screen, tl, ttree):
-                    screen.dialog("All targets proved")
-                    started = False
+                ok = update_constraints(screen, tl)
+                if ok:
+                    ok = process_sorts(screen, tl)
+                    if ok:
+                        if targets_proved(screen, tl, ttree):
+                            screen.dialog("All targets proved")
+                            started = False
+                    else:
+                        started = False
             skip = False
             if reset:
                 # reset dependencies

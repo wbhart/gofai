@@ -34,10 +34,14 @@ class TreeList:
         self.tlist1 = TList()
         self.tlist2 = TList()
         self.focus = self.tlist0
-        self.vars = dict() # variables used
+        self.vars = dict() # variable names used and their subscripts
         self.tars = dict() # targets used
         self.stree = None # sort hierarchy
-
+        self.constraints = None # dictionary of constraints for all vars in tableau
+        self.contraints_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
+        self.sorts_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
+        self.depmin = 0 # number of variables in qz from original tableau
+        
     def switch_list(self):
         if self.focus == self.tlist0:
             self.focus = self.tlist1

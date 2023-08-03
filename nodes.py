@@ -1,5 +1,5 @@
 from sorts import NumberSort, Constraint, Universum, SetSort, TupleSort, PredSort, \
-                  FunctionConstraint
+                  FunctionConstraint, univar
 from typeclass import OrderedSemiringClass
 
 def isatomic(node):
@@ -57,44 +57,6 @@ class LRNode:
             return '('+repr(child)+')'
         else:
             return repr(child)
-
-def univar(name):
-    if len(name) > 3 and name[-3] == '_' and name[-2:-1].isdigit():
-        suffix = chr(8336+int(name[-1]))
-        name = name[0:-3]
-    elif len(name) > 2 and name[-2] == '_' and name[-1].isdigit():
-        suffix = chr(8320+int(name[-1]))
-        name = name[0:-2]
-    else:
-        suffix = ''
-
-    unicode_dict = {"\\alpha" : "\u03b1",
-                    "\\beta" : "\u03b2",
-                    "\\gamma" : "\u03b3",
-                    "\\delta" : "\u03b4",
-                    "\\epsilon" : "\u03b5",
-                    "\\zeta" : "\u03b6",
-                    "\\eta" : "\u03b7",
-                    "\\theta" : "\u03b8",
-                    "\\kappa" : "\u03ba",
-                    "\\lambda" : "\u03bb",
-                    "\\mu" : "\u03bc",
-                    "\\nu" : "\u03bd",
-                    "\\xi" : "\u03be",
-                    "\\rho" : "\u03c1",
-                    "\\sigma" : "\u03c3",
-                    "\\tau" : "\u03c4",
-                    "\\phi" : "\u03c6",
-                    "\\chi" : "\u03c7",
-                    "\\psi" : "\u03c8",
-                    "\\omega" : "\u03c9",
-                    "\\emptyset" : "\u2205",
-                    "\\mathcal{U}" : "\u03a9"}
-
-    if name in unicode_dict:
-        return unicode_dict[name]+suffix
-    else:
-        return name+suffix
 
 # AST Nodes
 
