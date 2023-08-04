@@ -12,7 +12,10 @@ from sorts import FunctionConstraint, DomainTuple, SetSort, NumberSort, TupleSor
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
-from unification import unify, subst, trees_unify, is_predicate
+from unification import unify, subst, trees_unify, is_predicate, sort_type_class, \
+     is_function_type, is_set_sort, sorts_compatible, coerce_sorts, sorts_equal, \
+     SortNode, find_sort, insert_sort
+
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
@@ -128,8 +131,8 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
             for i in range(len(tlist1)):
                 dep = tl.tlist1.dependency(i)
                 if deps_compatible(ttree_full, ttree.num, dep):
-                    unifies, assign, macros = unify(tlist2[ttree.num], tlist1[i])
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    unifies, assign, macros = unify(screen, tl, tlist2[ttree.num], tlist1[i])
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies:
                         ttree.unifies.append(i)
                         unification_count[ttree.num] += 1
@@ -137,8 +140,8 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                         if ttree.metavars not in hydras:
                             hydras.append(ttree.metavars)
             if isinstance(tlist2[ttree.num], EqNode): # equality may be a tautology
-                unifies, assign, macros = unify(tlist2[ttree.num].left, tlist2[ttree.num].right)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                unifies, assign, macros = unify(screen, tl, tlist2[ttree.num].left, tlist2[ttree.num].right)
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if unifies:
                     ttree.unifies.append(-1) # -1 signifies tautology P = P
                     unification_count[ttree.num] += 1
@@ -155,8 +158,8 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                             d2 = tl.tlist1.dependency(j)
                             if d2 == -1 or deps_compatible(ttree, d2, d1):
                                 tree2 = tlist1[j]
-                                unifies, assign, macros = unify(tree1, tree2)
-                                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                                unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                                 if unifies:
                                     mv2 = metavars_used(tlist1[j])
                                     if all(var in ttree.metavars or var not in tarmv for var in mv1) and \
@@ -242,14 +245,14 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 (i, j) = hyp
                 tree1 = complement_tree(tlist1[i])
                 tree2 = tlist1[j]
-                unifies, assign, macros = unify(tree1, tree2, assign)
+                unifies, assign, macros = unify(screen, tl, tree1, tree2, assign)
             else:
                 hyp = unifications[c][d]
                 if hyp == -1: # signifies tautology P = P
-                    unifies, assign, macros = unify(tlist2[c].left, tlist2[c].right, assign)
+                    unifies, assign, macros = unify(screen, tl, tlist2[c].left, tlist2[c].right, assign)
                 else:
-                    unifies, assign, macros = unify(tlist2[c], tlist1[hyp], assign)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    unifies, assign, macros = unify(screen, tl, tlist2[c], tlist1[hyp], assign)
+            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
             if not unifies:
                 break
         if unifies:
@@ -267,16 +270,16 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                 if not any(v in tarmv for v in mv2):
                     dep = tl.tlist1.dependency(i)
                     if dep == -1 or deps_compatible(ttree, j, dep):
-                        unifies, assign, macros = unify(tlist1[i], tlist2[j])
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
                             mark_proved(screen, tl, ttree, j)
     check_contradictions(screen, tl, ttree, tarmv)
     for i in range(len(tlist2)):
         if isinstance(tlist2[i], EqNode):
             if not metavars_used(tlist2[i]):
-                unifies, assign, macros = unify(tlist2[i].left, tlist2[i].right)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                unifies, assign, macros = unify(screen, tl, tlist2[i].left, tlist2[i].right)
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if unifies:
                     mark_proved(screen, tl, ttree, i)
     
@@ -294,58 +297,6 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
-def sort_type_class(sort):
-    if isinstance(sort, VarNode):
-        return sort.constraint.typeclass
-    elif isinstance(sort, NumberSort):
-        return sort.typeclass
-    else:
-        raise Exception("Not a valid sort")
-    
-def is_function_type(sort):
-    return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
-                   len(sort.sort.sets) == 2
-
-def is_set_sort(sort):
-    return isinstance(sort, SetSort) or isinstance(sort, NumberSort)
-
-def sorts_equal(s1, s2):
-    if type(s1) != type(s2):
-        return False
-    elif isinstance(s1, VarNode) or isinstance(s1, NumberSort):
-        return s1.name() == s2.name()
-    elif isinstance(s1, SetSort):
-        return sorts_equal(s1.sort, s2.sort)
-    elif isinstance(s1, TupleSort):
-        if len(s1.sets) != len(s2.sets):
-            return False
-        for i in range(len(s1.sets)):
-            if not sorts_equal(s1.sets[i], s2.sets[i]):
-                return False
-        return True
-    elif isinstance(s1, PredSort) or isinstance(s1, Universum):
-        return True
-    return False
-
-class SortNode:
-    def __init__(self, sort):
-        self.sort = sort
-        self.subsorts = []
-
-def find_sort(screen, tl, stree, s):
-        if sorts_equal(s, stree.sort):
-            return stree
-        for t in stree.subsorts:
-            r = find_sort(screen, tl, t, s)
-            if r:
-                return r
-        return None
-
-def insert_sort(screen, tl, s1, s2):
-    # make s2 a subsort of s1
-    r = find_sort(screen, tl, tl.stree, s1)
-    r.subsorts.append(SortNode(s2))
-
 def initialise_sorts(screen, tl):
     stree = SortNode(Universum())
     tl.stree = stree 
@@ -359,49 +310,6 @@ def initialise_sorts(screen, tl):
     insert_sort(screen, tl, R, Q)
     insert_sort(screen, tl, Q, Z)
     insert_sort(screen, tl, Z, N)   
-
-def coerce_sorts(screen, tl, s1, s2):
-    # if s2 can be coerced to s1, return s1, else None
-    if sorts_equal(s1, s2):
-        return s1
-    b = find_sort(screen, tl, tl.stree, s1)
-    if b:
-        r = find_sort(screen, tl, b, s2)
-        if r:
-            return s1
-    return None # not coercible
-    
-def sorts_compatible(screen, tl, s1, s2):
-    t1 = isinstance(s1, TupleSort)
-    t2 = isinstance(s2, TupleSort)
-    if (t1 and not t2) or (t2 and not t1):
-        return False
-    if t1:
-        if len(s1.sets) != len(s2.sets):
-            return False 
-        compatible = True
-        for i in range(len(s1.sets)):
-            if not coerce_sorts(screen, tl, s1.sets[i], s2.sets[i]):
-                compatible = False
-                break
-        if not compatible:
-            compatible = True
-            for i in range(len(s1.sets)):
-                if not coerce_sorts(screen, tl, s2.sets[i], s1.sets[i]):
-                    compatible = False
-                    break
-        return compatible
-    c1 = isinstance(s1, SetSort)
-    c2 = isinstance(s2, SetSort)
-    if (c1 and not c2) or (c2 and not c1):
-         return False
-    if c1:
-         return sorts_compatible(screen, tl, s1.sort, s2.sort)
-    if coerce_sorts(screen, tl, s1, s2):
-        return True
-    if coerce_sorts(screen, tl, s2, s1):
-        return True
-    return False
 
 def propagate_sorts(screen, tl, tree0):
     stree = tl.stree
@@ -702,11 +610,11 @@ def process_sorts(screen, tl):
             while data != None:
                 data = data.left
                 i += 1
-    for j in range(n1,len(tl.tlist1.data)):
+    for j in range(n1, len(tl.tlist1.data)):
         ok = propagate_sorts(screen, tl, tl.tlist1.data[j])
         if not ok:
             return False
-    for k in range(n1,len(tl.tlist2.data)):
+    for k in range(n2, len(tl.tlist2.data)):
         ok = propagate_sorts(screen, tl, tl.tlist2.data[k])
         if not ok:
             return False
@@ -940,7 +848,7 @@ def fill_macros(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def check_macros(macros, assign, qz):
+def check_macros(screen, tl, macros, assign, qz):
     qz = qz[0] if len(qz) > 0 else []
     # check macros after substitution
     for (uni1, tree2) in macros:
@@ -953,7 +861,7 @@ def check_macros(macros, assign, qz):
             tree = codomain(tree, qz)
         if tree == None:
             return False
-        unified, assign, macr = unify(uni1, tree, assign)
+        unified, assign, macr = unify(screen, tl, uni1, tree, assign)
         macros.extend(macr)
         if not unified:
             return False
@@ -1005,18 +913,18 @@ def old_targets_proved(screen, tl, ttree):
                 if dep not in ttree.deps: # if we didn't already prove with this dep
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
                         varlist = deepcopy(tl.vars) # temporary relabelling
-                        unifies, assign, macros = unify(complement_tree(P.left), \
+                        unifies, assign, macros = unify(screen, tl, complement_tree(P.left), \
                                                 relabel(deepcopy(tars[ttree.num]), varlist))
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
                             # or branched can be assigned independently
-                            unifies, assign, macros = unify(P.right, \
+                            unifies, assign, macros = unify(screen, tl, P.right, \
                                                 relabel(deepcopy(tars[ttree.num]), varlist), assign)
-                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         
                     else:
-                        unifies, assign, macros = unify(P, tars[ttree.num])
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        unifies, assign, macros = unify(screen, tl, P, tars[ttree.num])
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies:
                         if dep == -1:
                             if assign_vars_in_single_target(tl, full_ttree, ttree.num, assign):
@@ -1103,8 +1011,8 @@ def check_contradictions(screen, tl, ttree, tarmv):
                     d2 = tl.tlist1.dependency(j)
                     if d1 < 0 or d2 < 0:
                         tree2 = tlist1[j]
-                        unifies, assign, macros = unify(tree1, tree2)
-                        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies: # we found a contradiction
                             if d1 >= 0:
                                 mark_proved(screen, tl, ttree, d1)
@@ -1113,14 +1021,14 @@ def check_contradictions(screen, tl, ttree, tarmv):
                     elif d1 >= 0 and d2 >= 0:
                         if deps_compatible(ttree, d1, d2):
                             tree2 = tlist1[j]
-                            unifies, assign, macros = unify(tree1, tree2)
-                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                            unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                             if unifies: # we found a contradiction
                                 mark_proved(screen, tl, ttree, d1)
                         elif deps_compatible(ttree, d2, d1):
                             tree2 = tlist1[j]
-                            unifies, assign, macros = unify(tree1, tree2)
-                            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                            unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                             if unifies: # we found a contradiction
                                 mark_proved(screen, tl, ttree, d2)
 
@@ -1394,11 +1302,11 @@ def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
     if str(tree) == string: # we found an occurrence
         occur += 1
         if occur == n: # we found the right occurrence
-            unifies, assign, macros = unify(subst.left, tree)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+            unifies, assign, macros = unify(screen, tl, subst.left, tree)
+            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
             if not unifies:
-                unifies, assign, macros = unify(subst.right, tree)
-                unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                unifies, assign, macros = unify(screen, tl, subst.right, tree)
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if not unifies:
                     return False, tree, n # does not unify, bogus selection
                 else:
@@ -1963,15 +1871,15 @@ def modus_ponens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         varlist = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             varlist = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), varlist), assign)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(deepcopy(qP2.right), varlist), assign)
+            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(qP1, qP2)
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -2073,15 +1981,15 @@ def modus_tollens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         vars = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             vars = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(qP1, relabel(deepcopy(qP2.right), vars), assign)
-            unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(deepcopy(qP2.right), vars), assign)
+            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(qP1, qP2)
-        unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
@@ -2219,8 +2127,8 @@ def cleanup(screen, tl, ttree):
                         screen.pad1[i] = str(tl1[i])
                 if isinstance(tl1[i], OrNode):
                     # First check we don't have P \vee P
-                    unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -2240,8 +2148,8 @@ def cleanup(screen, tl, ttree):
                     rollback()
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \vee P
-                    unifies, assign, macros = unify(tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl1, i, tl1[i].left)
                     else:
@@ -2293,8 +2201,8 @@ def cleanup(screen, tl, ttree):
                     tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
-                    unifies, assign, macros = unify(tl2[j].left, tl2[j].right)
-                    unifies = unifies and check_macros(macros, assign, tl.tlist0.data)
+                    unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
+                    unifies = unifies and check_macros(screen, tl, screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl2, j, tl2[j].left)
                     else:
