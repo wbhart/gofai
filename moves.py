@@ -367,8 +367,8 @@ def propagate_sorts(screen, tl, tree0):
             elif isinstance(tree.constraint, FnApplNode): # check it is a universe of metavar
                 if tree.constraint.name() != "universe":
                     screen.dialog(f"Variable {tree.name()} has invalid contraint")
+                    # leave sort as None
                     return False
-                # leave sort as None
             elif isinstance(tree.constraint, VarNode): # check it is in a set
                 if not isinstance(tree.constraint.constraint, SetSort):
                     screen.dialog(f"Variable {tree.name()} has invalid constraint")
@@ -2276,7 +2276,9 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
             sk.pop()
     
     if isinstance(tree, NotNode) and isinstance(tree.left, EqNode):
-        return NeqNode(tree.left.left, tree.left.right)
+        neq = NeqNode(tree.left.left, tree.left.right)
+        neq.sort = PredSort # may be replacing an already typed node
+        return neq
     if isinstance(tree, OrNode):
         tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, True)
         tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, True)
@@ -2377,6 +2379,8 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
             if is_meta:
                 fn.is_metavar = True
                 fn.var.is_metavar = True
+            fn.sort = tree.sort # may be replacing an already typed node
+            fn.var.sort = tree.sort # may be replacing an already typed node
             return fn
     elif isinstance(tree, FnApplNode):
         if tree.name() in mv:
