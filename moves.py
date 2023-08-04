@@ -357,6 +357,7 @@ def propagate_sorts(screen, tl, tree0):
                  if not isinstance(tree.sort, SetSort):
                      screen.dialog("Invalid universe for empty set")
                      return False
+                 propagate(tree.sort)
         elif isinstance(tree, VarNode):
             if isinstance(tree.constraint, SetSort): # this variable is a set
                 insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
@@ -592,6 +593,12 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Type mismatch in element relation")
                 return False
             tree.sort = PredSort()
+        elif isinstance(tree, SetSort):
+            if tree.sort != tree:
+                propagate(tree.sort)
+        elif isinstance(tree, TupleSort):
+            for i in range(len(tree.sets)):
+                propagate(tree.sets[i])
         return True
     return propagate(tree0)
 

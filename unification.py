@@ -108,8 +108,8 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             assign.append(deepcopy((tree2.var, tree1.var)))
             return True, assign, macros
         else:
-            #screen.dialog(str(tree1.var)+", "+str(tree2.var)+" : "+str(tree1.var.sort)+", "+str(tree2.var.sort))
-            #screen.dialog(str(tree1.var.constraint)+", "+str(tree2.var.constraint))
+            screen.dialog(str(tree1.var)+", "+str(tree2.var)+" : "+str(tree1.var.sort)+", "+str(tree2.var.sort))
+            screen.dialog(str(tree1.var.constraint)+", "+str(tree2.var.constraint))
             return False, [], []
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnApplNode)) \
            and tree1.is_metavar:
@@ -119,7 +119,7 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
                   if sorts_compatible(screen, tl, tree1.sort, tree2.sort):
                       assign.append(deepcopy((tree1, tree2)))
                   else:
-                      #screen.dialog(str(tree1)+", "+str(tree2)+" : "+str(tree1.sort)+", "+str(tree2.sort))
+                      screen.dialog(str(tree1)+", "+str(tree2)+" : "+str(tree1.sort)+", "+str(tree2.sort))
                       return False, [], []
         else:
             return False, [], []
@@ -131,7 +131,7 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
               if sorts_compatible(screen, tl, tree1.sort, tree2.sort):
                   assign.append(deepcopy((tree2, tree1)))
               else:
-                  #screen.dialog(str(tree1)+", "+str(tree2)+" : "+str(tree1.sort)+", "+str(tree2.sort))
+                  screen.dialog(str(tree1)+", "+str(tree2)+" : "+str(tree1.sort)+", "+str(tree2.sort))
                   return False, [], []
         else:
             return False, [], []
@@ -180,14 +180,43 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
         else:
             assign = ass
             macros = mac
-    else: # we didn't hit a variable, or a pair of functions
+    elif isinstance(tree1, Universum):
+        if isinstance(tree2, Sort) or (isinstance(tree2, VarNode) and is_set_sort(tree2.sort)):
+            pass
+            # TODO: do assignment of metavariable (type variable)
+        else:
+            screen.dialog(str(tree1)+" , "+str(tree2))
+            return False, [], []
+    elif isinstance(tree2, Universum):
+        if isinstance(tree1, Sort) or (isinstance(tree1, VarNode) and is_set_sort(tree1.sort)):
+            pass
+            # TODO: do assignment of metavariable (type variable)
+        else:
+            screen.dialog(str(tree1)+" , "+str(tree2))
+            return False, [], []
+    else: # we didn't hit a variable, or a pair of functions or a type variable
         if type(tree1) != type(tree2):
             return False, [], []
         elif isinstance(tree1, SymbolNode):
             if tree1.name() != tree2.name():
                 return False, [], []
             if tree1.name() == '\\emptyset':
-                unified, assign, macros = trees_unify(screen, tl, tree1.constraint.universe, tree2.constraint.universe, assign, macros)
+                unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros)
+                if not unified:
+                    return False, [], []
+        elif isinstance(tree1, SetSort):
+            if tree1.sort == tree1:
+                return (tree2.sort == tree2 and tree1 == tree2), assign, macros
+            if tree2.sort == tree2:
+                return False, [], []
+            unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros)
+            if not unified:
+                return False, [], []
+        elif isinstance(tree1, TupleSort):
+            if len(tree1.sets) != len(tree2.sets):
+                return False, [], []
+            for i in range(len(tree1.sets)):
+                unified, assign, macros = trees_unify(screen, tl, tree1.sets[i], tree2.sets[i], assign, macros)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, TupleNode):
@@ -275,7 +304,15 @@ def subst(tree1, var, tree2):
         tree1.right = subst(tree1.right, var, tree2)
         return tree1
     elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
-        tree1.constraint.universe = subst(tree1.constraint.universe, var, tree2)
+        tree1.sort = subst(tree1.sort, var, tree2)
+        return tree1
+    elif isinstance(tree1, SetSort):
+        if tree1.sort != tree1:
+            tree1.sort = subst(tree1.sort, var, tree2)
+        return tree1
+    elif isinstance(tree1, TupleSort):
+        for i in range(len(tree1.sets)):
+            tree1.sets[i] = subst(tree1.sets[i], var, tree2)
         return tree1
     else:
         return tree1
