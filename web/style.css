@@ -1,0 +1,157 @@
+
+body {
+	font-family: "Computer Modern", sans-serif;
+}
+
+main {
+	display: flex;
+}
+
+.column {
+	width: 50%;
+	padding: 0px 10px;
+	border-radius: 10px;
+}
+
+.box {
+	min-height: 100px;
+	margin: 15px 0;
+	border: 2px solid black;
+	border-radius: 10px;
+}
+
+.box-header {
+	border-bottom: 1px solid black;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 35px;
+}
+
+.label {
+	font-size: 10pt;
+	margin: 5px 10px;
+}
+
+.move {
+	display: flex;
+	align-items: center;
+	margin: 5px;
+	border-radius: 10px;
+	border: 2px solid blue;
+	background-color: lightcyan;
+}
+
+.move:hover {
+	background-color: lightblue;
+	cursor: pointer;
+}
+
+.move-name {
+	margin: 5px 5px;
+	font-weight: bold;
+	padding: 5px;
+	display: inline-block;
+	width: 150px;
+}
+
+input[type="text"] {
+	width: 50%;
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid lightgray;
+	outline: none;
+	border-radius: 10px;
+}
+
+input[type="text"]:focus {
+	background-color: lightgray;
+}
+
+header {
+	padding: 10px;
+}
+
+
+button {
+	background: lightgray;
+	border: 2px solid black;
+	border-radius: 10px;
+	padding: 5px;
+	font: inherit;
+	cursor: pointer;
+	outline: inherit;
+	margin: 0px 10px;
+}
+
+button:hover {
+	background: lightblue;
+}
+
+
+
+
+/* unused */
+
+.term {
+	margin: 5px 5px;
+	border: 2px solid blue;
+	padding: 5px;
+	display: inline-block;
+	border-radius: 10px;
+}
+
+.term:hover {
+	background-color: lightblue;
+	cursor: pointer;
+}
+
+.term.sel {
+	background-color: lightblue;
+}
+
+.modify {
+	display: inline-block;
+	float: right;
+	padding: 5px;
+	margin: 5px;
+	color: gray;
+}
+
+.modify:hover {
+	color: black;
+	cursor: pointer;
+}
+
+.fact {
+	margin: 5px 5px;
+	border: 2px solid green;
+	padding: 5px;
+	display: inline-block;
+	border-radius: 10px;
+	line-height: 25px;
+}
+
+.fact:hover {
+	background-color: lightgreen;
+	cursor: pointer;
+}
+
+hr {
+	margin: 4px;
+}
+
+.exp {
+	display: inline-block;
+	margin: 3px;
+	padding: 3px;
+	border: 2px solid green;
+	border-radius: 5px;
+}
+
+.exp-head {
+	height: 0px;
+	background-color: green;
+}
+
+
