@@ -37,7 +37,10 @@ called when a line in the hypothesis zone is clicked, passing the line number (0
 `target_clicked(int) -> none`  
 called when a line in the target zone is clicked, passing the line number (0-indexed)
 
-`library_search(str) -> none`
+`library_clicked(int) -> none`  
+called when a library suggestion is clicked, passing the line number (0-indexed)
+
+`library_search(str) -> none`  
 called whenever the string in the library search field changes, passing the current string
 
 `new_proof() -> none`  
