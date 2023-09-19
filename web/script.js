@@ -107,47 +107,47 @@ function populate_targets(list) {
 
 function quantifier_clicked(n) {
 	console.log("quantifier " + n +  " clicked!");
-	// TODO
+	eel.quantifier_clicked(n);
 }
 
 function hypothesis_clicked(n) {
 	console.log("hypothesis " + n +  " clicked!");
-	// TODO
+	eel.hypothesis_clicked(n);
 }
 
 function target_clicked(n) {
 	console.log("target " + n +  " clicked!");
-	// TODO
+	eel.target_clicked(n);
 }
 
 function move_clicked(n) {
 	console.log("move " + n +  " clicked!");
-	// TODO
+	eel.move_clicked(n);
 }
 
 function library_clicked(n) {
 	console.log("library line " + n +  " clicked!");
-	// TODO
-}
-
-function new_proof() {
-	console.log("new proof!");
-	// TODO
-}
-
-function restart_proof() {
-	console.log("restart proof!");
-	// TODO
-}
-
-function export_proof() {
-	console.log("export proof!");
-	// TODO
+	eel.library_clicked(n);
 }
 
 function library_search(str) {
 	console.log("search library for: " + str)
-	// TODO
+	eel.library_search(str);
+}
+
+function new_proof() {
+	console.log("new proof!");
+	eel.new_proof();
+}
+
+function restart_proof() {
+	console.log("restart proof!");
+	eel.restart_proof();
+}
+
+function export_proof() {
+	console.log("export proof!");
+	eel.export_proof();
 }
 
 
