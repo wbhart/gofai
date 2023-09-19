@@ -14,7 +14,6 @@ main {
 }
 
 .box {
-	min-height: 100px;
 	margin: 15px 0;
 	border: 2px solid black;
 	border-radius: 10px;
@@ -28,16 +27,26 @@ main {
 	height: 35px;
 }
 
-.label {
+.box-body {
+	min-height: 50px;
+	max-height: 200px;
+	overflow: scroll;
+}
+
+.box-label {
 	font-size: 10pt;
 	margin: 5px 10px;
 }
 
-.move {
+.line {
 	display: flex;
 	align-items: center;
 	margin: 5px;
+	padding: 5px;
 	border-radius: 10px;
+}
+
+.move {
 	border: 2px solid blue;
 	background-color: lightcyan;
 }
@@ -48,11 +57,53 @@ main {
 }
 
 .move-name {
-	margin: 5px 5px;
 	font-weight: bold;
 	padding: 5px;
-	display: inline-block;
 	width: 150px;
+}
+
+.entry {
+	border: 2px solid green;
+	background-color: aquamarine;
+}
+
+.entry:hover {
+	background-color: lightseagreen;
+	cursor: pointer;
+}
+
+.quant {
+	border: 2px solid red;
+	background-color: lightpink;
+}
+
+.zone-line-name {
+	width: 40px;
+}
+
+.quant:hover {
+	background-color: lightcoral;
+	cursor: pointer;
+}
+
+.hyp {
+	border: 2px solid purple;
+	background-color: plum;
+}
+
+.hyp:hover {
+	background-color: orchid;
+	cursor: pointer;
+}
+
+.target {
+	border: 2px solid darkgoldenrod;
+	background-color: khaki;
+}
+
+.target:hover {
+	background-color: darkkhaki;
+	cursor: pointer;
 }
 
 input[type="text"] {
@@ -87,71 +138,4 @@ button {
 button:hover {
 	background: lightblue;
 }
-
-
-
-
-/* unused */
-
-.term {
-	margin: 5px 5px;
-	border: 2px solid blue;
-	padding: 5px;
-	display: inline-block;
-	border-radius: 10px;
-}
-
-.term:hover {
-	background-color: lightblue;
-	cursor: pointer;
-}
-
-.term.sel {
-	background-color: lightblue;
-}
-
-.modify {
-	display: inline-block;
-	float: right;
-	padding: 5px;
-	margin: 5px;
-	color: gray;
-}
-
-.modify:hover {
-	color: black;
-	cursor: pointer;
-}
-
-.fact {
-	margin: 5px 5px;
-	border: 2px solid green;
-	padding: 5px;
-	display: inline-block;
-	border-radius: 10px;
-	line-height: 25px;
-}
-
-.fact:hover {
-	background-color: lightgreen;
-	cursor: pointer;
-}
-
-hr {
-	margin: 4px;
-}
-
-.exp {
-	display: inline-block;
-	margin: 3px;
-	padding: 3px;
-	border: 2px solid green;
-	border-radius: 5px;
-}
-
-.exp-head {
-	height: 0px;
-	background-color: green;
-}
-
 
