@@ -444,7 +444,7 @@ class ExistsNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Universum):
-                return "\\exists"+repr(self.var)+expr
+                return "\\exists "+repr(self.var)+expr
         elif isinstance(self.var.constraint, SetSort) or \
              isinstance(self.var.constraint, PredSort) or \
              isinstance(self.var.constraint, FunctionConstraint):
@@ -484,7 +484,7 @@ class ForallNode(LRNode):
         else:
             expr = ""
         if isinstance(self.var.constraint, Universum):
-                return "\\forall"+repr(self.var)+expr
+                return "\\forall "+repr(self.var)+expr
         elif isinstance(self.var.constraint, SetSort) or \
              isinstance(self.var.constraint, PredSort) or \
              isinstance(self.var.constraint, FunctionConstraint):

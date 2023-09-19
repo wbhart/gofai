@@ -6,7 +6,7 @@ from curses import wrapper
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
-    return False
+   return False
 
 def iswide_char_nsimsun(c):
     if c == '\u22A4' or c == '\u2115' or c == '\u2124' or \

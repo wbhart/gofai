@@ -346,7 +346,7 @@ def insert_sort(screen, tl, s1, s2):
 def sort_type_class(sort):
     if isinstance(sort, VarNode):
         return sort.constraint.typeclass
-    elif isinstance(sort, NumberSort):
+    elif isinstance(sort, NumberSort) or isinstance(sort, Universum):
         return sort.typeclass
     else:
         raise Exception("Not a valid sort")
