@@ -15,4 +15,4 @@ def python_reverse_string(str):
 	eel.javascript_alert(str[::-1])
 
 # start the local webserver at localhost
-eel.start("demo.html")
+eel.start("demo.html", mode = "default")

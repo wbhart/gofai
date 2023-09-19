@@ -5,35 +5,40 @@
 		<link rel="stylesheet" href="./style.css">
 		<title>GOFAI Theorem Prover</title>
 
+		<!-- link favicon -->
+		 <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
 		<!-- mathjax for LaTeX support -->
 		<script src = "https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 		<script id = "MathJax-script" async src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 	</head>
 	<body>
 		<header>
-			<button>New Proof</button>
-			<button>Restart Proof</button>
-			<button>Export Proof</button>
+			<button onclick = "new_proof()">New Proof</button>
+			<button onclick = "restart_proof()">Restart Proof</button>
+			<button onclick = "export_proof()">Export Proof</button>
+			<span style = "font-weight: bold;">Status:</span> 
+			<span id = "status">No proof in progress</span>
 		</header>
 		<main>
 			<div class = column>
 				<div class = "box" id = "quant-box">
 					<div class = "box-header">
-						<div class = "label">Quantifier Zone</div>
+						<div class = "box-label">Quantifier Zone</div>
 					</div>
 					<div class = "box-body">
 					</div>
 				</div>
-				<div class = "box" id = "hyps-box">
+				<div class = "box" id = "hyp-box">
 					<div class = "box-header">
-						<div class = "label">Hypothesis Zone</div>
+						<div class = "box-label">Hypothesis Zone</div>
 					</div>
 					<div class = "box-body">
 					</div>
 				</div>
 				<div class = "box" id = "targ-box">
 					<div class = "box-header">
-						<div class = "label">Target Zone</div>
+						<div class = "box-label">Target Zone</div>
 					</div>
 					<div class = "box-body">
 					</div>
@@ -43,31 +48,31 @@
 			<div class = column>
 				<div class = "box" id = "moves-box">
 					<div class = "box-header">
-						<div class = "label">Moves</div>
+						<div class = "box-label">Moves</div>
 					</div>
 					<div class = "box-body">
-						<div class = "move">
-							<div class = "move-name">Modus Ponens</div>
-							<div class = "move-info">\(P\to Q\) together with \(P\) proves \(Q\)</div>
+						<div class = "line move" onclick = "move_clicked(0)">
+							<span class = "move-name">Modus Ponens</span>
+							<span class = "move-info">\(P\to Q\) together with \(P\) proves \(Q\)</span>
 						</div>
-						<div class = "move">
-							<div class = "move-name">Modus Tollens</div>
-							<div class = "move-info">\(P\to Q\) together with \(\neg Q\) proves \(\neg P\)</div>
+						<div class = "line move" onclick = "move_clicked(1)">
+							<span class = "move-name">Modus Tollens</span>
+							<span class = "move-info">\(P\to Q\) together with \(\neg Q\) proves \(\neg P\)</span>
 						</div>
-						<div class = "move">
-							<div class = "move-name">Skolemize</div>
-							<div class = "move-info">Create metavariables and move quantors to quantifier zone</div>
+						<div class = "line move" onclick = "move_clicked(2)">
+							<span class = "move-name">Skolemize</span>
+							<span class = "move-info">Create metavariables and move quantors to quantifier zone</span>
 						</div>
-						<div class = "move">
-							<div class = "move-name">Automation</div>
-							<div class = "move-info">Simple proof automation</div>
+						<div class = "line move" onclick = "move_clicked(3)">
+							<span class = "move-name">Automation</span>
+							<span class = "move-info">Simple proof automation</span>
 						</div>
 					</div>
 				</div>
 				<div class = "box" id = "lib-box">
 					<div class = "box-header">
-						<div class = "label">Library</div>
-						<input type = "text" placeholder = "Search Library">
+						<div class = "box-label">Library</div>
+						<input type = "text" placeholder = "Search Library" onkeyup = "library_search(this.value)">
 					</div>
 					<div class = "box-body">
 					</div>
