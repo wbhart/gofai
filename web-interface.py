@@ -11,22 +11,92 @@ hypothesis = []
 targets = []
 
 # expose python functions to the javascript code
+
+@eel.expose	
+def add_quantifier():
+	text = eel.dialog("Enter a quantifier in LaTeX format:")()
+	if not text:
+		return
+
+	global quantifiers
+	quantifiers.append(text)
+	eel.populate_quantifiers(quantifiers)
+	print("Quantifier added")
+
+@eel.expose	
+def add_hypothesis():
+	text = eel.dialog("Enter a hypothesis in LaTeX format:")()
+	if not text:
+		return
+
+	global hypothesis
+	hypothesis.append(text)
+	eel.populate_hypothesis(hypothesis)
+	print("Hypothesis added")
+
+@eel.expose	
+def add_target():
+	text = eel.dialog("Enter a target in LaTeX format:")()
+	if not text:
+		return
+
+	global targets
+	targets.append(text)
+	eel.populate_targets(targets)
+	print("Target added")
+
 @eel.expose	
 def move_clicked(n):
 	print("Move", n, "clicked")
 
 @eel.expose	
 def quantifier_clicked(n):
-	print("Quantifier", n, "clicked")
+	global quantifiers
+	assert n < len(quantifiers)
+	text = eel.dialog("Edit the quantifier in LaTeX format:", quantifiers[n])()
+	if text == "":
+		del quantifiers[n]
+		print("Quantifier", n ,"deleted")
+	elif not text:
+		return
+	else:
+		quantifiers[n] = text
+		print("Quantifier", n ,"edited")
+
+	eel.populate_quantifiers(quantifiers)
 
 @eel.expose	
 def hypothesis_clicked(n):
-	print("Hypothesis", n, "clicked")
+	global hypothesis
+	assert n < len(hypothesis)
+	text = eel.dialog("Edit the hypothesis in LaTeX format:", hypothesis[n])()
+	if text == "":
+		del hypothesis[n]
+		print("Hypothesis", n ,"deleted")
+	elif not text:
+		return
+	else:
+		hypothesis[n] = text
+		print("Hypothesis", n ,"edited")
+
+	eel.populate_hypothesis(hypothesis)
 
 @eel.expose	
 def target_clicked(n):
-	print("Target", n, "clicked")
+	global targets
+	assert n < len(targets)
+	text = eel.dialog("Edit the target in LaTeX format:", targets[n])()
+	if text == "":
+		del targets[n]
+		print("Target", n ,"deleted")
+	elif not text:
+		return
+	else:
+		targets[n] = text
+		print("Target", n ,"edited")
 
+	eel.populate_targets(targets)
+	
 @eel.expose	
 def library_clicked(n):
 	print("Library suggestion", n, "clicked")
@@ -48,11 +118,6 @@ def library_search(query):
 
 @eel.expose	
 def new_proof():
-	print("New proof started")
-	text = eel.dialog("Enter a target in LaTeX format:")()
-	if not text:
-		return
-
 	global quantifiers
 	quantifiers = []
 	eel.populate_quantifiers(quantifiers)
@@ -62,14 +127,15 @@ def new_proof():
 	eel.populate_hypothesis(hypothesis)
 
 	global targets
-	targets = [text]
+	targets = []
 	eel.populate_targets(targets)
 
-	eel.status("Proof in progress, select move or library result.")
+	eel.edit_mode(True)
 
 @eel.expose	
-def restart_proof():
-	print("Proof restarted")
+def start_proof():
+	eel.edit_mode(False)
+	print("Proof started")
 
 @eel.expose	
 def export_proof():
@@ -78,6 +144,7 @@ def export_proof():
 
 
 
+# pyhton stuff
 
 # callback when interface window is closed
 def interface_closed(path, open):

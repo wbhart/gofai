@@ -18,16 +18,17 @@
 	<body>
 		<header>
 			<button onclick = "new_proof()">New Proof</button>
-			<button onclick = "restart_proof()">Restart Proof</button>
+			<button onclick = "start_proof()">Start Proof</button>
 			<button onclick = "export_proof()">Export Proof</button>
 			<span style = "font-weight: bold;">Status:</span> 
-			<span id = "status">No proof in progress</span>
+			<span id = "status">Edit mode, press start proof when tableau is ready</span>
 		</header>
 		<main>
 			<div class = column>
 				<div class = "box" id = "quant-box">
 					<div class = "box-header">
 						<div class = "box-label">Quantifier Zone</div>
+						<div class = "add" onclick = "add_quantifier()">add</div>
 					</div>
 					<div class = "box-body">
 					</div>
@@ -35,6 +36,7 @@
 				<div class = "box" id = "hyp-box">
 					<div class = "box-header">
 						<div class = "box-label">Hypothesis Zone</div>
+						<div class = "add" onclick = "add_hypothesis()">add</div>
 					</div>
 					<div class = "box-body">
 					</div>
@@ -42,6 +44,7 @@
 				<div class = "box" id = "targ-box">
 					<div class = "box-header">
 						<div class = "box-label">Target Zone</div>
+						<div class = "add" onclick = "add_target()">add</div>
 					</div>
 					<div class = "box-body">
 					</div>
@@ -49,7 +52,7 @@
 			</div>
 
 			<div class = column>
-				<div class = "box" id = "moves-box">
+				<div class = "box disabled" id = "moves-box">
 					<div class = "box-header">
 						<div class = "box-label">Moves</div>
 					</div>
