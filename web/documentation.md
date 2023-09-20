@@ -22,7 +22,19 @@ set the list of displayed lines in the hypothesis zone
 `populate_targets([str]) -> none`  
 set the list of displayed lines in the target zone
 
+`edit_mode(bool) -> none`
+enables or disables the edit mode styling
+
 ## Expected Python Functions Exposed to JavaScript
+
+`add_quantifier() -> none`  
+clicked when the "add" button in the quantifier zone is clicked
+
+`add_hypothesis() -> none`  
+clicked when the "add" button in the hypothesis zone is clicked
+
+`add_target() -> none`  
+clicked when the "add" button in the target zone is clicked
 
 `move_clicked(int) -> none`  
 called when a move is clicked, passing the move type  
@@ -46,8 +58,8 @@ called whenever the string in the library search field changes, passing the curr
 `new_proof() -> none`  
 called when the "new proof" button is clicked
 
-`restart_proof() -> none`  
-called when the "restart proof" button is clicked
+`start_proof() -> none`  
+called when the "start proof" button is clicked
 
 `export_proof() -> none`  
 called when the "export proof" button is clicked

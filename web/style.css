@@ -139,3 +139,18 @@ button:hover {
 	background: lightblue;
 }
 
+.add {
+	font-weight: bold;
+	color: lightcoral;
+	margin: 5px 10px;
+}
+
+.add:hover {
+	color: red;
+	cursor: pointer;
+}
+
+.disabled {
+	filter: grayscale(100%);
+	pointer-events: none;
+}

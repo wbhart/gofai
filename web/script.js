@@ -9,8 +9,8 @@ function info(str) {
 
 // display the given string and wait for user string input
 eel.expose(dialog);
-function dialog(str) {
-	return prompt(str);
+function dialog(str, def = "") {
+	return prompt(str, def);
 }
 
 // display the given string in the status area
@@ -49,7 +49,7 @@ function populate_quantifiers(list) {
 
 		var name = document.createElement('span');
 		name.classList.add("zone-line-name");
-		name.innerHTML = "\\(\\bf Q_" + i + "\\)";
+		name.innerHTML = "\\(\\bf Q_" + (i+1) + "\\)";
 
 		line.appendChild(name);
 		line.innerHTML += list[i];
@@ -103,7 +103,35 @@ function populate_targets(list) {
 	MathJax.typeset();
 }
 
+// enables and disables edit mode, initially enabled.
+eel.expose(edit_mode)
+function edit_mode(edit) {
+	add_buttons = document.getElementsByClassName("add");
+	moves_box = document.getElementById("moves-box");
+	if (edit) {
+		status("Edit mode, press start proof when tableau is ready")
+		for (button of add_buttons) { button.style.display = "block"; }
+		moves_box.classList.add("disabled")
+	} else {
+		status("Proof mode, select move or library result to progress")
+		for (button of add_buttons) { button.style.display = "none"; }
+		moves_box.classList.remove("disabled")
+	}
+}
+
 // --- Functions forwarding to python ---
+
+function add_quantifier() {
+	eel.add_quantifier();
+}
+
+function add_hypothesis() {
+	eel.add_hypothesis();
+}
+
+function add_target() {
+	eel.add_target();
+}
 
 function quantifier_clicked(n) {
 	console.log("quantifier " + n +  " clicked!");
@@ -140,9 +168,9 @@ function new_proof() {
 	eel.new_proof();
 }
 
-function restart_proof() {
-	console.log("restart proof!");
-	eel.restart_proof();
+function start_proof() {
+	console.log("start proof!");
+	eel.start_proof();
 }
 
 function export_proof() {
