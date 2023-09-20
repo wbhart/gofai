@@ -144,7 +144,7 @@ def export_proof():
 
 
 
-# pyhton stuff
+# python stuff
 
 # callback when interface window is closed
 def interface_closed(path, open):
