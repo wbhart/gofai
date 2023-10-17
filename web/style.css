@@ -8,7 +8,7 @@ main {
 }
 
 .column {
-	width: 50%;
+	/* width: 50%; */
 	padding: 0px 10px;
 	border-radius: 10px;
 }
@@ -31,6 +31,7 @@ main {
 	min-height: 50px;
 	max-height: 200px;
 	overflow: scroll;
+	
 }
 
 .box-label {
@@ -41,9 +42,9 @@ main {
 .line {
 	display: flex;
 	align-items: center;
-	margin: 5px;
+	max-width: 400px;
 	padding: 5px;
-	border-radius: 10px;
+	border-radius: 10px; 
 }
 
 .move {
@@ -141,16 +142,40 @@ button:hover {
 
 .add {
 	font-weight: bold;
-	color: lightcoral;
+	display: flex;
+	color: #0366d6;
 	margin: 5px 10px;
 }
 
 .add:hover {
-	color: red;
+	color: #228be6;
 	cursor: pointer;
 }
 
 .disabled {
 	filter: grayscale(100%);
 	pointer-events: none;
+}
+
+.container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px;
+}
+
+.footer {
+	text-align: center;
+	margin-bottom: 3rem;
+}
+
+
+
+.footer-link {
+	color: #0366d6;
+	text-decoration: none;
+	transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+	color: #228be6;
 }
