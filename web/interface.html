@@ -24,7 +24,7 @@
 
 
 	<main class="container">
-		<header class="p-3 ">
+		<header class="px-4 ">
 			<button onclick="new_proof()" class="btn btn-outline mr-1"> New </button>
 			<button onclick="start_proof()" class="btn"> Start </button>
 			<button onclick="export_proof()" class="btn btn-primary ">Export </button>
@@ -32,10 +32,11 @@
 			<span id="status">Edit mode, press start proof when tableau is ready</span>
 		</header>
 
-		<div id="lib-box" class=" bg-gray-light text-accent-emphasis rounded-2 p-4 my-4" id="lib-box">
+		<div id="lib-box" class=" bg-gray-light text-accent-emphasis rounded-2 p-4 " id="lib-box">
 			<div class="">
-				<div class="Box-header">Library</div>
-				<input type="text" class="" placeholder="Search Library" onkeyup="library_search(this.value)">
+				<div class="Box-header">Library </div>
+				<input type="text" class="rounded-2 my-2" placeholder="Search Library" onkeyup="library_search(this.value)">
+				<button class="btn btn-outline" onclick="library_search(this.value)">Search</button>
 			</div>
 
 			<div class="Box-body  box-body autocomplete-body border-gray-light bg-gray-light">
@@ -46,7 +47,7 @@
 
 		<div class=" d-flex height-full">
 			<div class="col-12 col-md-8 pr-3">
-				<aside class="p-3  flex">
+				<aside class="px-3 flex">
 					<div class="column ">
 
 						<div class="box Box  Box--spacious my-3" id="quant-box">
