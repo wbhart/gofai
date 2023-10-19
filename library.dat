@@ -559,7 +559,7 @@ Tags: #sets #definition
 ------------------------------
 A \subseteq B \iff (\forall x \in universe(A) x \in A \implies x \in B)
 
-Title: Definition of set equality
+Title: Extensionality for sets
 Tags: #sets #definition
 \forall A : Set \forall B : Set
 ------------------------------

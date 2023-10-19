@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import deepcopy, copy
 from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode, \
      NeqNode, LtNode, GtNode, LeqNode, GeqNode, OrNode, AndNode, NotNode, \
      FnApplNode, LRNode, LeafNode, TupleNode, EqNode, ElemNode, UnionNode, \
@@ -921,12 +921,12 @@ def old_targets_proved(screen, tl, ttree):
                     if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
                         varlist = deepcopy(tl.vars) # temporary relabelling
                         unifies, assign, macros = unify(screen, tl, complement_tree(P.left), \
-                                                relabel(deepcopy(tars[ttree.num]), varlist))
+                                                relabel(screen, tl, deepcopy(tars[ttree.num]), varlist))
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
                             # or branched can be assigned independently
                             unifies, assign, macros = unify(screen, tl, P.right, \
-                                                relabel(deepcopy(tars[ttree.num]), varlist), assign)
+                                                relabel(screen, tl, deepcopy(tars[ttree.num]), varlist), assign)
                             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         
                     else:
@@ -1075,7 +1075,31 @@ def relabel_varname(name, var_dict):
     var_dict[name] = subscript
     return name+'_'+str(subscript)
 
-def relabel(tree, tldict):
+def qz_copy_var(screen, tl, name, new_name):
+    node_to_copy = None
+    qz = tl.tlist0.data[0]
+    tree = qz
+
+    while tree != None:
+       if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
+          if tree.var.name() == new_name:
+              return
+          if tree.var.name() == name: # found the relevant variable
+              node_to_copy = tree
+       if tree.left == None and node_to_copy != None: # this is the last node, make copy
+          new_node = copy(node_to_copy)
+          new_node.var._name = new_name # rename
+          new_node.left = None
+          new_node.constraint = deepcopy(new_node.constraint)
+          new_node.sort = deepcopy(new_node.sort)
+          tree.left = new_node   
+       tree = tree.left
+    screen.pad0.pad[0] = str(qz)
+    screen.pad0.refresh()
+    screen.focus.refresh()
+       
+def relabel(screen, tl, tree, tldict, update_qz=False):
+    # update_qz makes a copy of variable in QZ with new name, if set
     vars_dict = dict()
     
     def process(tree):
@@ -1091,12 +1115,17 @@ def relabel(tree, tldict):
         elif isinstance(tree, VarNode):
             process(tree.constraint)
             if tree.name() in vars_dict:
-                tree._name = vars_dict[tree.name()]
+                new_name = vars_dict[tree.name()]
+                tree._name = new_name
+                if update_qz:
+                    qz_copy_var(screen, tl, tree.name(), new_name)
             elif tree.is_metavar:
                 name = tree.name()
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
+                if update_qz:
+                    qz_copy_var(screen, tl, tree.name(), new_name)
         elif isinstance(tree, SetBuilderNode):
             name = tree.left.left.name()
             new_name = relabel_varname(name, tldict)
@@ -1548,7 +1577,7 @@ def library_import(screen, tl):
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
         pad1 = screen.pad1.pad
-        stmt = relabel(tree, tl.vars)
+        stmt = relabel(screen, tl, tree, tl.vars)
         ok = process_constraints(screen, stmt, tl.constraints)
         if ok:
             relabel_constraints(screen, tl, stmt)
@@ -1878,11 +1907,11 @@ def modus_ponens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         varlist = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(deepcopy(qP2.left), varlist)))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, deepcopy(qP2.left), varlist)))
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             varlist = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(deepcopy(qP2.right), varlist), assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, deepcopy(qP2.right), varlist), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
@@ -1894,12 +1923,11 @@ def modus_ponens(screen, tl, ttree):
         return # does not unify, bogus selection
     if forward:
         stmt = substitute(deepcopy(tree1.right), assign)
-        stmt = relabel(stmt, tl.vars)
+        stmt = relabel(screen, tl, stmt, tl.vars, True)
         append_tree(screen.pad1, tlist1.data, stmt)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         stmt = substitute(deepcopy(tree1.left), assign)
-        stmt = relabel(stmt, tl.vars)
         if line2 in tl.tars: # we already reasoned from this target
             screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
             screen.restore_state()
@@ -1909,6 +1937,7 @@ def modus_ponens(screen, tl, ttree):
             # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             # tlist1.dep[len(tlist1.data) - 1] = dep
         else:
+            stmt = relabel(screen, tl, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -1988,11 +2017,11 @@ def modus_tollens(screen, tl, ttree):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         vars = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(deepcopy(qP2.left), vars)))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, deepcopy(qP2.left), vars)))
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             vars = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(deepcopy(qP2.right), vars), assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, deepcopy(qP2.right), vars), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
@@ -2004,12 +2033,11 @@ def modus_tollens(screen, tl, ttree):
         return # does not unify, bogus selection
     if forward:
         stmt = complement_tree(substitute(deepcopy(tree1.left), assign))
-        stmt = relabel(stmt, tl.vars)
+        stmt = relabel(screen, tl, stmt, tl.vars, True)
         append_tree(screen.pad1, tlist1.data, stmt)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
-        stmt = relabel(stmt, tl.vars)
         if line2 in tl.tars: # we already reasoned from this target
             screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
             screen.restore_state()
@@ -2019,6 +2047,7 @@ def modus_tollens(screen, tl, ttree):
             # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             # tlist1.dep[len(tlist1.data) - 1] = dep
         else:
+            stmt = relabel(screen, tl, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -2200,10 +2229,10 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad2, tl2, j, tl2[j].right)
                     tl.tlist1.dep[len(tl1) - 1] = j
                 if isinstance(tl2[j], ImpliesNode):
-                    left = relabel(tl2[j].left, tl.vars)
+                    left = relabel(screen, tl, tl2[j].left, tl.vars, True)
                     append_tree(screen.pad1, tl1, left)
                     hyps_done = False
-                    right = relabel(tl2[j].right, tl.vars)
+                    right = relabel(screen, tl, tl2[j].right, tl.vars, True)
                     replace_tree(screen.pad2, tl2, j, right)
                     tl.tlist1.dep[len(tl1) - 1] = j
                 while isinstance(tl2[j], AndNode):
