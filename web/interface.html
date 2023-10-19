@@ -1,91 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset = "UTF-8">
-		<link rel="stylesheet" href="./style.css">
-		<title>GOFAI Theorem Prover</title>
 
-		<!-- link favicon -->
-		 <link rel="icon" type="image/x-icon" href="/favicon.ico">
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="./style.css">
+	<title>GOFAI Theorem Prover</title>
 
-		 <!-- link the eel.js file wich is served by the eel python package -->
-		 <script type="text/javascript" src="/eel.js"></script>
+	<!-- link favicon -->
+	<link rel="icon" type="image/x-icon" href="/favicon.ico">
+	<link href="https://unpkg.com/@primer/css@^16.0.0/dist/primer.css" rel="stylesheet" />
 
-		<!-- mathjax for LaTeX support -->
-		<script src = "https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-		<script id = "MathJax-script" async src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-	</head>
-	<body>
-		<header>
-			<button onclick = "new_proof()">New Proof</button>
-			<button onclick = "start_proof()">Start Proof</button>
-			<button onclick = "export_proof()">Export Proof</button>
-			<span style = "font-weight: bold;">Status:</span> 
-			<span id = "status">Edit mode, press start proof when tableau is ready</span>
+	<!-- link the eel.js file wich is served by the eel python package -->
+	<script type="text/javascript" src="/eel.js"></script>
+
+	<!-- mathjax for LaTeX support -->
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+	<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+
+
+
+
+	<main class="container">
+		<header class="px-4 ">
+			<button onclick="new_proof()" class="btn btn-outline mr-1"> New </button>
+			<button onclick="start_proof()" class="btn"> Start </button>
+			<button onclick="export_proof()" class="btn btn-primary ">Export </button>
+			<span style="font-weight: bold;">Status:</span>
+			<span id="status">Edit mode, press start proof when tableau is ready</span>
 		</header>
-		<main>
-			<div class = column>
-				<div class = "box" id = "quant-box">
-					<div class = "box-header">
-						<div class = "box-label">Quantifier Zone</div>
-						<div class = "add" onclick = "add_quantifier()">add</div>
-					</div>
-					<div class = "box-body">
-					</div>
-				</div>
-				<div class = "box" id = "hyp-box">
-					<div class = "box-header">
-						<div class = "box-label">Hypothesis Zone</div>
-						<div class = "add" onclick = "add_hypothesis()">add</div>
-					</div>
-					<div class = "box-body">
-					</div>
-				</div>
-				<div class = "box" id = "targ-box">
-					<div class = "box-header">
-						<div class = "box-label">Target Zone</div>
-						<div class = "add" onclick = "add_target()">add</div>
-					</div>
-					<div class = "box-body">
-					</div>
-				</div>
+
+		<div id="lib-box" class=" bg-gray-light text-accent-emphasis rounded-2 p-4 " id="lib-box">
+			<div class="">
+				<div class="Box-header">Library </div>
+				<input type="text" class="rounded-2 my-2" placeholder="Search Library" onkeyup="library_search(this.value)">
+				<button class="btn btn-outline" onclick="library_search(this.value)">Search</button>
 			</div>
 
-			<div class = column>
-				<div class = "box disabled" id = "moves-box">
-					<div class = "box-header">
-						<div class = "box-label">Moves</div>
-					</div>
-					<div class = "box-body">
-						<div class = "line move" onclick = "move_clicked(0)">
-							<span class = "move-name">Modus Ponens</span>
-							<span class = "move-info">\(P\to Q\) together with \(P\) proves \(Q\)</span>
+			<div class="Box-body  box-body autocomplete-body border-gray-light bg-gray-light">
+
+
+			</div>
+		</div>
+
+		<div class=" d-flex height-full">
+			<div class="col-12 col-md-8 pr-3">
+				<aside class="px-3 flex">
+					<div class="column ">
+
+						<div class="box Box  Box--spacious my-3" id="quant-box">
+							<div class=" d-flex flex-justify-between Box-header">
+								<div class="">Quantifier Zone
+								</div>
+
+								<div class="btn btn-outline add" onclick="add_quantifier()">
+									add(\(\exists\))</div>
+							</div>
+							<div class="box-body Box-body">
+							</div>
 						</div>
-						<div class = "line move" onclick = "move_clicked(1)">
-							<span class = "move-name">Modus Tollens</span>
-							<span class = "move-info">\(P\to Q\) together with \(\neg Q\) proves \(\neg P\)</span>
+
+						<div class=" box Box Box--spacious my-3" id="hyp-box">
+							<div class=" d-flex flex-justify-between Box-header">
+								<div>Hypothesis Zone
+									 
+								</div>
+								<div class="btn btn-outline add" onclick="add_hypothesis()">
+									add \(\mathbb(H)\)</div>
+							</div>
+							<div class="box-body Box-body">
+							</div>
 						</div>
-						<div class = "line move" onclick = "move_clicked(2)">
-							<span class = "move-name">Skolemize</span>
-							<span class = "move-info">Create metavariables and move quantors to quantifier zone</span>
-						</div>
-						<div class = "line move" onclick = "move_clicked(3)">
-							<span class = "move-name">Automation</span>
-							<span class = "move-info">Simple proof automation</span>
+						<div class=" box Box Box--spacious my-3" id="targ-box">
+							<div class=" d-flex flex-justify-between Box-header">
+								<div>Target Zone </div>
+								<div class="btn btn-outline add" onclick="add_target()">
+
+									add (\(\odot\))</div>
+							</div>
+							<div class="box-body Box-body">
+							</div>
 						</div>
 					</div>
-				</div>
-				<div class = "box" id = "lib-box">
-					<div class = "box-header">
-						<div class = "box-label">Library</div>
-						<input type = "text" placeholder = "Search Library" onkeyup = "library_search(this.value)">
-					</div>
-					<div class = "box-body">
-					</div>
-				</div>
+				</aside>
+
 			</div>
 
-		</main>
-	</body>
-	<script src="./script.js"></script>
+			<div class="col-12 col-md-4">
+				<main class="p-3">
+					<div class="column">
+						<div class="Box disabled" id="moves-box">
+							<div class="Box-header">
+								<div class="Box-title">Moves</div>
+							</div>
+							<div class="Box-body">
+
+								<div class="" onclick="move_clicked(0)">
+                                      <button class="btn my-2">
+										<svg width="12" height="12" viewBox="0 0 18 12" fill="none"
+											xmlns="http://www.w3.org/2000/svg">
+											<path
+												d="M10.6 4.93336C10.2134 4.93336 9.89998 5.24676 9.89998 5.63336C9.89998 6.01996 10.2134 6.33336 10.6 6.33336V4.93336ZM17.495 6.12834C17.7683 5.85497 17.7683 5.41175 17.495 5.13839L13.0402 0.683615C12.7668 0.410248 12.3236 0.410248 12.0502 0.683615C11.7769 0.956982 11.7769 1.4002 12.0502 1.67356L16.01 5.63336L12.0502 9.59316C11.7769 9.86653 11.7769 10.3097 12.0502 10.5831C12.3236 10.8565 12.7668 10.8565 13.0402 10.5831L17.495 6.12834ZM10.6 6.33336H17V4.93336H10.6V6.33336Z"
+												fill="black" />
+											<circle cx="6.86659" cy="5.63332" r="1.06667" fill="black" />
+											<circle cx="2.06667" cy="5.63332" r="1.53333" fill="white" stroke="black"
+												stroke-width="0.933333" />
+										</svg>
+
+
+										Forward
+									</button>
+									<div>
+										<span class="move-name">Modus Ponens </span>
+										<span class="move-info">\(p\to q\) together with \(p\) proves \(q\)</span>
+									</div>
+
+								</div>
+							</div>
+
+
+							<div class="Box-row">
+								<button class="btn my-2" onclick="move_clicked(1)">
+									<svg width="12" height="12" viewBox="0 0 18 12" fill="none"
+										xmlns="http://www.w3.org/2000/svg">
+										<path
+											d="M7.40002 5.31665C7.81424 5.31665 8.15002 5.65244 8.15002 6.06665C8.15002 6.48086 7.81424 6.81665 7.40002 6.81665V5.31665ZM0.469694 6.59698C0.176801 6.30409 0.176801 5.82921 0.469694 5.53632L5.24267 0.76335C5.53556 0.470456 6.01043 0.470456 6.30333 0.76335C6.59622 1.05624 6.59622 1.53112 6.30333 1.82401L2.06068 6.06665L6.30333 10.3093C6.59622 10.6022 6.59622 11.0771 6.30333 11.37C6.01043 11.6628 5.53556 11.6628 5.24267 11.37L0.469694 6.59698ZM7.40002 6.81665H1.00002V5.31665H7.40002V6.81665Z"
+											fill="black" />
+										<circle cx="1.06667" cy="1.06667" r="1.06667"
+											transform="matrix(-1 0 0 1 12.2 5)" fill="black" />
+										<circle cx="1.06667" cy="1.06667" r="1.56667" transform="matrix(-1 0 0 1 17 5)"
+											fill="white" stroke="black" />
+									</svg>
+
+
+
+									Backwards
+								</button>
+								<div>
+									<span class="move-name">Modus Tollens</span>
+									<span class="move-info">\(p\to q\) together with \(\neg q\) proves \(\neg p\)</span>
+								</div>
+
+							</div>
+							<div class="Box-row">
+								<button class="btn my-2" onclick="move_clicked(2)">
+									<svg xmlns="http://www.w3.org/2000/svg" class="" viewBox="0 0 16 16" width="12"
+										height="12">
+										<path
+											d="M3.75 4.5a1.25 1.25 0 1 0 0-2.5 1.25 1.25 0 0 0 0 2.5ZM3 7.75a.75.75 0 0 1 1.5 0v2.878a2.251 2.251 0 1 1-1.5 0Zm.75 5.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm5-7.75a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0Zm5.75 2.5a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-1.5 0a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z">
+										</path>
+									</svg>
+									Expand</button>
+								<div>
+
+									<span class="move-name">Skolemize</span>
+									<span class="move-info">Create metavariables and move quantors to quantifier
+										zone</span>
+								</div>
+							</div>
+							<div class="Box-row ">
+								<button class="btn btn-outline my-2" onclick="move_clicked(3)">
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12">
+										<path
+											d="M14.307 11.655a.75.75 0 0 1 .165 1.048 8.05 8.05 0 0 1-1.769 1.77.75.75 0 0 1-.883-1.214 6.552 6.552 0 0 0 1.44-1.439.75.75 0 0 1 1.047-.165Zm-2.652-9.962a.75.75 0 0 1 1.048-.165 8.05 8.05 0 0 1 1.77 1.769.75.75 0 0 1-1.214.883 6.552 6.552 0 0 0-1.439-1.44.75.75 0 0 1-.165-1.047ZM6.749.097a8.074 8.074 0 0 1 2.502 0 .75.75 0 1 1-.233 1.482 6.558 6.558 0 0 0-2.036 0A.751.751 0 0 1 6.749.097ZM.955 6.125a.75.75 0 0 1 .624.857 6.558 6.558 0 0 0 0 2.036.75.75 0 1 1-1.482.233 8.074 8.074 0 0 1 0-2.502.75.75 0 0 1 .858-.624Zm14.09 0a.75.75 0 0 1 .858.624c.13.829.13 1.673 0 2.502a.75.75 0 1 1-1.482-.233 6.558 6.558 0 0 0 0-2.036.75.75 0 0 1 .624-.857Zm-8.92 8.92a.75.75 0 0 1 .857-.624 6.558 6.558 0 0 0 2.036 0 .75.75 0 1 1 .233 1.482c-.829.13-1.673.13-2.502 0a.75.75 0 0 1-.624-.858Zm-4.432-3.39a.75.75 0 0 1 1.048.165 6.552 6.552 0 0 0 1.439 1.44.751.751 0 0 1-.883 1.212 8.05 8.05 0 0 1-1.77-1.769.75.75 0 0 1 .166-1.048Zm2.652-9.962A.75.75 0 0 1 4.18 2.74a6.556 6.556 0 0 0-1.44 1.44.751.751 0 0 1-1.212-.883 8.05 8.05 0 0 1 1.769-1.77.75.75 0 0 1 1.048.166Z">
+										</path>
+									</svg>
+									Automate
+								</button>
+								<div>
+									<span class="move-name">Automation</span>
+									<span class="move-info">Simple proof automation</span>
+								</div>
+
+							</div>
+						</div>
+					</div>
+
+
+			</div>
+	</main>
+	</div>
+	</div>
+
+
+
+	</main>
+</body>
+<script src="./script.js"></script>
+
 </html>

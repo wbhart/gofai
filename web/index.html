@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset = "UTF-8">
+		<link rel="stylesheet" href="./style.css">
+		<link href=
+		"https://unpkg.com/@primer/css@^16.0.0/dist/primer.css"
+				  rel="stylesheet" />
+
+		<title>GOFAI Theorem Prover</title>
+
+		<!-- link favicon -->
+		 <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+		 <!-- link the eel.js file wich is served by the eel python package -->
+		 <script type="text/javascript" src="/eel.js"></script>
+
+		<!-- mathjax for LaTeX support -->
+		<script src = "https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+		<script id = "MathJax-script" async src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+	</head>
+
+ 
+
+<body>
+    <div class="container">
+        <div >
+            
+
+
+            <header class="p-3 ">
+                <button onclick = "new_proof()"  class="btn btn-outline mr-1"> New </button>
+                <button onclick = "start_proof()" class="btn"> Start </button>
+                <button onclick = "export_proof()" class="btn btn-primary ">Export </button>
+                <span style = "font-weight: bold;" >Status:</span> 
+                <span  id="status">Edit mode, press start proof when tableau is ready</span>
+            </header> 
+        </div>
+ 
+            <div class=" bg-gray-light text-accent-emphasis rounded-2 p-4 my-4" id="lib-box">
+                <div class="Box-header">
+                    <div class="Box-title">Library</div>
+                    <input type="text" placeholder="Search Library" onkeyup="library_search(this.value)">
+                </div>
+                <div class="Box-body">
+                </div>
+            </div>
+     
+
+        <div class=" d-flex height-full">
+            <div class="col-12 col-md-8 pr-3">
+                <aside class="p-3  flex" >
+					<div class="column ">
+			
+						<div class="Box Box--spacious my-3" id="quant-box">
+						<div class="Box-header">
+							<div class="Box-title">Quantifier Zone</div>
+							<div class="btn btn-primary add" onclick="add_quantifier()">add</div>
+						</div>
+						<div class="box-body Box-body">
+						</div>
+					</div>
+
+					<div class="Box Box--spacious my-3" id="hyp-box">
+						<div class="Box-header">
+							<div class="Box-title">Hypothesis Zone</div>
+							<div class="btn btn-outline add" onclick="add_hypothesis()">add</div>
+						</div>
+						<div class="box-body Box-body">
+						</div>
+					</div>
+					<div class="Box Box--spacious my-3" id="targ-box">
+						<div class="Box-header">
+							<div class="Box-title">Target Zone</div>
+							<div class="btn add" onclick="add_target()">add</div>
+						</div>
+						<div class="box-body Box-body">
+						</div>
+					</div>
+				</div>
+				  </aside>
+               
+            </div>
+
+            <div class="col-12 col-md-4">
+                <main class="p-3">
+					<div class="column">
+						<div class="Box disabled" id="moves-box">
+							<div class="Box-header">
+								<div class="Box-title">Moves</div>
+							</div>
+							<div class="Box-body">
+								<div class="Box-row" onclick="move_clicked(0)">
+									<span class="move-name">Modus Ponens</span>
+									<span class="move-info">\(P\to Q\) together with \(P\) proves \(Q\)</span>
+								</div>
+								<div class="Box-row" onclick="move_clicked(1)">
+									<span class="move-name">Modus Tollens</span>
+									<span class="move-info">\(P\to Q\) together with \(\neg Q\) proves \(\neg P\)</span>
+								</div>
+								<div class="Box-row" onclick="move_clicked(2)">
+									<span class="move-name">Skolemize</span>
+									<span class="move-info">Create metavariables and move quantors to quantifier zone</span>
+								</div>
+								<div class="Box-row" onclick="move_clicked(3)">
+									<span class="move-name">Automation</span>
+									<span class="move-info">Simple proof automation</span>
+								</div>
+							</div>
+						</div>
+		
+						<div class="Box" id="lib-box">
+							<div class="Box-header">
+								<div class="Box-title">Library</div>
+								<input type="text" placeholder="Search Library" onkeyup="library_search(this.value)">
+							</div>
+							<div class="Box-body">
+							</div>
+						</div>
+					</div>
+				  </main>
+            </div>
+        </div>
+
+        <div class="Box py-3 mb-3 border-top border-gray-light">
+            <!-- Content for Footer component goes here -->
+            <div class="footer">
+                <div class="tip-box tip-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M2 1.75C2 .784 2.784 0 3.75 0h5.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v8.586A1.75 1.75 0 0 1 12.25 15h-7a.75.75 0 0 1 0-1.5h7a.25.25 0 0 0 .25-.25V6H9.75A1.75 1.75 0 0 1 8 4.25V1.5H3.75a.25.25 0 0 0-.25.25V4.5a.75.75 0 0 1-1.5 0Zm-.5 10.487v1.013a.75.75 0 0 1-1.5 0v-1.012a3.748 3.748 0 0 1 3.77-3.749L4 8.49V6.573a.25.25 0 0 1 .42-.183l2.883 2.678a.25.25 0 0 1 0 .366L4.42 12.111a.25.25 0 0 1-.42-.183V9.99l-.238-.003a2.25 2.25 0 0 0-2.262 2.25Zm8-10.675V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                    <span class="color-text-warning">View</span>
+                </div>
+                <span>
+                    Before you get started, check out our
+                    <a href="https://wtgowers.github.io/human-style-atp/" target="_blank" class="footer-link">
+                        Human-Oriented Automatic Theorem Proving
+                    </a>
+                </span>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="./script.js"></script>
+</html>

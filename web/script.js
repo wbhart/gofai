@@ -27,7 +27,9 @@ function populate_library(list) {
 
 	for (let i = 0; i < list.length; i++) {
 		var line = document.createElement('div');
-		line.classList.add("line", "entry")
+		// line.classList.add("line", "entry")
+        line.classList.add("line", "entry", "autocomplete-item");
+	 
 		line.onclick = function() {library_clicked(i)};
 		line.innerHTML = list[i];
 
