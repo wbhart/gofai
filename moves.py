@@ -1929,13 +1929,13 @@ def modus_ponens(screen, tl, ttree):
     else:
         stmt = substitute(deepcopy(tree1.left), assign)
         if line2 in tl.tars: # we already reasoned from this target
-            screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
-            screen.restore_state()
-            screen.focus.refresh()
-            return
-            # stmt = complement_tree(stmt)
-            # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            # tlist1.dep[len(tlist1.data) - 1] = dep
+            #screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
+            #screen.restore_state()
+            #screen.focus.refresh()
+            #return
+            stmt = complement_tree(stmt)
+            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            tlist1.dep[len(tlist1.data) - 1] = dep
         else:
             stmt = relabel(screen, tl, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
@@ -2039,13 +2039,13 @@ def modus_tollens(screen, tl, ttree):
     else:
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         if line2 in tl.tars: # we already reasoned from this target
-            screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
-            screen.restore_state()
-            screen.focus.refresh()
-            return
-            # stmt = complement_tree(stmt)
-            # append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            # tlist1.dep[len(tlist1.data) - 1] = dep
+            #screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
+            #screen.restore_state()
+            #screen.focus.refresh()
+            #return
+            stmt = complement_tree(stmt)
+            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            tlist1.dep[len(tlist1.data) - 1] = dep
         else:
             stmt = relabel(screen, tl, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)

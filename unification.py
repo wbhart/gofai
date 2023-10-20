@@ -348,7 +348,7 @@ def is_function_type(sort):
                    len(sort.sort.sets) == 2
 
 def is_set_sort(sort):
-    return isinstance(sort, SetSort) or isinstance(sort, NumberSort)
+    return isinstance(sort, SetSort) or isinstance(sort, NumberSort) or isinstance(sort, Universum)
 
 def sorts_equal(s1, s2):
     if type(s1) != type(s2):
