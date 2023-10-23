@@ -559,7 +559,14 @@ Tags: #sets #definition
 ------------------------------
 A \subseteq B \iff (\forall x \in universe(A) x \in A \implies x \in B)
 
-Title: Extensionality for sets
+Title: Extensionality of sets
+Tags: #sets #definition
+\forall S : Set, \forall T : Set
+------------------------------
+------------------------------
+S = T \iff (\forall x (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
+
+Title: Sets are equal iff they include one another
 Tags: #sets #definition
 \forall A : Set \forall B : Set
 ------------------------------
@@ -776,7 +783,7 @@ Tags: #sets
 \forall S : Set
 ------------------------------
 ------------------------------
-S \cap \emptyset(universe(S)) = S
+S \cap \emptyset(universe(S)) = \emptyset(universe(S))
 
 Title: Problem : An element in one set of an empty intersection is not in the other
 Tags: #sets #tests 

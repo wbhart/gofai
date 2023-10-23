@@ -2238,7 +2238,7 @@ def cleanup(screen, tl, ttree):
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
-                    unifies = unifies and check_macros(screen, tl, screen, tl, macros, assign, tl.tlist0.data)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
                         replace_tree(screen.pad1, tl2, j, tl2[j].left)
                     else:
