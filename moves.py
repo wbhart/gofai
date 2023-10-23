@@ -380,6 +380,8 @@ def propagate_sorts(screen, tl, tree0):
                 lsort = tree.constraint.left.sort.sort
                 rsort = tree.constraint.right.sort.sort
                 tree.sort = TupleSort([lsort, rsort])
+            elif isinstance(tree.constraint, TupleSort):
+                tree.sort = tree.constraint
             elif isinstance(tree.constraint, FunctionConstraint):
                 if not tree.constraint.domain:
                     tree.sort = tree.constraint.sort
@@ -775,8 +777,10 @@ def universe(tree, qz):
         t = get_constraint(tree, qz)
         return t.sort
     elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
-         isinstance(tree, DiffNode) or isinstance(tree, CartesianNode):
+         isinstance(tree, DiffNode):
         return universe(tree.left, qz)
+    elif isinstance(tree, CartesianNode):
+        return TupleSort([universe(tree.left, qz), universe(tree.right, qz)])
     elif isinstance(tree, FnApplNode) and tree.name() == 'complement':
         return universe(tree.args[0], qz)
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':

@@ -561,10 +561,10 @@ A \subseteq B \iff (\forall x \in universe(A) x \in A \implies x \in B)
 
 Title: Extensionality of sets
 Tags: #sets #definition
-\forall S : Set, \forall T : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
-S = T \iff (\forall x (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
+S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
 
 Title: Sets are equal iff they include one another
 Tags: #sets #definition
@@ -878,14 +878,14 @@ Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-S \times \emptyset(T) = \emptyset(S \times T)
+S \times \emptyset(universe(T)) = \emptyset(universe(S \times T))
 
 Title: Cartesian product with the empty set is empty (left)
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
 ------------------------------
-\emptyset(S) \times T = \emptyset(S \times T)
+\emptyset(universe(S)) \times T = \emptyset(universe(S \times T))
 
 Title: Cartesian product on the right preserves subset relation
 Tags: #sets

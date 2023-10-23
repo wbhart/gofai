@@ -18,7 +18,7 @@ def is_expression(tree):
        or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
        or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
        or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode) \
-       or isinstance(tree, TupleComponentNode):
+       or isinstance(tree, TupleComponentNode) or isinstance(tree, Sort):
         return True
     else:
         return True
@@ -109,10 +109,13 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             return False, [], []
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnApplNode)) \
            and tree1.is_metavar:
-        if (isinstance(node_constraint(tree1), PredSort) and is_predicate(tree2)) \
+        if isinstance(tree2, Sort) and isinstance(tree1.sort, SetSort) and \
+           isinstance(tree1.sort.sort, Universum):
+            assign.append(deepcopy((tree1, tree2)))
+        elif (isinstance(node_constraint(tree1), PredSort) and is_predicate(tree2)) \
               or (not isinstance(node_constraint(tree1), PredSort) and is_expression(tree2)
               and (tree1.is_binder or not tree_contains_binder(tree2))):
-                  if sorts_compatible(screen, tl, tree1.sort, tree2.sort):
+                  if sorts_compatible(screen, tl, tree1.sort, tree2.sort, assign):
                       assign.append(deepcopy((tree1, tree2)))
                   else:
                       return False, [], []
@@ -120,10 +123,13 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             return False, [], []
     elif (isinstance(tree2, VarNode) or isinstance(tree2, FnApplNode)) \
            and tree2.is_metavar:
-        if (isinstance(node_constraint(tree2), PredSort) and is_predicate(tree1)) \
+        if isinstance(tree1, Sort) and isinstance(tree2.sort, SetSort) and \
+           isinstance(tree2.sort.sort, Universum):
+            assign.append(deepcopy((tree2, tree1)))
+        elif (isinstance(node_constraint(tree2), PredSort) and is_predicate(tree1)) \
               or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
               and (tree2.is_binder or not tree_contains_binder(tree1))):
-              if sorts_compatible(screen, tl, tree1.sort, tree2.sort):
+              if sorts_compatible(screen, tl, tree1.sort, tree2.sort, assign):
                   assign.append(deepcopy((tree2, tree1)))
               else:
                   return False, [], []
@@ -379,7 +385,17 @@ def coerce_sorts(screen, tl, s1, s2):
             return s1
     return None # not coercible
     
-def sorts_compatible(screen, tl, s1, s2):
+def sorts_compatible(screen, tl, s1, s2, assign=None):
+    if isinstance(s1, VarNode) and s1.is_metavar:
+        if assign != None:
+            assign.append((s1, s2))
+        return True
+    if isinstance(s2, VarNode) and s2.is_metavar:
+        if assign != None:
+            assign.append((s2, s1))
+        return True
+    if isinstance(s1, Universum) or isinstance(s2, Universum):
+        return True
     t1 = isinstance(s1, TupleSort)
     t2 = isinstance(s2, TupleSort)
     if (t1 and not t2) or (t2 and not t1):
@@ -402,9 +418,9 @@ def sorts_compatible(screen, tl, s1, s2):
     c1 = isinstance(s1, SetSort)
     c2 = isinstance(s2, SetSort)
     if (c1 and not c2) or (c2 and not c1):
-         return False
+         return False 
     if c1:
-         return sorts_compatible(screen, tl, s1.sort, s2.sort)
+         return sorts_compatible(screen, tl, s1.sort, s2.sort, assign)
     if coerce_sorts(screen, tl, s1, s2):
         return True
     if coerce_sorts(screen, tl, s2, s1):
