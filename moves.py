@@ -1088,10 +1088,9 @@ def qz_copy_var(screen, tl, name, new_name):
               node_to_copy = tree
        if tree.left == None and node_to_copy != None: # this is the last node, make copy
           new_node = copy(node_to_copy)
+          new_node.var = deepcopy(new_node.var)
           new_node.var._name = new_name # rename
           new_node.left = None
-          new_node.constraint = deepcopy(new_node.constraint)
-          new_node.sort = deepcopy(new_node.sort)
           tree.left = new_node   
        tree = tree.left
     screen.pad0.pad[0] = str(qz)
@@ -1115,17 +1114,18 @@ def relabel(screen, tl, tree, tldict, update_qz=False):
         elif isinstance(tree, VarNode):
             process(tree.constraint)
             if tree.name() in vars_dict:
+                name = tree.name()
                 new_name = vars_dict[tree.name()]
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, tree.name(), new_name)
+                    qz_copy_var(screen, tl, name, new_name)
             elif tree.is_metavar:
                 name = tree.name()
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, tree.name(), new_name)
+                    qz_copy_var(screen, tl, name, new_name)
         elif isinstance(tree, SetBuilderNode):
             name = tree.left.left.name()
             new_name = relabel_varname(name, tldict)
