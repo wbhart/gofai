@@ -264,6 +264,7 @@ def subst(tree1, var, tree2):
         tree1.left = subst(tree1.left, var, tree2)
         return tree1
     if isinstance(tree1, VarNode):
+        tree1.constraint = subst(tree1.constraint, var, tree2)
         if tree1.name() == var.name():
             return deepcopy(tree2)
         else:

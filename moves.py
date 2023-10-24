@@ -1114,7 +1114,7 @@ def relabel(screen, tl, tree, tldict, update_qz=False):
             vars_dict[name] = new_name
             process(tree.var)
             process(tree.left)
-            process(tree.var.constraint)
+            process(tree.var.constraint) # seems to duplicate constraint proc below
         elif isinstance(tree, VarNode):
             process(tree.constraint)
             if tree.name() in vars_dict:
@@ -2254,7 +2254,8 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
                     add_sibling(ttree, j, len(tl2) - 1)
                 screen.pad2[j] = str(tl2[j])
-                if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode):
+                if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
+                   and not isinstance(tl2[j], ImpliesNode):
                     j += 1
                 while len(mv) > m:
                     mv.pop()
