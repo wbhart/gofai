@@ -683,7 +683,7 @@ Tags: #sets
 
 Title: Problem : A set containing an element strictly includes the empty set
 Tags: #sets #tests
-\forall S : Set \forall s \in universe(S)
+\forall S : Set, \forall s \in universe(S)
 ------------------------------
 s \in S
 ------------------------------
