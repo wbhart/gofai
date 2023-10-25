@@ -343,7 +343,7 @@ def propagate_sorts(screen, tl, tree0):
             if tree.domain:
                 tree.sort = TupleSort([tree.domain.sort, tree.codomain.sort])
             else:
-                tree.sort = tree.codomain.sort
+                tree.sort = TupleSort([None, tree.codomain.sort])
         if isinstance(tree, LRNode):
             if not propagate(tree.left):
                 return False
@@ -383,10 +383,7 @@ def propagate_sorts(screen, tl, tree0):
             elif isinstance(tree.constraint, TupleSort):
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, FunctionConstraint):
-                if not tree.constraint.domain:
-                    tree.sort = tree.constraint.sort
-                else:
-                    tree.sort = SetSort(tree.constraint.sort)
+                tree.sort = SetSort(tree.constraint.sort)
             elif isinstance(tree.constraint, NumberSort):
                 tree.sort = tree.constraint
         elif isinstance(tree, TupleComponentNode):
@@ -436,21 +433,21 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = PredSort()
             elif len(tree.args) == 0: # constant function
                 fn_sort = tree.var.sort
-                if isinstance(fn_sort.sort, TupleSort):
+                if fn_sort.sort.sets[0] != None:
                      screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                      return False
-                tree.sort = fn_sort.sort
+                tree.sort = fn_sort.sort.sets[1]
             else:
                 fn_sort = tree.var.sort
                 if isinstance(fn_sort, PredSort):
                     if len(tree.args) != 1:
-                        screen.dialog("Wrong number of arguments in predicate {tree.name()}")
+                        screen.dialog(f"Wrong number of arguments in predicate {tree.name()}")
                         return False
                     tree.sort = PredSort()
                 else:
                     domain_sort = fn_sort.sort.sets[0]
                     codomain_sort = fn_sort.sort.sets[1]
-                    if not isinstance(domain_sort, TupleSort):
+                    if domain_sort == None:
                         if len(tree.args) != 1:
                             screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                             return False

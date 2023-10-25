@@ -76,7 +76,7 @@ class FunctionConstraint(Constraint):
              # thought of as a set of tuples
              self.sort = TupleSort([domain.sort, codomain.sort])
          else:
-             self.sort = codomain.sort # function is a constant
+             self.sort = TupleSort([None, codomain.sort]) # function is a constant
 
     def __repr__(self):
          if self.domain == None:
