@@ -554,10 +554,10 @@ is_lower_bound(U, l)
 
 Title: Definition of set inclusion
 Tags: #sets #definition
-\forall A : Set \forall B : Set
+\forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
 ------------------------------
-A \subseteq B \iff (\forall x \in universe(A) x \in A \implies x \in B)
+A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 
 Title: Extensionality of sets
 Tags: #sets #definition
