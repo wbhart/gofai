@@ -94,7 +94,7 @@ class DomainTuple(Constraint):
     def __init__(self, sets):
          self.sets = sets
          # sort is that of a tuple to be passed to a function
-         self.sort = TupleSort([v.sort for v in sets])
+         self.sort = TupleSort(sets)
 
     def __repr__(self):
          n = len(self.sets)

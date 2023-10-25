@@ -127,8 +127,8 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
            isinstance(tree2.sort.sort, Universum):
             assign.append(deepcopy((tree2, tree1)))
         elif (isinstance(node_constraint(tree2), PredSort) and is_predicate(tree1)) \
-              or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
-              and (tree2.is_binder or not tree_contains_binder(tree1))):
+            or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
+            and (tree2.is_binder or not tree_contains_binder(tree1))):
               if sorts_compatible(screen, tl, tree1.sort, tree2.sort, assign):
                   assign.append(deepcopy((tree2, tree1)))
               else:
@@ -376,6 +376,9 @@ def sorts_equal(s1, s2):
     return False
 
 def coerce_sorts(screen, tl, s1, s2):
+    # special case, used only by sorts_compatible for function domains
+    if s1 == None and s2 == None:
+        return True
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2):
         return s1

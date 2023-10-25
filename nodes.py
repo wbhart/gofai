@@ -96,6 +96,7 @@ class VarNode(LeafNode):
         self.sort = None
         self.is_metavar = is_metavar # whether this is a metavariable
         self.is_binder = False # whether this node is a binder variable
+        self.skolemized = False # make sure we don't skolemize a variable twice
 
     def name(self):
         return self._name

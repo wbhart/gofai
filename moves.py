@@ -366,7 +366,7 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, FnApplNode): # check it is a universe of metavar
                 if tree.constraint.name() != "universe":
-                    screen.dialog(f"Variable {tree.name()} has invalid contraint")
+                    screen.dialog(f"Variable {tree.name()} has invalid constraint")
                     # leave sort as None
                     return False
             elif isinstance(tree.constraint, VarNode): # check it is in a set
@@ -2109,6 +2109,9 @@ def cleanup(screen, tl, ttree):
     if tl0:
         sq, deps, sk, ex = skolemize_quantifiers(tl0[0], deps, sk, [])
         qzext = []
+        if len(ex) > 0: # constraint of new skolem variable will need to be recomputed
+           tl.constraints_processed = (0, 0, 0)
+           tl.sorts_processed = (0, 0, 0)
         for i in range(len(ex)):
             n = sk[i][1] # number of dependencies
             domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps[0:n]]
@@ -2118,7 +2121,9 @@ def cleanup(screen, tl, ttree):
                 fn_constraint = FunctionConstraint(domain_constraints[0], ex[i].constraint)
             else:
                 fn_constraint = FunctionConstraint(None, ex[i].constraint)
-            qzext.append(ExistsNode(VarNode(ex[i].name(), fn_constraint), None))
+            var = VarNode(ex[i].name(), fn_constraint)
+            var.skolemized = True # make sure we don't skolemize it again
+            qzext.append(ExistsNode(var, None))
         if qzext:
             root = qzext[0]
             t = root
@@ -2288,7 +2293,7 @@ def cleanup(screen, tl, ttree):
 
 def skolemize_quantifiers(tree, deps, sk, ex):
     if isinstance(tree, ExistsNode):
-        if not tree.var.is_metavar: # check we didn't already deal with this var
+        if not tree.var.is_metavar and not tree.var.skolemized: # check we didn't already deal with this var
             sk.append((tree.var.name(), len(deps), True))
             ex.append(tree.var)
             return skolemize_quantifiers(tree.left, deps, sk, ex)

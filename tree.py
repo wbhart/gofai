@@ -38,7 +38,7 @@ class TreeList:
         self.tars = dict() # targets used
         self.stree = None # sort hierarchy
         self.constraints = None # dictionary of constraints for all vars in tableau
-        self.contraints_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
+        self.constraints_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
         self.sorts_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
         self.depmin = 0 # number of variables in qz from original tableau
         
