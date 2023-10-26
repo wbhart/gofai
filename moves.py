@@ -1448,7 +1448,7 @@ def clear_tableau(screen, tl):
     pad0.cursor_line = 0
     pad0.scroll_char = 0
     pad0.cursor_char = 0
-    pad1.scoll_line = 0
+    pad1.scroll_line = 0
     pad1.cursor_line = 0
     pad1.scroll_char = 0
     pad1.cursor_char = 0
@@ -1465,7 +1465,7 @@ def clear_tableau(screen, tl):
     pad0.refresh()
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
-
+    
 canonical_numconstraints = { "\\N" : "\\mathbb{N}",
                        "\\Z" : "\\mathbb{Z}",
                        "\\Q" : "\\mathbb{Q}",
