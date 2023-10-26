@@ -379,6 +379,8 @@ def coerce_sorts(screen, tl, s1, s2):
     # special case, used only by sorts_compatible for function domains
     if s1 == None and s2 == None:
         return True
+    if isinstance(s1, Universum): # everything is compatible with the Universum
+        return s1
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2):
         return s1
