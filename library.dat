@@ -1049,29 +1049,22 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cup complement(S) = universe(S)
+S \cup complement(S) = complement(\emptyset(X))
 
 Title: Intersection of a set with its complement is the empty set
 Tags: #sets
-\forall S : Set
+\forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cap complement(S) = \emptyset(universe(S))
+S \cap complement(S) = \emptyset(X)
 
 Title: Complement of a set equal to its universe is the empty set
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
-S = X
+S = complement(\emptyset(X))
 ------------------------------
 complement(S) = \emptyset(X)
-
-Title: Complement of empty set is universe
-Tags: #sets
-\forall X : Set
-------------------------------
-------------------------------
-complement(\emptyset(X)) = X
 
 Title: Complement reverses order of inclusion
 Tags: #sets
