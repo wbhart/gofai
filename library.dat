@@ -1204,7 +1204,7 @@ B \setminus A \subseteq C
 
 Title: Definition of set builder
 Tags: #sets #definition
-\forall X : Set, \forall x \in X, \forall P : Pred
+\forall X : Set, \forall x \in universe(X), \forall P : Pred
 ------------------------------
 ------------------------------
 (x \in {y \in X | P(y)}) \iff P(x) \wedge x \in X
