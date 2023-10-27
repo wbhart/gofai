@@ -13,6 +13,7 @@ from sorts import NumberSort, SetSort, TupleSort, PredSort, FunctionConstraint, 
      DomainTuple, Universum
 from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
      CompleteOrderedFieldClass, CompleteFieldClass, CompleteOrderedValuedFieldClass
+from copy import deepcopy
 
 # TODO: add \sum, \integral, \partial, derivative, subscripts (incl. braces)
 
@@ -237,7 +238,7 @@ class StatementVisitor(NodeVisitor):
     def visit_powerset(self, node, visited_children):
         return PowerSetNode(visited_children[2])
     def visit_set_builder(self, node, visited_children):
-        lmbda = LambdaNode(visited_children[2].left, visited_children[6])
+        lmbda = LambdaNode(deepcopy(visited_children[2].left), visited_children[6])
         return SetBuilderNode(visited_children[2], lmbda)
     def visit_neg_expression(self, node, visited_children):
         return NotNode(visited_children[2][0])

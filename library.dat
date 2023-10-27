@@ -1184,7 +1184,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-A \setminus universe(A) = \emptyset(universe(A))
+A \setminus complement(\emptyset(X)) = \emptyset(X)
 
 Title: Containment of sets is reversed upon taking differences with another set
 Tags: #sets

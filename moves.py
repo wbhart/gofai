@@ -1117,14 +1117,13 @@ def relabel(screen, tl, tree, tldict, update_qz=False):
             process(tree.var.constraint) # seems to duplicate constraint proc below
         elif isinstance(tree, VarNode):
             process(tree.constraint)
-            if tree.name() in vars_dict:
-                name = tree.name()
-                new_name = vars_dict[tree.name()]
+            name = tree.name()
+            if name in vars_dict:
+                new_name = vars_dict[name]
                 tree._name = new_name
                 if update_qz:
                     qz_copy_var(screen, tl, name, new_name)
             elif tree.is_metavar:
-                name = tree.name()
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
@@ -1149,7 +1148,8 @@ def relabel(screen, tl, tree, tldict, update_qz=False):
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree.var._name = new_name
-                qz_copy_var(screen, tl, name, new_name)
+                if update_qz:
+                    qz_copy_var(screen, tl, name, new_name)
             else:
                 process(tree.var)
             #######
