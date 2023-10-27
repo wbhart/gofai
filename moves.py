@@ -448,9 +448,9 @@ def propagate_sorts(screen, tl, tree0):
                     domain_sort = fn_sort.sort.sets[0]
                     codomain_sort = fn_sort.sort.sets[1]
                     if domain_sort == None:
-                        if len(tree.args) != 1:
-                            screen.dialog(f"Wrong number of arguments to function {tree.name()}")
-                            return False
+                        screen.dialog(f"Wrong number of arguments to function {tree.name()}")
+                        return False
+                    if len(tree.args) == 1:
                         if not coerce_sorts(screen, tl, domain_sort, tree.args[0].sort):
                             screen.dialog(f"Type mismatch for argument {0} of {tree.name()}")
                             return False
