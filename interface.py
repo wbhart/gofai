@@ -333,8 +333,11 @@ class Screen:
     def dialog(self, string):
         """Print the given status message and wait for a key to be pressed.
         """
-        self.status(string)
-        self.wait_key("\n")
+        n = curses.COLS - 2
+        strings = [string[i:i+n] for i in range(0, len(string), n)]
+        for s in strings:
+            self.status(s)
+            self.wait_key("\n")
         self.status("")
 
     def switch_window(self):

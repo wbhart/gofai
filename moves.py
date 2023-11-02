@@ -33,6 +33,7 @@ class TargetNode:
         self.deps = [] # other targets that the current proofs of this one depends on
         self.metavars = [] # metavariables used by this target
         self.unifies = [] # list of hyps this target unifies with on its own
+        self.quasideps = [] # fake target dependency (for targets P \wedge Q with deps that get split)
 
     def __str__(self):
         if not self.andlist:
@@ -201,7 +202,7 @@ def generate_pairs(V, L, r, i=0, last_chosen_c=None):
 
 def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
     hydra_heads = []
-    
+
     def find(ttree, path, head_found, head_killable):
         head_found = head_found or any(item in hydra for item in ttree.metavars)
         mv_ok = all(item in hydra for item in ttree.metavars)
@@ -247,10 +248,15 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 tree2 = tlist1[j]
                 unifies, assign, macros = unify(screen, tl, tree1, tree2, assign)
             else:
-                hyp = unifications[c][d]
+                if isinstance(tlist2[c], DeadNode):
+                    unifies = False
+                    break
                 if hyp == -1: # signifies tautology P = P
                     unifies, assign, macros = unify(screen, tl, tlist2[c].left, tlist2[c].right, assign)
                 else:
+                    if isinstance(tlist1[hyp], DeadNode):
+                        unifies = False
+                        break
                     unifies, assign, macros = unify(screen, tl, tlist2[c], tlist1[hyp], assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
             if not unifies:
@@ -958,12 +964,12 @@ def mark_proved(screen, tl, ttree, n):
                 screen.dialog("Target "+str(ttree.num)+" proved")
             for i in range(0, len(tl.tlist1.data)):
                 d1 = tl.tlist1.dependency(i)
-                if d1 != -1 and (n == -1 or deps_compatible(ttree, d1, n)):
+                if d1 != -1 and (n == -1 or deps_compatible(ttree, d1, n, False)):
                     tl.tlist1.data[i] = DeadNode()
                     screen.pad1.pad[i] = str(tl.tlist1.data[i])
             screen.pad1.refresh()
             for i in range(0, len(tl.tlist2.data)):
-                if n == -1 or deps_compatible(ttree, i, n): 
+                if n == -1 or deps_compatible(ttree, i, n, False): 
                     tl.tlist2.data[i] = DeadNode()
                     screen.pad2.pad[i] = str(tl.tlist2.data[i])
             screen.pad2.refresh()
@@ -977,12 +983,12 @@ def mark_proved(screen, tl, ttree, n):
                     screen.dialog("Target "+str(ttree.num)+" proved")
                 for i in range(0, len(tl.tlist1.data)):
                     d1 = tl.tlist1.dependency(i)
-                    if d1 != -1 and (ttree.num == -1 or deps_compatible(ttree, d1, ttree.num)):
+                    if d1 != -1 and (ttree.num == -1 or deps_compatible(ttree, d1, ttree.num, False)):
                         tl.tlist1.data[i] = DeadNode()
                         screen.pad1.pad[i] = str(tl.tlist1.data[i])
                 screen.pad1.refresh()
                 for i in range(0, len(tl.tlist2.data)):
-                    if ttree.num == -1 or deps_compatible(ttree, i, ttree.num): 
+                    if ttree.num == -1 or deps_compatible(ttree, i, ttree.num, False): 
                         tl.tlist2.data[i] = DeadNode()
                         screen.pad2.pad[i] = str(tl.tlist2.data[i])
                 screen.pad2.refresh()
@@ -990,18 +996,23 @@ def mark_proved(screen, tl, ttree, n):
             return True
     return False
 
-def deps_compatible(ttree, d1, d2):
-    def find(ttree, d1):
+def deps_compatible(ttree, d1, d2, allow_quasideps=True):
+    def find(ttree, d1, quasideps):
         if ttree.num == d1:
             return ttree
         for P in ttree.andlist:
-            t = find(P, d1)
+            t = find(P, d1, quasideps)
             if t:
                 return t
+        if quasideps: # allow searching via quasideps (from split target conjunctions)
+            for P in ttree.quasideps:
+                t = find(P, d1, quasideps)
+                if t:
+                    return t
         return None
 
-    root = find(ttree, d2)
-    if find(root, d1):
+    root = find(ttree, d2, False)
+    if find(root, d1, allow_quasideps):
         return True
     else:
         return False
@@ -1110,25 +1121,25 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
     # update_qz makes a copy of variable in QZ with new name, if set
     vars_dict = dict()
     
-    def process(tree):
+    def process(tree, constraint=False):
         if tree == None:
             return
         if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
             name = tree.var.name()
             new_name = relabel_varname(name, tldict)
             vars_dict[name] = new_name
-            process(tree.var)
-            process(tree.left)
-            process(tree.var.constraint) # seems to duplicate constraint proc below
+            process(tree.var, constraint)
+            process(tree.left, constraint)
+            #sprocess(tree.var.constraint, True) # seems to duplicate constraint proc below
         elif isinstance(tree, VarNode):
-            process(tree.constraint)
+            process(tree.constraint, True)
             name = tree.name()
             if name in vars_dict:
                 new_name = vars_dict[name]
                 tree._name = new_name
                 if update_qz:
                     qz_copy_var(screen, tl, extras, name, new_name)
-            elif tree.is_metavar:
+            elif not constraint and tree.is_metavar:
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
@@ -1138,11 +1149,11 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
             name = tree.left.left.name()
             new_name = relabel_varname(name, tldict)
             vars_dict[name] = new_name
-            process(tree.left)
-            process(tree.right)
+            process(tree.left, constraint)
+            process(tree.right, constraint)
         elif isinstance(tree, LRNode):
-            process(tree.left)
-            process(tree.right)
+            process(tree.left, constraint)
+            process(tree.right, constraint)
         elif isinstance(tree, FnApplNode):
             name = tree.name()
             if isinstance(tree.var, VarNode) and name in vars_dict:
@@ -1156,23 +1167,23 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
                 if update_qz:
                     qz_copy_var(screen, tl, extras, name, new_name)
             else:
-                process(tree.var)
+                process(tree.var, constraint)
             #######
             for v in tree.args:
-                process(v)
+                process(v, constraint)
         elif isinstance(tree, TupleNode):
             for v in tree.args:
-                process(v)
+                process(v, constraint)
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-            process(tree.sort)
+            process(tree.sort, constraint)
         elif isinstance(tree, SetSort):
-            process(tree.sort)
+            process(tree.sort, constraint)
         elif isinstance(tree, TupleSort):
             for v in tree.sets:
-                process(v)
+                process(v, constraint)
         elif isinstance(tree, FunctionConstraint):
-            process(tree.domain)
-            process(tree.codomain)
+            process(tree.domain, constraint)
+            process(tree.codomain, constraint)
     t = tree
     while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
         name = t.var.name()
@@ -1888,6 +1899,7 @@ def modus_ponens(screen, tl, ttree):
     if forward:
         qP1, u = unquantify(screen, tree1.left, True)
     else:
+        tree1 = relabel(screen, tl, univs, tree1, tl.vars, True)
         qP1, u = unquantify(screen, tree1.right, False)
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
     t = qP1
@@ -1953,7 +1965,7 @@ def modus_ponens(screen, tl, ttree):
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
+            #stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -1998,8 +2010,12 @@ def modus_tollens(screen, tl, ttree):
         screen.focus.refresh()
         return
     tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-    qP1, u = unquantify(screen, tree1.right, False) if forward else tree1.left
-    qP1 = complement_tree(qP1) if forward else complement_tree(unquantify(screen, qP1, True)[0])
+    if forward:
+        qP1, u = unquantify(screen, tree1.right, False)
+        qP1 = complement_tree(qP1)
+    else:
+        tree1 = relabel(screen, tl, univs, tree1, tl.vars, True)
+        qP1 = complement_tree(unquantify(screen, qP1, True)[0])
     t1 = qP1
     n = 1 # number of hypotheses/targets in conjunction
     while isinstance(t1, AndNode):
@@ -2063,7 +2079,7 @@ def modus_tollens(screen, tl, ttree):
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
+            #stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -2091,7 +2107,9 @@ def replace_tree(pad, tl, i, stmt):
 def add_sibling(ttree, i, j):
     for P in ttree.andlist:
         if P.num == i:
-            ttree.andlist.append(TargetNode(j))
+            jnode = TargetNode(j)
+            ttree.andlist.append(jnode)
+            P.quasideps.append(jnode) # set up fake dependency
             return True
     for P in ttree.andlist:
         if add_sibling(P, i, j):

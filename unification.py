@@ -269,23 +269,23 @@ def subst(tree1, var, tree2):
             return deepcopy(tree2)
         else:
             return tree1
+    elif isinstance(tree1, TupleComponentNode):
+        # special hack to expand (a, b)[0] as function application
+        if isinstance(tree1.left, VarNode) and tree1.left.name() == var.name() \
+             and isinstance(tree2, TupleNode):
+            n = tree1.right.value
+            if n >= len(tree2.args):
+                raise Exception("Invalid indexing in tuple")
+            return tree2.args[n]
+        p = deepcopy(tree1)
+        p.left = subst(p.left, var, tree2)
+        return p
     elif isinstance(tree1, FnApplNode):
         if tree1.name() == var.name() and is_predicate(tree2):
             p = deepcopy(tree2)
             for i in range(0, len(tree1.args)):
                 p = subst(p, var.args[i], tree1.args[i])
             return p
-        # TODO : come up with a proper Pair signature
-        # This is an unsound hack to allow pairs to be
-        # treated like functions
-        if tree1.name() == var.name() and isinstance(tree2, TupleNode):
-            if isinstance(tree1.args[0], NaturalNode):
-                n = tree1.args[0].value
-                if n >= len(tree2.args):
-                    raise Exception("Invalid indexing in tuple")
-                return tree2.args[n]
-            else:
-                raise Exception("Tuple is not a general function")
         p = deepcopy(tree1)
         p.var = subst(p.var, var, tree2)
         if not isinstance(p.var, VarNode) and not isinstance(p.var, FnApplNode):
