@@ -67,16 +67,24 @@ class Constraint:
 class Sort(Constraint):
     pass
 
+class CartesianConstraint(Constraint):
+    def __init__(self, sorts):
+         self.sorts = sorts # the elements of the cartesian product are the sorts
+         self.sort = None
+
+    def __repr__(self):
+         n = len(self.sorts)
+         return ' \\times '.join([repr(self.sorts[i]) for i in range(0, n)])
+   
+    def __str__(self):
+         n = len(self.sorts)
+         return '\u00d7'.join([str(self.sorts[i]) for i in range(0, n)])
+
 class FunctionConstraint(Constraint):
     def __init__(self, domain, codomain):
          self.domain = domain
          self.codomain = codomain
-         if domain:
-             # sort is that of single tuple in function which is
-             # thought of as a set of tuples
-             self.sort = TupleSort([domain.sort, codomain.sort])
-         else:
-             self.sort = TupleSort([None, codomain.sort]) # function is a constant
+         self.sort = None
 
     def __repr__(self):
          if self.domain == None:
@@ -94,7 +102,7 @@ class DomainTuple(Constraint):
     def __init__(self, sets):
          self.sets = sets
          # sort is that of a tuple to be passed to a function
-         self.sort = TupleSort(sets)
+         self.sort = None
 
     def __repr__(self):
          n = len(self.sets)
@@ -158,24 +166,24 @@ class NumberSort(Sort):
         return self._name
 
 class TupleSort(Sort):
-    def __init__(self, sets):
-         self.sets = sets
+    def __init__(self, sorts):
+         self.sorts = sorts
          self.sort = self
          self.typeclass = SetClass()
 
     def __repr__(self):
-         n = len(self.sets)
+         n = len(self.sorts)
          if n == 0:
              return "()"
          else:
-             return ' \\times '.join([repr(self.sets[i]) for i in range(0, n)])
+             return ' \\times '.join([repr(self.sorts[i]) for i in range(0, n)])
    
     def __str__(self):
-         n = len(self.sets)
+         n = len(self.sorts)
          if n == 0:
              return "()"
          else:
-             return '\u00d7'.join([str(self.sets[i]) for i in range(0, n)])
+             return '\u00d7'.join([str(self.sorts[i]) for i in range(0, n)])
 
 class PredSort(Sort):
     def __init__(self):

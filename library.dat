@@ -854,14 +854,14 @@ is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0]
 
 Title: Definition of cartesian product
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x \in S \times T
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
 ------------------------------
 is_pair(x, S, T) \iff x \in S \times T
 
 Title: Element of cartesian product has components in the sets
 Tags: #sets
-\forall S : Set, \forall T : Set, \forall x \in S \times T
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
 ------------------------------
 x \in S \times T \implies x[0] \in S \wedge x[1] \in T

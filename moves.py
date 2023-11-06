@@ -7,13 +7,13 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      SubseteqNode, SubsetneqNode, SupseteqNode, SupsetneqNode, \
      CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
      LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, DeadNode
-from sorts import FunctionConstraint, DomainTuple, SetSort, NumberSort, TupleSort, \
-     PredSort, Universum, Sort
+from sorts import FunctionConstraint, CartesianConstraint, DomainTuple, SetSort, \
+     NumberSort, TupleSort, PredSort, Universum, Sort
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate, sort_type_class, \
-     is_function_type, is_set_sort, sorts_compatible, coerce_sorts, sorts_equal, \
+     is_function_type, sorts_compatible, coerce_sorts, sorts_equal, \
      SortNode, find_sort, insert_sort
 
 from editor import edit
@@ -275,7 +275,7 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                 mv2 = metavars_used(tlist2[j])
                 if not any(v in tarmv for v in mv2):
                     dep = tl.tlist1.dependency(i)
-                    if dep == -1 or deps_compatible(ttree, j, dep):
+                    if dep == -1 or deps_compatible(ttree, j, dep, False):
                         unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
@@ -347,23 +347,27 @@ def propagate_sorts(screen, tl, tree0):
             if not ok:
                 return False
             if tree.domain:
-                tree.sort = TupleSort([tree.domain.sort, tree.codomain.sort])
+                tree.sort = TupleSort([tree.domain.sort.sort, tree.codomain.sort.sort])
             else:
-                tree.sort = TupleSort([None, tree.codomain.sort])
+                tree.sort = TupleSort([None, tree.codomain.sort.sort])
+        if isinstance(tree, CartesianConstraint):
+            for v in tree.sorts:
+                ok = propagate(v)
+                if not ok:
+                    return False
+            tree.sort = TupleSort([s.sort for s in tree.sorts])
         if isinstance(tree, LRNode):
             if not propagate(tree.left):
                 return False
             if not propagate(tree.right):
                 return False
-        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-            if not propagate(tree.var.constraint):
-                return False
+        #if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+        #    if not propagate(tree.var.constraint):
+        #        return False
         if isinstance(tree, SymbolNode):
+            propagate(tree.constraint)
             if tree.name() == "\\emptyset":
-                 if not isinstance(tree.sort, SetSort):
-                     screen.dialog("Invalid universe for empty set")
-                     return False
-                 propagate(tree.sort)
+                 tree.sort = SetSort(tree.constraint.sort)
         elif isinstance(tree, VarNode):
             if isinstance(tree.constraint, SetSort): # this variable is a set
                 insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
@@ -382,12 +386,11 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, Universum): # variable is in universum
                 tree.sort = tree.constraint
-            elif isinstance(tree.constraint, CartesianNode):
-                lsort = tree.constraint.left.sort.sort
-                rsort = tree.constraint.right.sort.sort
-                tree.sort = TupleSort([lsort, rsort])
-            elif isinstance(tree.constraint, TupleSort):
-                tree.sort = tree.constraint
+            elif isinstance(tree.constraint, CartesianConstraint):
+                propagate(tree.constraint)
+                tree.sort = tree.constraint.sort
+            #elif isinstance(tree.constraint, TupleSort):
+            #    tree.sort = tree.constraint
             elif isinstance(tree.constraint, FunctionConstraint):
                 tree.sort = SetSort(tree.constraint.sort)
             elif isinstance(tree.constraint, NumberSort):
@@ -398,10 +401,10 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Invalid tuple in component operation")
                 return False
             idx = tree.right.value
-            if idx < 0 or idx >= len(lsort.sets):
+            if idx < 0 or idx >= len(lsort.sorts):
                 screen.dialog("Invalid tuple index")
                 return False
-            tree.sort = lsort.sets[idx]
+            tree.sort = lsort.sorts[idx].sort
         elif isinstance(tree, CartesianNode):
             if not isinstance(tree.left.sort, SetSort) or \
                not isinstance(tree.right.sort, SetSort):
@@ -428,10 +431,10 @@ def propagate_sorts(screen, tl, tree0):
                not is_function_type(rsort):    
                 screen.dialog("Not a function in composition")
                 return False
-            if not sorts_equal(lsort.sort.sets[1], rsort.sort.sets[0]):
+            if not sorts_equal(lsort.sort.sorts[1], rsort.sort.sorts[0]):
                 screen.dialog("Type mismatch in function composition")
                 return False
-            tree.sort = SetSort(TupleSort([lsort.sort.sets[0], rsort.sort.sets[1]]))
+            tree.sort = SetSort(TupleSort([lsort.sort.sorts[0], rsort.sort.sorts[1]]))
         elif isinstance(tree, FnApplNode):
             if tree.name() in system_unary_functions or tree.name() in system_binary_functions:
                 tree.sort = tree.args[0].sort
@@ -439,10 +442,10 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = PredSort()
             elif len(tree.args) == 0: # constant function
                 fn_sort = tree.var.sort
-                if fn_sort.sort.sets[0] != None:
+                if fn_sort.sort.sorts[0] != None:
                      screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                      return False
-                tree.sort = fn_sort.sort.sets[1]
+                tree.sort = fn_sort.sort.sorts[1]
             else:
                 fn_sort = tree.var.sort
                 if isinstance(fn_sort, PredSort):
@@ -451,8 +454,8 @@ def propagate_sorts(screen, tl, tree0):
                         return False
                     tree.sort = PredSort()
                 else:
-                    domain_sort = fn_sort.sort.sets[0]
-                    codomain_sort = fn_sort.sort.sets[1]
+                    domain_sort = fn_sort.sort.sorts[0]
+                    codomain_sort = fn_sort.sort.sorts[1]
                     if domain_sort == None:
                         screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                         return False
@@ -461,11 +464,11 @@ def propagate_sorts(screen, tl, tree0):
                             screen.dialog(f"Type mismatch for argument {0} of {tree.name()}")
                             return False
                     else:
-                        if len(tree.args) != len(domain_sort.sets):
+                        if len(tree.args) != len(domain_sort.sorts):
                             screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                             return False
                         for i in range(len(tree.args)):
-                            if not coerce_sorts(screen, tl, domain_sort.sets[i], tree.args[i].sort):
+                            if not coerce_sorts(screen, tl, domain_sort.sorts[i], tree.args[i].sort):
                                 screen.dialog(f"Type mismatch for argument {i} of {tree.name()}")
                                 return False
                     tree.sort = codomain_sort
@@ -476,7 +479,7 @@ def propagate_sorts(screen, tl, tree0):
             # will be used for all sorts of things, so no point checking anything
             tree.sort = TupleSort([v.sort for v in tree.args])
         elif isinstance(tree, PowerSetNode):
-            if not is_set_sort(tree.left.sort):
+            if not isinstance(tree.left.sort, SetSort):
                 screen.dialog("Argument to power set not a set")
                 return False
             tree.sort = SetSort(tree.left.sort)
@@ -525,20 +528,20 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Logical operator requires predicates")
                 return False
             tree.sort = PredSort()
-        elif isinstance(tree, CartesianNode):
-            lsort = tree.left.sort
-            rsort = tree.right.sort
-            if not is_set_sort(lsort) or \
-               not is_set_sort(rsort):
-                screen.dialog("Arguments to cartesian product are not sets")
-                return False
-            tree.sort = SetSort(TupleSort([lsort.sort, rsort.sort]))
+        #elif isinstance(tree, CartesianNode):
+        #    lsort = tree.left.sort
+        #    rsort = tree.right.sort
+        #    if not isinstance(lsort, SetSort) or \
+        #       not isinstance(rsort, SetSort):
+        #        screen.dialog("Arguments to cartesian product are not sets")
+        #        return False
+        #    tree.sort = SetSort(TupleSort([lsort.sort, rsort.sort]))
         elif isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) or \
              isinstance(tree, DiffNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
-            if not is_set_sort(lsort) or \
-               not is_set_sort(rsort):
+            if not isinstance(lsort, SetSort) or \
+               not isinstance(rsort, SetSort):
                 screen.dialog("Arguments to set operation are not sets")
                 return False
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
@@ -549,8 +552,8 @@ def propagate_sorts(screen, tl, tree0):
              isinstance(tree, SupsetneqNode) or isinstance(tree, SupseteqNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
-            if not is_set_sort(lsort) or \
-               not is_set_sort(rsort):
+            if not isinstance(lsort, SetSort) or \
+               not isinstance(rsort, SetSort):
                 screen.dialog("Arguments to set relation are not sets")
                 return False
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
@@ -558,7 +561,7 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             tree.sort = PredSort()
         elif isinstance(tree, SetBuilderNode):
-            if not is_set_sort(tree.left.right.sort):
+            if not isinstance(tree.left.right.sort, SetSort):
                 screen.dialog("Set comprehension must range over set")
                 return False
             tree.sort = tree.left.right.sort
@@ -591,10 +594,9 @@ def propagate_sorts(screen, tl, tree0):
         elif isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
             tree.sort = PredSort()
         elif isinstance(tree, ElemNode):
-            if not is_set_sort(tree.right.sort):
-                screen.dialog("Not a set in element relation")
+            if not isinstance(tree.right.sort, SetSort):
                 return False
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
                 screen.dialog("Type mismatch in element relation")
                 return False
             tree.sort = PredSort()
@@ -602,8 +604,8 @@ def propagate_sorts(screen, tl, tree0):
             if tree.sort != tree:
                 propagate(tree.sort)
         elif isinstance(tree, TupleSort):
-            for i in range(len(tree.sets)):
-                propagate(tree.sets[i])
+            for i in range(len(tree.sorts)):
+                propagate(tree.sorts[i])
         return True
     return propagate(tree0)
 
@@ -840,7 +842,7 @@ def fill_macros(screen, tl):
             tree.right = fill(tree.right, data)
             return tree
         elif isinstance(tree, SymbolNode):
-            tree.sort = SetSort(fill(tree.sort.sort, data))
+            tree.constraint = fill(tree.constraint, data)
             return tree
         elif isinstance(tree, LeafNode):
             return tree
@@ -1038,13 +1040,13 @@ def check_contradictions(screen, tl, ttree, tarmv):
                             else:
                                 mark_proved(screen, tl, ttree, d2)
                     elif d1 >= 0 and d2 >= 0:
-                        if deps_compatible(ttree, d1, d2):
+                        if deps_compatible(ttree, d1, d2, False):
                             tree2 = tlist1[j]
                             unifies, assign, macros = unify(screen, tl, tree1, tree2)
                             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                             if unifies: # we found a contradiction
                                 mark_proved(screen, tl, ttree, d1)
-                        elif deps_compatible(ttree, d2, d1):
+                        elif deps_compatible(ttree, d2, d1, False):
                             tree2 = tlist1[j]
                             unifies, assign, macros = unify(screen, tl, tree1, tree2)
                             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
@@ -1130,7 +1132,7 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
             vars_dict[name] = new_name
             process(tree.var, constraint)
             process(tree.left, constraint)
-            #sprocess(tree.var.constraint, True) # seems to duplicate constraint proc below
+            #process(tree.var.constraint, True) # seems to duplicate constraint proc below
         elif isinstance(tree, VarNode):
             process(tree.constraint, True)
             name = tree.name()
@@ -1157,7 +1159,8 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
         elif isinstance(tree, FnApplNode):
             name = tree.name()
             if isinstance(tree.var, VarNode) and name in vars_dict:
-                tree.var._name = vars_dict[name] # TODO : add setter for assignment
+                new_name = vars_dict[name] # TODO : add setter for assignment
+                tree.var._name = new_name
                 if update_qz:
                     qz_copy_var(screen, tl, extras, name, new_name)
             elif tree.is_metavar:
@@ -1179,11 +1182,14 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
         elif isinstance(tree, SetSort):
             process(tree.sort, constraint)
         elif isinstance(tree, TupleSort):
-            for v in tree.sets:
+            for v in tree.sorts:
                 process(v, constraint)
         elif isinstance(tree, FunctionConstraint):
             process(tree.domain, constraint)
             process(tree.codomain, constraint)
+        elif isinstance(tree, CartesianConstraint):
+            for v in tree.sorts:
+                process(v, constraint)
     t = tree
     while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
         name = t.var.name()
@@ -1241,6 +1247,9 @@ def relabel_constraints(screen, tl, tree):
         elif isinstance(tree, FunctionConstraint):
             process(tree.domain)
             process(tree.codomain)
+        elif isinstance(tree, CartesianConstraint):
+            for v in tree.sorts:
+                process(v)
         elif isinstance(tree, DomainTuple):
             for v in tree.sets:
                 process(v)
@@ -2472,8 +2481,13 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
         rollback()
         return tree
     elif isinstance(tree, TupleSort):
-        for i in range(len(tree.sets)):
-            tree.sets[i] = skolemize_statement(screen, tree.sets[i], deps, depmin, sk, qz, mv, positive, blocked)
+        for i in range(len(tree.sorts)):
+            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
+        rollback()
+        return tree
+    elif isinstance(tree, CartesianConstraint):
+        for i in range(len(tree.sorts)):
+            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':

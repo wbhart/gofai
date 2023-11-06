@@ -8,7 +8,8 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
 
-from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum
+from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum, \
+                  CartesianConstraint
 
 def is_expression(tree):
     if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
@@ -181,13 +182,15 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             assign = ass
             macros = mac
     elif isinstance(tree1, Universum):
-        if isinstance(tree2, Sort) or (isinstance(tree2, VarNode) and is_set_sort(tree2.sort)):
+        if isinstance(tree2, Sort) or (isinstance(tree2, VarNode) and \
+           isinstance(tree2.sort, SetSort)):
             pass
             # TODO: do assignment of metavariable (type variable)
         else:
             return False, [], []
     elif isinstance(tree2, Universum):
-        if isinstance(tree1, Sort) or (isinstance(tree1, VarNode) and is_set_sort(tree1.sort)):
+        if isinstance(tree1, Sort) or (isinstance(tree1, VarNode) and \
+           isinstance(tree1.sort, SetSort)):
             pass
             # TODO: do assignment of metavariable (type variable)
         else:
@@ -211,10 +214,10 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             if not unified:
                 return False, [], []
         elif isinstance(tree1, TupleSort):
-            if len(tree1.sets) != len(tree2.sets):
+            if len(tree1.sorts) != len(tree2.sorts):
                 return False, [], []
-            for i in range(len(tree1.sets)):
-                unified, assign, macros = trees_unify(screen, tl, tree1.sets[i], tree2.sets[i], assign, macros)
+            for i in range(len(tree1.sorts)):
+                unified, assign, macros = trees_unify(screen, tl, tree1.sorts[i], tree2.sorts[i], assign, macros)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, TupleNode):
@@ -261,6 +264,8 @@ def subst(tree1, var, tree2):
         return tree1
     if isinstance(tree1, ForallNode) or isinstance(tree1, ExistsNode):
         tree1.var.constraint = subst(tree1.var.constraint, var, tree2)
+        if isinstance(tree1.var.constraint, TupleSort):
+            tree1.var.constraint = CartesianConstraint(tree1.var.constraint.sorts)
         tree1.left = subst(tree1.left, var, tree2)
         return tree1
     if isinstance(tree1, VarNode):
@@ -303,15 +308,19 @@ def subst(tree1, var, tree2):
         tree1.right = subst(tree1.right, var, tree2)
         return tree1
     elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
-        tree1.sort = subst(tree1.sort, var, tree2)
+        tree1.constraint = subst(tree1.constraint, var, tree2)
         return tree1
     elif isinstance(tree1, SetSort):
         if tree1.sort != tree1:
             tree1.sort = subst(tree1.sort, var, tree2)
         return tree1
     elif isinstance(tree1, TupleSort):
-        for i in range(len(tree1.sets)):
-            tree1.sets[i] = subst(tree1.sets[i], var, tree2)
+        for i in range(len(tree1.sorts)):
+            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
+        return tree1
+    elif isinstance(tree1, CartesianConstraint):
+        for i in range(len(tree1.sorts)):
+            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
         return tree1
     else:
         return tree1
@@ -352,10 +361,7 @@ def sort_type_class(sort):
     
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
-                   len(sort.sort.sets) == 2
-
-def is_set_sort(sort):
-    return isinstance(sort, SetSort) or isinstance(sort, NumberSort) or isinstance(sort, Universum)
+                   len(sort.sort.sorts) == 2
 
 def sorts_equal(s1, s2):
     if type(s1) != type(s2):
@@ -365,21 +371,27 @@ def sorts_equal(s1, s2):
     elif isinstance(s1, SetSort):
         return sorts_equal(s1.sort, s2.sort)
     elif isinstance(s1, TupleSort):
-        if len(s1.sets) != len(s2.sets):
+        if len(s1.sorts) != len(s2.sorts):
             return False
-        for i in range(len(s1.sets)):
-            if not sorts_equal(s1.sets[i], s2.sets[i]):
+        for i in range(len(s1.sorts)):
+            if not sorts_equal(s1.sorts[i], s2.sorts[i]):
                 return False
         return True
     elif isinstance(s1, PredSort) or isinstance(s1, Universum):
         return True
     return False
 
-def coerce_sorts(screen, tl, s1, s2):
+def coerce_sorts(screen, tl, s1, s2, assign=None):
     # special case, used only by sorts_compatible for function domains
     if s1 == None and s2 == None:
         return True
-    if isinstance(s1, Universum): # everything is compatible with the Universum
+    if isinstance(s1, VarNode) and s1.is_metavar:
+        if assign != None:
+            assign.append((s1, s2))
+        return s2
+    if isinstance(s2, VarNode) and s2.is_metavar:
+        if assign != None:
+            assign.append((s2, s1))
         return s1
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2):
@@ -391,7 +403,7 @@ def coerce_sorts(screen, tl, s1, s2):
             return s1
     return None # not coercible
     
-def sorts_compatible(screen, tl, s1, s2, assign=None):
+def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
     if isinstance(s1, VarNode) and s1.is_metavar:
         if assign != None:
             assign.append((s1, s2))
@@ -400,24 +412,22 @@ def sorts_compatible(screen, tl, s1, s2, assign=None):
         if assign != None:
             assign.append((s2, s1))
         return True
-    if isinstance(s1, Universum) or isinstance(s2, Universum):
-        return True
     t1 = isinstance(s1, TupleSort)
     t2 = isinstance(s2, TupleSort)
     if (t1 and not t2) or (t2 and not t1):
         return False
     if t1:
-        if len(s1.sets) != len(s2.sets):
+        if len(s1.sorts) != len(s2.sorts):
             return False 
         compatible = True
-        for i in range(len(s1.sets)):
-            if not coerce_sorts(screen, tl, s1.sets[i], s2.sets[i]):
+        for i in range(len(s1.sorts)):
+            if not coerce_sorts(screen, tl, s1.sorts[i], s2.sorts[i]):
                 compatible = False
                 break
         if not compatible:
             compatible = True
-            for i in range(len(s1.sets)):
-                if not coerce_sorts(screen, tl, s2.sets[i], s1.sets[i]):
+            for i in range(len(s1.sorts)):
+                if not coerce_sorts(screen, tl, s2.sorts[i], s1.sorts[i]):
                     compatible = False
                     break
         return compatible
@@ -426,7 +436,7 @@ def sorts_compatible(screen, tl, s1, s2, assign=None):
     if (c1 and not c2) or (c2 and not c1):
          return False 
     if c1:
-         return sorts_compatible(screen, tl, s1.sort, s2.sort, assign)
+         return sorts_compatible(screen, tl, s1.sort, s2.sort, assign, both_dirs)
     if coerce_sorts(screen, tl, s1, s2):
         return True
     if coerce_sorts(screen, tl, s2, s1):

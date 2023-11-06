@@ -70,22 +70,21 @@ class DeadNode(LeafNode):
 class SymbolNode(LeafNode):
     def __init__(self, name, constraint):
         self._name = name
+        self.constraint = constraint
         self.sort = None
-        if name == "\\emptyset":
-            self.sort = constraint
 
     def name(self):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and not isinstance(self.sort.sort, Universum):
-            return univar(self._name)+"("+str(self.sort.sort)+")"
+        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum):
+            return univar(self._name)+"("+str(self.constraint)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and not isinstance(self.sort.sort, Universum):
-            return self._name+"("+repr(self.sort.sort.sort)+")"
+        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum):
+            return self._name+"("+repr(self.constraint)+")"
         else:
             return self._name
 
@@ -111,7 +110,7 @@ class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
         self.constraint = NumberSort('\\mathbb{N}', OrderedSemiringClass())
-        self.sort = self.constraint
+        self.sort = SetSort(self.constraint)
 
     def __str__(self):
         return str(self.value)

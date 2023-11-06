@@ -10,7 +10,7 @@ from nodes import AddNode, AndNode, NaturalNode, DiffNode, DivNode, \
      SymbolNode, CartesianNode, TupleNode, PowerSetNode, SetBuilderNode, CircNode, \
      LambdaNode, TupleComponentNode, LRNode
 from sorts import NumberSort, SetSort, TupleSort, PredSort, FunctionConstraint, \
-     DomainTuple, Universum
+     CartesianConstraint, DomainTuple, Universum
 from typeclass import OrderedSemiringClass, OrderedFieldClass, OrderedRingClass, \
      CompleteOrderedFieldClass, CompleteFieldClass, CompleteOrderedValuedFieldClass
 from copy import deepcopy
@@ -24,7 +24,10 @@ statement = Grammar(
     universal = forall space ","? space statement
     exists = "\\exists" space (elem_var / set_var / var)
     forall = "\\forall" space (elem_var / set_var / var)
-    elem_var = var space "\\in" space set_expression
+    elem_var = var space "\\in" space elem_constraint
+    elem_constraint = cartesian_constraint / constraint_set
+    constraint_set = universe / domain / codomain / var / number_constraint / universum / powerset
+    cartesian_constraint = (constraint_set space "\\times" space)+ constraint_set
     set_var = var space ":" space constraint
     constraint = fn_constraint / basic_constraint
     basic_constraint = number_constraint / set_constraint / pred_constraint
@@ -82,7 +85,7 @@ statement = Grammar(
     natural = ~"[1-9][0-9]*" / ~"0"
     pred_name = ~"is[A-Za-z0-9_]*" / ~"has[A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi"
     var = !"complement" (~"[A-Za-z_][A-Za-z0-9_]*" / "\\alpha" / "\\beta" / "\\gamma" / "\\delta" / "\\epsilon" / "\\zeta" / "\\eta" / "\\kappa" / "\\lambda" / "\\mu" / "\\nu" / "\\psi" / "\\rho" / "\\sigma" / "\\chi" / "\\omega" / "\\tau" / "\\psi" / "\\phi")
-    empty_set = "\\emptyset" ("(" space (universe / set_cartesian / var / number_constraint) space ")")?
+    empty_set = "\\emptyset" ("(" space (universe / cartesian_constraint / var / number_constraint) space ")")?
     universum = "\\mathcal{U}"
     space = ~"\s*"
     """)
@@ -171,6 +174,10 @@ class StatementVisitor(NodeVisitor):
         return visited_children[0]
     def visit_basic_constraint(self, node, visited_children):
         return visited_children[0]
+    def visit_elem_constraint(self, node, visited_children):
+        return visited_children[0]
+    def visit_constraint_set(self, node, visited_children):
+        return visited_children[0]
     def visit_domain_constraint(self, node, visited_children):
         return visited_children[0]
     def visit_codomain_constraint(self, node, visited_children):
@@ -190,6 +197,10 @@ class StatementVisitor(NodeVisitor):
             return SetSort(constraint)
     def visit_pred_constraint(self, node, visited_children):
         return PredSort()
+    def visit_cartesian_constraint(self, node, visited_children):
+        sets = [v[0] for v in visited_children[0]]
+        sets.append(visited_children[1])
+        return CartesianConstraint(sets)
     def visit_universe(self, node, visited_children):
         return FnApplNode(VarNode("universe"), [visited_children[2]])
     def visit_domain(self, node, visited_children):
@@ -340,13 +351,13 @@ class StatementVisitor(NodeVisitor):
     def visit_empty_set(self, node, visited_children):
         params = visited_children[1]
         if isinstance(params, Node):
-            set_constraint = SetSort(Universum())
+            set_constraint = Universum()
         else:
             constraint = params[0][2][0]
             if isinstance(constraint, CartesianNode):
-                set_constraint = SetSort(TupleSort([constraint.left, constraint.right]))
+                set_constraint = CartesianConstraint([constraint.left, constraint.right])
             else:
-                set_constraint = SetSort(constraint)
+                set_constraint = constraint
         return SymbolNode("\\emptyset", set_constraint)
     def visit_universum(self, node, visited_children):
         return Universum()
