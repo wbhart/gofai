@@ -660,7 +660,7 @@ Tags: #sets
 
 Title: Definition of set union
 Tags: #sets #definition
-\forall S : Set \forall T : Set \forall x \in universe(S)
+\forall X : Set, \forall S : Set(X) \forall T : Set(X) \forall x \in X
 ------------------------------
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
@@ -759,7 +759,7 @@ S = \emptyset(universe(S)) \wedge T = \emptyset(universe(S))
 
 Title: Definition of set intersection
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall x \in universe(S)
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
 x \in S \cap T \iff x \in S \wedge x \in T
@@ -1018,10 +1018,10 @@ C \subseteq T
 
 Title: Definition of complement
 Tags: #sets #definition
-\forall S : Set, \forall x \in universe(S)
+\forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
+x \in complement(S) \iff x \in X \wedge \neg(x \in S)
 
 Title: Definition of set universe
 Tags: #sets

@@ -404,6 +404,8 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
     return None # not coercible
     
 def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
+    if isinstance(s1, Universum) and isinstance(s2, Universum):
+        return True
     if isinstance(s1, VarNode) and s1.is_metavar:
         if assign != None:
             assign.append((s1, s2))

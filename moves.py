@@ -595,6 +595,7 @@ def propagate_sorts(screen, tl, tree0):
             tree.sort = PredSort()
         elif isinstance(tree, ElemNode):
             if not isinstance(tree.right.sort, SetSort):
+                screen.dialog("Not a set in element relation")
                 return False
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
                 screen.dialog("Type mismatch in element relation")
