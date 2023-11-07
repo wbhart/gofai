@@ -317,6 +317,16 @@ def initialise_sorts(screen, tl):
     insert_sort(screen, tl, Q, Z)
     insert_sort(screen, tl, Z, N)   
 
+def element_universe(x):
+    if isinstance(x, VarNode):
+        return x.sort.sort
+    elif isinstance(x, FunctionConstraint):
+        return x.sort # the type of a function constraint must be the type of a function
+    elif isinstance(x, CartesianConstraint):
+        return x.sort # ?? may need to take universes of components ??
+    else: # Universum, NumberSort, TupleSort are their own sorts
+        return x
+
 def propagate_sorts(screen, tl, tree0):
     stree = tl.stree
 
@@ -347,9 +357,9 @@ def propagate_sorts(screen, tl, tree0):
             if not ok:
                 return False
             if tree.domain:
-                tree.sort = TupleSort([tree.domain.sort.sort, tree.codomain.sort.sort])
+                tree.sort = SetSort(TupleSort([element_universe(tree.domain), element_universe(tree.codomain)]))
             else:
-                tree.sort = TupleSort([None, tree.codomain.sort.sort])
+                tree.sort = SetSort(TupleSort([None, element_universe(tree.codomain)]))
         if isinstance(tree, CartesianConstraint):
             for v in tree.sorts:
                 ok = propagate(v)
@@ -392,7 +402,7 @@ def propagate_sorts(screen, tl, tree0):
             #elif isinstance(tree.constraint, TupleSort):
             #    tree.sort = tree.constraint
             elif isinstance(tree.constraint, FunctionConstraint):
-                tree.sort = SetSort(tree.constraint.sort)
+                tree.sort = tree.constraint.sort
             elif isinstance(tree.constraint, NumberSort):
                 tree.sort = tree.constraint
         elif isinstance(tree, TupleComponentNode):
@@ -442,10 +452,10 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = PredSort()
             elif len(tree.args) == 0: # constant function
                 fn_sort = tree.var.sort
-                if fn_sort.sort.sorts[0] != None:
+                if fn_sort.sort.sort.sorts[0] != None:
                      screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                      return False
-                tree.sort = fn_sort.sort.sorts[1]
+                tree.sort = fn_sort.sort.sort.sorts[1]
             else:
                 fn_sort = tree.var.sort
                 if isinstance(fn_sort, PredSort):
@@ -454,8 +464,8 @@ def propagate_sorts(screen, tl, tree0):
                         return False
                     tree.sort = PredSort()
                 else:
-                    domain_sort = fn_sort.sort.sorts[0]
-                    codomain_sort = fn_sort.sort.sorts[1]
+                    domain_sort = fn_sort.sort.sort.sorts[0]
+                    codomain_sort = fn_sort.sort.sort.sorts[1]
                     if domain_sort == None:
                         screen.dialog(f"Wrong number of arguments to function {tree.name()}")
                         return False
