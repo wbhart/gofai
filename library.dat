@@ -618,7 +618,7 @@ A \subsetneq C
 
 Title: Element of a set is an element of a superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x \in universe(A)
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
 A \subseteq B
 x \in A
@@ -627,7 +627,7 @@ x \in B
 
 Title: Element of a set is an element of a strict superset
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall x \in universe(A)
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
 A \subsetneq B
 x \in A
@@ -1232,7 +1232,7 @@ is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
 Title: Function value in codomain
 Tags: #sets #functions
-\forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall a \in X
 ------------------------------
 is_function(f, A, B) \wedge a \in A
 ------------------------------

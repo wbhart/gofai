@@ -2406,11 +2406,13 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
                 if not blocked:
                     tree.var.is_metavar = True
                     mv.append(tree.var.name())
-                    qz.append(ExistsNode(VarNode(tree.var.name(), fn_constraint, True), None))
+                    v = VarNode(tree.var.name(), fn_constraint, True)
+                    qz.append(ExistsNode(v, None))
                 if isinstance(tree.left, ImpliesNode) or isinstance(tree.left, OrNode):
                     is_blocked = True
             else:
-                qz.append(ForallNode(VarNode(tree.var.name(), fn_constraint, False), None))
+                v = VarNode(tree.var.name(), fn_constraint, False)
+                qz.append(ForallNode(v, None))
         tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
         tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked)
         rollback()
@@ -2451,7 +2453,6 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
         rollback()
         return tree
     elif isinstance(tree, VarNode):
-        is_meta = False
         if tree.name() in mv:
             is_meta = True
             tree.is_metavar = True

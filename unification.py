@@ -117,7 +117,8 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
               or (not isinstance(node_constraint(tree1), PredSort) and is_expression(tree2)
               and (tree1.is_binder or not tree_contains_binder(tree2))):
                   if sorts_compatible(screen, tl, tree1.sort, tree2.sort, assign):
-                      assign.append(deepcopy((tree1, tree2)))
+                      if not isinstance(tree2, VarNode) or tree1.name() != tree2.name():
+                           assign.append(deepcopy((tree1, tree2)))
                   else:
                       return False, [], []
         else:
@@ -131,7 +132,8 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
             or (not isinstance(node_constraint(tree2), PredSort) and is_expression(tree1)
             and (tree2.is_binder or not tree_contains_binder(tree1))):
               if sorts_compatible(screen, tl, tree1.sort, tree2.sort, assign):
-                  assign.append(deepcopy((tree2, tree1)))
+                  if not isinstance(tree1, VarNode) or tree2.name() != tree1.name():
+                       assign.append(deepcopy((tree2, tree1)))
               else:
                   return False, [], []
         else:

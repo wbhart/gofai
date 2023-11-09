@@ -249,6 +249,7 @@ class StatementVisitor(NodeVisitor):
     def visit_powerset(self, node, visited_children):
         return PowerSetNode(visited_children[2])
     def visit_set_builder(self, node, visited_children):
+        visited_children[2].left.is_binder = True
         lmbda = LambdaNode(deepcopy(visited_children[2].left), visited_children[6])
         return SetBuilderNode(visited_children[2], lmbda)
     def visit_neg_expression(self, node, visited_children):
