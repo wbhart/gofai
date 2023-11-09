@@ -918,8 +918,8 @@ def mark_proved(screen, tl, ttree, n):
                 ttree.proved = True
                 if ttree.num >= 0:
                     screen.dialog("Target "+str(ttree.num)+" proved")
-                for i in range(0, len(tl.tlist1.data)):
-                    if deps_defunct(screen, tl, ttree, i, ttree.num):
+                for i in range(0, len(tl.tlist2.data)):
+                    if deps_defunct(screen, tl, ttree, ttree.num, i):
                         tl.tlist1.data[i] = DeadNode()
                         screen.pad1.pad[i] = str(tl.tlist1.data[i])
                 screen.pad1.refresh()
@@ -1769,13 +1769,21 @@ def unquantify(screen, tree, positive):
     return tree, univs
 
 def target_compatible(screen, tl, ttree, dep_list, j, forward):
-    if forward: # return intersection of lists
+    if forward: # return "intersection" of lists
         deps_j = tl.tlist1.dependency(j) # targets provable from j
         if -1 in deps_j:
             return dep_list
         if -1 in dep_list:
             return deps_j
-        return list(filter(i in deps_i, deps_j))
+        deps = []
+        for d1 in deps_j:
+            for d2 in dep_list:
+               if d1 < d2:
+                   d1, d2 = d2, d1
+               if target_depends(screen, tl, ttree, d1, d2):
+                   if d1 not in deps:
+                       deps.append(d1)
+        return deps
     else: # return original list or [] depending if target j is target compatible
         if -1 in dep_list:
             return dep_list
@@ -1783,17 +1791,6 @@ def target_compatible(screen, tl, ttree, dep_list, j, forward):
             if target_depends(screen, tl, ttree, j, d):
                 return dep_list
         return None
-        
-
-    if forward:
-        d2 = tlist1.dependency(j)
-    else:
-        d2 = j
-    if d1 < d2:
-        d1, d2 = d2, d1
-    if d1 >= 0 and d2 >= 0 and not deps_compatible(screen, tl, ttree, d1, d2):
-       return None
-    return d1
 
 """ Not needed at present
 def negate_target(screen, tl):
@@ -1852,7 +1849,7 @@ def modus_ponens(screen, tl, ttree):
         return
     dep = tlist1.dependency(line1)
     dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-    if dep == None:
+    if not dep:
         screen.dialog("Not target compatible. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -1883,7 +1880,7 @@ def modus_ponens(screen, tl, ttree):
             screen.focus.refresh()
             return
         dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-        if dep == None:
+        if not dep:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
             screen.focus.refresh()
@@ -1916,15 +1913,10 @@ def modus_ponens(screen, tl, ttree):
     else:
         stmt = substitute(deepcopy(tree1.left), assign)
         if line2 in tl.tars: # we already reasoned from this target
-            #screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
-            #screen.restore_state()
-            #screen.focus.refresh()
-            #return
             stmt = complement_tree(stmt)
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            #stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -1963,7 +1955,7 @@ def modus_tollens(screen, tl, ttree):
         return
     dep = tlist1.dependency(line1)
     dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-    if dep == None:
+    if not dep:
         screen.dialog("Not target compatible. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -1995,7 +1987,7 @@ def modus_tollens(screen, tl, ttree):
             screen.focus.refresh()
             return
         dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-        if dep == None:
+        if not dep:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
             screen.focus.refresh()
@@ -2028,15 +2020,10 @@ def modus_tollens(screen, tl, ttree):
     else:
         stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
         if line2 in tl.tars: # we already reasoned from this target
-            #screen.dialog("Can't reason back from target more than once. Press Enter to continue.")
-            #screen.restore_state()
-            #screen.focus.refresh()
-            #return
             stmt = complement_tree(stmt)
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            #stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -2256,6 +2243,8 @@ def cleanup(screen, tl, ttree):
                     mv.pop()
     
     if qz:
+        tl.constraints_processed = (0, 0, 0)
+        tl.sorts_processed = (0, 0, 0)
         if tl0:
             t = tl0[0]
             while t.left:
