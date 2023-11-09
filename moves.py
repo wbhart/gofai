@@ -959,7 +959,15 @@ def deps_intersect(screen, tl, ttree, i, j):
          return deps_j
     if -1 in deps_j:
          return deps_i
-    return list(filter(lambda d: d in deps_i, deps_j))
+    deps = []
+    for d1 in deps_j:
+        for d2 in deps_i:
+            if d1 < d2:
+                d1, d2 = d2, d1
+            if target_depends(screen, tl, ttree, d1, d2):
+                if d1 not in deps:
+                    deps.append(d1)
+    return deps
 
 def deps_defunct(screen, tl, ttree, i, j):
     deps_j = tl.tlist1.dependency(j) # targets provable by hyp j
