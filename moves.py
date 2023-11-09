@@ -1974,7 +1974,7 @@ def modus_tollens(screen, tl, ttree):
         qP1 = complement_tree(qP1)
     else:
         tree1 = relabel(screen, tl, univs, tree1, tl.vars, True)
-        qP1 = complement_tree(unquantify(screen, qP1, True)[0])
+        qP1 = complement_tree(unquantify(screen, tree1.left, True)[0])
     t1 = qP1
     n = 1 # number of hypotheses/targets in conjunction
     while isinstance(t1, AndNode):
