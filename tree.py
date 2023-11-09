@@ -23,7 +23,7 @@ class TList:
     def dependency(self, i):
         if i in self.dep:
             return self.dep[i]
-        return -1 
+        return [-1] 
 
 class TreeList:
     """Structure containing TreeLists for each of the windows 0-2 and which one

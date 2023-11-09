@@ -30,10 +30,8 @@ class TargetNode:
         self.num = num # which target this node corresponds to
         self.proved = False # start in unproved state
         self.andlist = andlist # a list of targets that would prove this target
-        self.deps = [] # other targets that the current proofs of this one depends on
         self.metavars = [] # metavariables used by this target
         self.unifies = [] # list of hyps this target unifies with on its own
-        self.quasideps = [] # fake target dependency (for targets P \wedge Q with deps that get split)
 
     def __str__(self):
         if not self.andlist:
@@ -130,8 +128,7 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
         if ttree.num != -1:
             ttree.unifies = []
             for i in range(len(tlist1)):
-                dep = tl.tlist1.dependency(i)
-                if deps_compatible(ttree_full, ttree.num, dep):
+                if deps_compatible(screen, tl, ttree_full, ttree.num, i):
                     unifies, assign, macros = unify(screen, tl, tlist2[ttree.num], tlist1[i])
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies:
@@ -150,14 +147,18 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                     if ttree.metavars not in hydras:
                         hydras.append(ttree.metavars)
             for i in range(len(tlist1)):
-                d1 = tl.tlist1.dependency(i)
-                if ttree.num == d1: # a contradiction to hyp i would prove this target
+                if deps_compatible(screen, tl, ttree_full, ttree.num, i): # a contradiction to hyp i would prove this target
                     tree1 = complement_tree(tlist1[i])
                     mv1 = metavars_used(tlist1[i])
                     for j in range(len(tlist1)):
                         if i != j:
-                            d2 = tl.tlist1.dependency(j)
-                            if d2 == -1 or deps_compatible(ttree, d2, d1):
+                            di = deps_intersect(screen, tl, ttree_full, i, j)
+                            dep_ok = False
+                            for d in di:
+                                if target_depends(screen, tl, ttree_full, ttree.num, d):
+                                    dep_ok = True # ttree.num is a descendent of d
+                                    break
+                            if dep_ok: # this contradiction can prove target ttree.num
                                 tree2 = tlist1[j]
                                 unifies, assign, macros = unify(screen, tl, tree1, tree2)
                                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
@@ -274,8 +275,7 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
             for j in range(len(tlist2)):
                 mv2 = metavars_used(tlist2[j])
                 if not any(v in tarmv for v in mv2):
-                    dep = tl.tlist1.dependency(i)
-                    if dep == -1 or deps_compatible(ttree, j, dep, False):
+                    if deps_compatible(screen, tl, ttree, j, i):
                         unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
@@ -894,81 +894,6 @@ def check_macros(screen, tl, macros, assign, qz):
             return False
     return True
 
-def assign_vars_in_single_target(tl, ttree, i, assign):
-    for (var, expr) in assign:
-        if not var_in_single_target(tl, ttree, i, var.name()):
-            return False
-    return True
-
-def old_targets_proved(screen, tl, ttree):
-    hyps = tl.tlist1.data
-    tars = tl.tlist2.data
-    full_ttree = ttree
-
-    def check(ttree):
-        if ttree.proved:
-            return True
-        if ttree.andlist:
-            proved = True
-            for Q in ttree.andlist:
-                proved = check(Q) and proved # and is short circuiting
-            if proved:
-                mark_proved(screen, tl, ttree, ttree.num)
-            if not ttree.proved:
-                j = 0
-                while j < len(ttree.andlist):
-                    if not ttree.andlist[j].proved:
-                        break
-                    j += 1
-                S = set(ttree.andlist[j].deps)
-                for i in range(j + 1, len(ttree.andlist)):
-                    if not ttree.andlist[i].proved:
-                        S = S.intersection(ttree.andlist[i].deps)
-                deps = list(S)
-                if ttree.num in deps:
-                    mark_proved(screen, tl, ttree, ttree.num)
-                else:
-                    for dep in deps:
-                        if dep not in ttree.deps:
-                            ttree.deps.append(dep)
-                            if ttree.num != -1:
-                                screen.dialog("Target "+str(ttree.num)+" with dependency on "+str(dep))
-        if not ttree.proved and ttree.num != -1:
-            for i in range(0, len(hyps)):
-                P = hyps[i]
-                dep = tl.tlist1.dependency(i)
-                if dep not in ttree.deps: # if we didn't already prove with this dep
-                    if isinstance(P, ImpliesNode): # view P implies Q as \wedge ¬P \wedge Q
-                        varlist = deepcopy(tl.vars) # temporary relabelling
-                        unifies, assign, macros = unify(screen, tl, complement_tree(P.left), \
-                                                relabel(screen, tl, [], deepcopy(tars[ttree.num]), varlist))
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        if unifies:
-                            # or branched can be assigned independently
-                            unifies, assign, macros = unify(screen, tl, P.right, \
-                                                relabel(screen, tl, [], deepcopy(tars[ttree.num]), varlist), assign)
-                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        
-                    else:
-                        unifies, assign, macros = unify(screen, tl, P, tars[ttree.num])
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                    if unifies:
-                        if dep == -1:
-                            if assign_vars_in_single_target(tl, full_ttree, ttree.num, assign):
-                                mark_proved(screen, tl, ttree, ttree.num)
-                                break
-                        else:
-                            if assign_vars_in_single_target(tl, full_ttree, ttree.num, assign):
-                                if dep == ttree.num:
-                                    mark_proved(screen, tl, ttree, ttree.num)
-                                else:
-                                    if ttree.num != -1 and dep not in ttree.deps:
-                                        screen.dialog("Target "+str(ttree.num)+" proved with dependency on "+str(dep))
-                                ttree.deps.append(dep)
-        return ttree.proved
-    
-    return check(ttree)
-
 def mark_proved(screen, tl, ttree, n):
     if ttree.num == n:
         if not ttree.proved:
@@ -976,13 +901,12 @@ def mark_proved(screen, tl, ttree, n):
             if n >= 0:
                 screen.dialog("Target "+str(ttree.num)+" proved")
             for i in range(0, len(tl.tlist1.data)):
-                d1 = tl.tlist1.dependency(i)
-                if d1 != -1 and (n == -1 or deps_compatible(ttree, d1, n, False)):
+                if deps_defunct(screen, tl, ttree, n, i):
                     tl.tlist1.data[i] = DeadNode()
                     screen.pad1.pad[i] = str(tl.tlist1.data[i])
             screen.pad1.refresh()
             for i in range(0, len(tl.tlist2.data)):
-                if n == -1 or deps_compatible(ttree, i, n, False): 
+                if target_depends(screen, tl, ttree, i, n): 
                     tl.tlist2.data[i] = DeadNode()
                     screen.pad2.pad[i] = str(tl.tlist2.data[i])
             screen.pad2.refresh()
@@ -995,13 +919,12 @@ def mark_proved(screen, tl, ttree, n):
                 if ttree.num >= 0:
                     screen.dialog("Target "+str(ttree.num)+" proved")
                 for i in range(0, len(tl.tlist1.data)):
-                    d1 = tl.tlist1.dependency(i)
-                    if d1 != -1 and (ttree.num == -1 or deps_compatible(ttree, d1, ttree.num, False)):
+                    if deps_defunct(screen, tl, ttree, i, ttree.num):
                         tl.tlist1.data[i] = DeadNode()
                         screen.pad1.pad[i] = str(tl.tlist1.data[i])
                 screen.pad1.refresh()
                 for i in range(0, len(tl.tlist2.data)):
-                    if ttree.num == -1 or deps_compatible(ttree, i, ttree.num, False): 
+                    if target_depends(screen, tl, ttree, i, ttree.num): 
                         tl.tlist2.data[i] = DeadNode()
                         screen.pad2.pad[i] = str(tl.tlist2.data[i])
                 screen.pad2.refresh()
@@ -1009,85 +932,87 @@ def mark_proved(screen, tl, ttree, n):
             return True
     return False
 
-def deps_compatible(ttree, d1, d2, allow_quasideps=True):
-    def find(ttree, d1, quasideps):
-        if ttree.num == d1:
+def deps_compatible(screen, tl, ttree, i, j):
+    dep_list = tl.tlist1.dependency(j) # targets provable by hypothesis j
+    if -1 in dep_list: # hyp j can prove anything
+        return True
+
+    def find(ttree, i):
+        if ttree.num == i:
             return ttree
         for P in ttree.andlist:
-            t = find(P, d1, quasideps)
+            t = find(P, i)
             if t:
                 return t
-        if quasideps: # allow searching via quasideps (from split target conjunctions)
-            for P in ttree.quasideps:
-                t = find(P, d1, quasideps)
-                if t:
-                    return t
         return None
 
-    root = find(ttree, d2, False)
-    if find(root, d1, allow_quasideps):
-        return True
-    else:
+    for d in dep_list:
+        root = find(ttree, d) # find target d
+        if find(root, i): # target i is a descendent of d
+            return True
+    return False
+
+def deps_intersect(screen, tl, ttree, i, j):
+    deps_i = tl.tlist1.dependency(i) # targets provable by hyp i
+    deps_j = tl.tlist1.dependency(j) # targets provable by hyp j
+    if -1 in deps_i:
+         return deps_j
+    if -1 in deps_j:
+         return deps_i
+    return list(filter(lambda d: d in deps_i, deps_j))
+
+def deps_defunct(screen, tl, ttree, i, j):
+    deps_j = tl.tlist1.dependency(j) # targets provable by hyp j
+    if -1 in deps_j: # hyp j can prove everything, can't be made defunct
         return False
+
+    def find(ttree, i):
+        if ttree.num == i:
+            return ttree
+        for P in ttree.andlist:
+            t = find(P, i)
+            if t:
+                return t
+        return None
+
+    root = find(ttree, i)
+    for d in deps_j:
+        if not find(root, d): # we can't prove d from i
+            return False
+    return True
+
+def target_depends(screen, tl, ttree, i, j):
+     def find(ttree, i):
+        if ttree.num == i:
+            return ttree
+        for P in ttree.andlist:
+            t = find(P, i)
+            if t:
+                return t
+        return None
+
+     root = find(ttree, j) # find target j
+     if find(root, i): # i is a descendent of j
+         return True
+     return False
 
 def check_contradictions(screen, tl, ttree, tarmv):
     tlist1 = tl.tlist1.data
     for i in range(len(tlist1)):
         mv1 = metavars_used(tlist1[i])
         if not any(v in tarmv for v in mv1):
-            d1 = tl.tlist1.dependency(i)
             tree1 = complement_tree(tlist1[i])
             for j in range(0, i):
                 mv2 = metavars_used(tlist1[j])
                 if not any(v in tarmv for v in mv2):
-                    d2 = tl.tlist1.dependency(j)
-                    if d1 < 0 or d2 < 0:
+                    di = deps_intersect(screen, tl, ttree, i, j)
+                    if di: # hyps i and j can be used to prove targets
                         tree2 = tlist1[j]
                         unifies, assign, macros = unify(screen, tl, tree1, tree2)
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies: # we found a contradiction
-                            if d1 >= 0:
-                                mark_proved(screen, tl, ttree, d1)
-                            else:
-                                mark_proved(screen, tl, ttree, d2)
-                    elif d1 >= 0 and d2 >= 0:
-                        if deps_compatible(ttree, d1, d2, False):
-                            tree2 = tlist1[j]
-                            unifies, assign, macros = unify(screen, tl, tree1, tree2)
-                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                            if unifies: # we found a contradiction
-                                mark_proved(screen, tl, ttree, d1)
-                        elif deps_compatible(ttree, d2, d1, False):
-                            tree2 = tlist1[j]
-                            unifies, assign, macros = unify(screen, tl, tree1, tree2)
-                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                            if unifies: # we found a contradiction
-                                mark_proved(screen, tl, ttree, d2)
-
-def var_in_single_target(tl, ttree, i, varname):
-    tlist2 = tl.tlist2.data
-    for j in range(0, len(tlist2)):
-        if i != j and not deps_compatible(ttree, i, j) and not deps_compatible(ttree, j, i):
-            mv = metavars_used(tlist2[j])
-            if varname in mv:
-                return False
-    return True
-
-def old_check_tautologies(screen, tl, ttree):
-    tlist2 = tl.tlist2.data
-    for i in range(0, len(tlist2)):
-        tree = tlist2[i]
-        if isinstance(tree, EqNode):
-            if (isinstance(tree.left, VarNode) or isinstance(tree.left, FnApplNode)) \
-                  and tree.left.is_metavar:
-                if var_in_single_target(tl, ttree, i, tree.left.name()):
-                    mark_proved(screen, tl, ttree, i)
-            elif (isinstance(tree.right, VarNode) or isinstance(tree.right, FnApplNode)) \
-                  and tree.right.is_metavar:
-                if var_in_single_target(tl, ttree, i, tree.right.name()):
-                    mark_proved(screen, tl, ttree, i)
-            elif str(tree.left) == str(tree.right):
-                mark_proved(screen, tl, ttree, i)
+                            for t in di:
+                                mark_proved(screen, tl, ttree, t)
                 
 def relabel_varname(name, var_dict):
     sp = name.split("_")
@@ -1843,14 +1768,30 @@ def unquantify(screen, tree, positive):
     tree = skolemize_statement(screen, tree, [], 0, [], [], mv, positive)
     return tree, univs
 
-def target_compatible(ttree, tlist1, d1, j, forward):
+def target_compatible(screen, tl, ttree, dep_list, j, forward):
+    if forward: # return intersection of lists
+        deps_j = tl.tlist1.dependency(j) # targets provable from j
+        if -1 in deps_j:
+            return dep_list
+        if -1 in dep_list:
+            return deps_j
+        return list(filter(i in deps_i, deps_j))
+    else: # return original list or [] depending if target j is target compatible
+        if -1 in dep_list:
+            return dep_list
+        for d in dep_list:
+            if target_depends(screen, tl, ttree, j, d):
+                return dep_list
+        return None
+        
+
     if forward:
         d2 = tlist1.dependency(j)
     else:
         d2 = j
     if d1 < d2:
         d1, d2 = d2, d1
-    if d1 >= 0 and d2 >= 0 and not deps_compatible(ttree, d1, d2):
+    if d1 >= 0 and d2 >= 0 and not deps_compatible(screen, tl, ttree, d1, d2):
        return None
     return d1
 
@@ -1910,7 +1851,7 @@ def modus_ponens(screen, tl, ttree):
         screen.focus.refresh()
         return
     dep = tlist1.dependency(line1)
-    dep = target_compatible(ttree, tlist1, dep, line2, forward)
+    dep = target_compatible(screen, tl, ttree, dep, line2, forward)
     if dep == None:
         screen.dialog("Not target compatible. Press Enter to continue.")
         screen.restore_state()
@@ -1941,9 +1882,7 @@ def modus_ponens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        if not forward:
-            dep = tlist1.dependency(line1)
-        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        dep = target_compatible(screen, tl, ttree, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
@@ -2023,7 +1962,7 @@ def modus_tollens(screen, tl, ttree):
         screen.focus.refresh()
         return
     dep = tlist1.dependency(line1)
-    dep = target_compatible(ttree, tlist1, dep, line2, forward)
+    dep = target_compatible(screen, tl, ttree, dep, line2, forward)
     if dep == None:
         screen.dialog("Not target compatible. Press Enter to continue.")
         screen.restore_state()
@@ -2055,9 +1994,7 @@ def modus_tollens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
-        if not forward:
-            dep = tlist1.dependency(line1)
-        dep = target_compatible(ttree, tlist1, dep, line2, forward)
+        dep = target_compatible(screen, tl, ttree, dep, line2, forward)
         if dep == None:
             screen.dialog("Not target compatible. Press Enter to continue.")
             screen.restore_state()
@@ -2124,15 +2061,18 @@ def replace_tree(pad, tl, i, stmt):
     tl[i] = stmt
     pad[i] = str(tl[i])
 
-def add_sibling(ttree, i, j):
+def add_sibling(screen, tl, ttree, i, j):
     for P in ttree.andlist:
         if P.num == i:
             jnode = TargetNode(j)
             ttree.andlist.append(jnode)
-            P.quasideps.append(jnode) # set up fake dependency
+            for k in range(len(tl.tlist1.data)): # hyps that prove i also prove j
+                if k in tl.tlist1.dep:
+                     if i in tl.tlist1.dep[k]: # add j to list
+                          tl.tlist1.dep[k].append(j)
             return True
     for P in ttree.andlist:
-        if add_sibling(P, i, j):
+        if add_sibling(screen, tl, P, i, j):
             return True
     return False
 
@@ -2286,14 +2226,14 @@ def cleanup(screen, tl, ttree):
                     append_tree(screen.pad1, tl1, complement_tree(tl2[j].left))
                     hyps_done = False
                     replace_tree(screen.pad2, tl2, j, tl2[j].right)
-                    tl.tlist1.dep[len(tl1) - 1] = j
+                    tl.tlist1.dep[len(tl1) - 1] = [j]
                 if isinstance(tl2[j], ImpliesNode):
                     left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
                     append_tree(screen.pad1, tl1, left)
                     hyps_done = False
                     right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
                     replace_tree(screen.pad2, tl2, j, right)
-                    tl.tlist1.dep[len(tl1) - 1] = j
+                    tl.tlist1.dep[len(tl1) - 1] = [j]
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
@@ -2303,11 +2243,11 @@ def cleanup(screen, tl, ttree):
                     else:
                         append_tree(screen.pad2, tl2, tl2[j].right)
                         replace_tree(screen.pad2, tl2, j, tl2[j].left)
-                        add_sibling(ttree, j, len(tl2) - 1)
+                        add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(screen.pad2, tl2, complement_tree(tl2[j].left.right))
                     replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
-                    add_sibling(ttree, j, len(tl2) - 1)
+                    add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 screen.pad2[j] = str(tl2[j])
                 if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
                    and not isinstance(tl2[j], ImpliesNode):
@@ -2453,6 +2393,7 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
         rollback()
         return tree
     elif isinstance(tree, VarNode):
+        is_meta = False
         if tree.name() in mv:
             is_meta = True
             tree.is_metavar = True
