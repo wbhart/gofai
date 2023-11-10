@@ -575,14 +575,14 @@ A = B \iff A \subseteq B \wedge B \subseteq A
 
 Title: Definition of strict set inclusion
 Tags: #sets #definition
-\forall A : Set, \forall B : Set
+\forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
 ------------------------------
 A \subsetneq B \iff A \subseteq B \wedge A \neq B
 
 Title: Transitivity of set inclusion
 Tags: #sets
-\forall A : Set, \forall B : Set, \forall C : Set
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
 A \subseteq B
 B \subseteq C
