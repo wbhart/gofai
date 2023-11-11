@@ -6,7 +6,8 @@ from nodes import ForallNode, ExistsNode, ImpliesNode, IffNode, VarNode, EqNode,
      NaturalNode, ExpNode, AddNode, SubNode, MulNode, DivNode, \
      SubseteqNode, SubsetneqNode, SupseteqNode, SupsetneqNode, \
      CircNode, NegNode, AbsNode, LambdaNode, PowerSetNode, \
-     LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, DeadNode
+     LtNode, GtNode, LeqNode, GeqNode, BoolNode, TupleComponentNode, SetOfNode, \
+     DeadNode
 from sorts import FunctionConstraint, CartesianConstraint, DomainTuple, SetSort, \
      NumberSort, TupleSort, PredSort, Universum, Sort
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
@@ -324,6 +325,8 @@ def element_universe(x):
         return x.sort # the type of a function constraint must be the type of a function
     elif isinstance(x, CartesianConstraint):
         return x.sort # ?? may need to take universes of components ??
+    elif isinstance(x, SetOfNode):
+        return x.left
     else: # Universum, NumberSort, TupleSort are their own sorts
         return x
 
@@ -374,10 +377,17 @@ def propagate_sorts(screen, tl, tree0):
         #if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
         #    if not propagate(tree.var.constraint):
         #        return False
+        if isinstance(tree, SetOfNode):
+            tree.sort = SetSort(tree.left)
         if isinstance(tree, SymbolNode):
             propagate(tree.constraint)
             if tree.name() == "\\emptyset":
-                 tree.sort = SetSort(tree.constraint.sort)
+                 if isinstance(tree.constraint, VarNode):
+                     tree.sort = SetSort(tree.constraint)
+                 elif isinstance(tree.constraint, SetOfNode):
+                     tree.sort = tree.constraint.sort
+                 else:
+                     tree.sort = SetSort(tree.constraint.sort)
         elif isinstance(tree, VarNode):
             if isinstance(tree.constraint, SetSort): # this variable is a set
                 insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
@@ -719,6 +729,10 @@ def process_constraints(screen, tree, constraints, vars=None):
             ok = process_constraints(screen, v, constraints, vars)
             if not ok:
                 return False
+    elif isinstance(tree, SymbolNode):
+         ok = process_constraints(screen, tree.constraint, constraints, vars)
+         if not ok:
+             return False
     return True
 
 def type_vars(screen, tl):
@@ -830,7 +844,7 @@ def fill_macros(screen, tl):
             return None
         if isinstance(tree, FnApplNode):
             if tree.name() == 'universe':
-                return universe(tree.args[0], data)
+                return SetOfNode(universe(tree.args[0], data))
             if tree.name() == 'domain':
                 return domain(tree.args[0], data)
             if tree.name() == 'codomain':
@@ -1122,7 +1136,7 @@ def relabel(screen, tl, extras, tree, tldict, update_qz=False):
             for v in tree.args:
                 process(v, constraint)
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-            process(tree.sort, constraint)
+            process(tree.constraint, constraint)
         elif isinstance(tree, SetSort):
             process(tree.sort, constraint)
         elif isinstance(tree, TupleSort):
@@ -1906,7 +1920,7 @@ def modus_ponens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), varlist), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP2, qP1)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
@@ -2013,7 +2027,7 @@ def modus_tollens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), vars), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP2, qP1)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
@@ -2098,11 +2112,11 @@ def cleanup(screen, tl, ttree):
             n = sk[i][1] # number of dependencies
             domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps[0:n]]
             if len(domain_constraints) > 1:
-                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), ex[i].constraint)
+                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), SetOfNode(ex[i].constraint))
             elif len(domain_constraints) == 1:
-                fn_constraint = FunctionConstraint(domain_constraints[0], ex[i].constraint)
+                fn_constraint = FunctionConstraint(domain_constraints[0], SetOfNode(ex[i].constraint))
             else:
-                fn_constraint = FunctionConstraint(None, ex[i].constraint)
+                fn_constraint = FunctionConstraint(None, SetOfNode(ex[i].constraint))
             var = VarNode(ex[i].name(), fn_constraint)
             var.skolemized = True # make sure we don't skolemize it again
             qzext.append(ExistsNode(var, None))
@@ -2334,11 +2348,11 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
             sk.append((tree.var.name(), len(deps), False))
             domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps[depmin:]]
             if len(domain_constraints) > 1:
-                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), tree.var.constraint)
+                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), SetOfNode(tree.var.constraint))
             elif len(domain_constraints) == 1:
-                fn_constraint = FunctionConstraint(domain_constraints[0], tree.var.constraint)
+                fn_constraint = FunctionConstraint(domain_constraints[0], SetOfNode(tree.var.constraint))
             else:
-                fn_constraint = FunctionConstraint(None, tree.var.constraint)
+                fn_constraint = FunctionConstraint(None, SetOfNode(tree.var.constraint))
             if positive:
                 if not blocked:
                     tree.var.is_metavar = True
@@ -2441,7 +2455,7 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
         rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        tree.sort = skolemize_statement(screen, tree.sort, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.constraint = skolemize_statement(screen, tree.constraint, deps, depmin, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     else:

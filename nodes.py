@@ -77,13 +77,17 @@ class SymbolNode(LeafNode):
         return self._name
 
     def __str__(self):
-        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum):
+        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum) \
+               and not (isinstance(self.constraint, SetOfNode) and \
+                        isinstance(self.constraint.left, Universum)):
             return univar(self._name)+"("+str(self.constraint)+")"
         else:
             return univar(self._name)
 
     def __repr__(self):
-        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum):
+        if self.name() == "\\emptyset" and not isinstance(self.constraint, Universum) \
+               and not (isinstance(self.constraint, SetOfNode) and \
+                        isinstance(self.constraint.left, Universum)):
             return self._name+"("+repr(self.constraint)+")"
         else:
             return self._name
@@ -105,6 +109,17 @@ class VarNode(LeafNode):
 
     def __repr__(self):
         return "\\dot{"+self._name+"}" if self.is_metavar else self._name
+
+class SetOfNode(LRNode):
+    def __init__(self, var):
+       self.left = var
+       self.right = None
+
+    def __str__(self):
+       return str(self.left)
+
+    def __repr__(self):
+       return repr(self.left)
 
 class NaturalNode(LeafNode):
     def __init__(self, string):
@@ -531,7 +546,7 @@ precedence = {ExistsNode:9, ForallNode:9,
               MulNode:3, DivNode:3,
               NegNode:2,
               ExpNode:1,
-              NaturalNode:0, VarNode:0, FnApplNode:0, AbsNode:0, TupleComponentNode:0}
+              SetOfNode:0, NaturalNode:0, VarNode:0, FnApplNode:0, AbsNode:0, TupleComponentNode:0}
 
 # whether it is self associative
 associative = {AddNode:True, SubNode:False, MulNode:True,

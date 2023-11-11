@@ -653,10 +653,10 @@ Tags: #sets
 
 Title: Empty set is a subset of every set
 Tags: #sets
-\forall S : Set
+\forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-\emptyset \subseteq S
+\emptyset(X) \subseteq S
 
 Title: Definition of set union
 Tags: #sets #definition
@@ -675,15 +675,15 @@ S = \emptyset(universe(S))
 
 Title: Empty set strictly included in set implies set has an element
 Tags: #sets
-\forall S : Set
+\forall X : Set, \forall S : Set(X)
 ------------------------------
-\emptyset(universe(S)) \subsetneq S
+\emptyset(X) \subsetneq S
 ------------------------------
-\exists s \in universe(S) s \in S
+\exists s \in X s \in S
 
 Title: Problem : A set containing an element strictly includes the empty set
 Tags: #sets #tests
-\forall S : Set, \forall s \in universe(S)
+\forall X : Set, \forall S : Set(X), \forall s \in X
 ------------------------------
 s \in S
 ------------------------------
@@ -721,9 +721,9 @@ C \subseteq S \cup T
 
 Title: Elements of set contained in two sets implies set is subset of their union
 Tags: #sets
-\forall C : Set, \forall S : Set, \forall T : Set
+\forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
-\forall c \in universe(C) c \in C \implies c \in S \vee c \in T
+\forall c \in X c \in C \implies c \in S \vee c \in T
 ------------------------------
 C \subseteq S \cup T
 
@@ -743,11 +743,11 @@ S \cup S = S
 
 Title: Union is nonempty implies one of the sets has an element
 Tags: #sets
-\forall S : Set, \forall T : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
-S \cup T \neq \emptyset
+S \cup T \neq \emptyset(X)
 ------------------------------
-\exists x \in universe(S) x \in S \vee x \in T
+\exists x \in X x \in S \vee x \in T
 
 Title: Union is empty implies the sets are empty
 Tags: #sets
@@ -787,7 +787,7 @@ S \cap \emptyset(universe(S)) = \emptyset(universe(S))
 
 Title: Problem : An element in one set of an empty intersection is not in the other
 Tags: #sets #tests 
-\forall S : Set, \forall T : Set, \forall s \in universe(S)
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall s \in X
 ------------------------------
 S \cap T = \emptyset(universe(S))
 s \in S
@@ -868,7 +868,7 @@ x \in S \times T \implies x[0] \in S \wedge x[1] \in T
 
 Title: Pair in a cartesian product if elements in sets
 Tags: #sets
-\forall S : Set, \forall T : Set, \forall a \in universe(S), \forall b \in universe(T)
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X
 ------------------------------
 ------------------------------
 a \in S \wedge b \in T \iff (a, b) \in S \times T
@@ -1021,11 +1021,11 @@ Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in complement(S) \iff x \in X \wedge \neg(x \in S)
+x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 
 Title: Definition of set universe
 Tags: #sets
-\forall S : Set, \forall x \in universe(S)
+\forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
 x \in S \implies x \in universe(S)
@@ -1049,7 +1049,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cup complement(S) = complement(\emptyset(X))
+S \cup complement(S) = universe(S)
 
 Title: Intersection of a set with its complement is the empty set
 Tags: #sets
