@@ -389,6 +389,9 @@ def propagate_sorts(screen, tl, tree0):
                  else:
                      tree.sort = SetSort(tree.constraint.sort)
         elif isinstance(tree, VarNode):
+            if tree.name() == 'x_4':
+                screen.dialog(str(tree.constraint))
+                screen.dialog(str(type(tree.constraint)))
             if isinstance(tree.constraint, SetSort): # this variable is a set
                 insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
                 tree.sort = tree.constraint
@@ -619,6 +622,8 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
                 screen.dialog("Type mismatch in element relation")
+                screen.dialog(str(tree))
+                screen.dialog(str(tree.left.sort)+", "+str(tree.right.sort.sort))
                 return False
             tree.sort = PredSort()
         elif isinstance(tree, SetSort):
@@ -836,7 +841,7 @@ def codomain(tree, qz):
             fn_constraint = get_constraint(tree, qz)
             return fn_constraint.codomain
     else:
-        return None # no domain
+        return None # no codomain
         
 def fill_macros(screen, tl):
     def fill(tree, data):
