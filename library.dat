@@ -840,7 +840,7 @@ x = (c, d) \implies x[0] = c \wedge x[1] = d
 
 Title: Equality of pairs
 Tags: #sets #definition
-\forall S : Set, \forall T : Set, \forall a \in S, \forall b \in T, \forall c \in universe(S), \forall d \in universe(T)
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in S, \forall b \in T, \forall c \in X, \forall d \in X
 ------------------------------
 ------------------------------
 (a, b) = (c, d) \iff a = c \wedge b = d
