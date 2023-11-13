@@ -326,7 +326,10 @@ def element_universe(x):
     elif isinstance(x, CartesianConstraint):
         return x.sort # ?? may need to take universes of components ??
     elif isinstance(x, SetOfNode):
-        return x.left
+        if isinstance(x.left, FunctionConstraint):
+            return x.left.sort
+        else:
+            return x.left
     else: # Universum, NumberSort, TupleSort are their own sorts
         return x
 
@@ -1934,7 +1937,10 @@ def modus_ponens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), varlist), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP2, qP1)
+        if forward:
+            unifies, assign, macros = unify(screen, tl, qP2, qP1)
+        else:
+            unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
@@ -1953,6 +1959,7 @@ def modus_ponens(screen, tl, ttree):
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
+            screen.debug("here "+str(stmt))
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -2041,7 +2048,10 @@ def modus_tollens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), vars), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP2, qP1)
+        if forward:
+            unifies, assign, macros = unify(screen, tl, qP2, qP1)
+        else:
+            unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
@@ -2161,6 +2171,14 @@ def cleanup(screen, tl, ttree):
             sk.pop()
     
     depmin = d # avoid dependencies on original qz variables
+
+    if tl0: # process constraints of variables in qz
+        tree = tl0[0]
+        while tree:
+            tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, True, False)
+            rollback()
+            tree = tree.left
+
     hyps_done = False
     tars_done = False
     i = 0
@@ -2251,10 +2269,14 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad2, tl2, j, tl2[j].right)
                     tl.tlist1.dep[len(tl1) - 1] = [j]
                 if isinstance(tl2[j], ImpliesNode):
-                    left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
+                    # can't relabel or metavar dependencies between existing targets broken
+                    # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
+                    left = tl2[j].left
                     append_tree(screen.pad1, tl1, left)
                     hyps_done = False
-                    right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
+                    # can't relabel or metavar dependencies between existing targets broken
+                    # right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
+                    right = tl2[j].right
                     replace_tree(screen.pad2, tl2, j, right)
                     tl.tlist1.dep[len(tl1) - 1] = [j]
                 while isinstance(tl2[j], AndNode):
@@ -2466,6 +2488,16 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
     elif isinstance(tree, CartesianConstraint):
         for i in range(len(tree.sorts)):
             tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
+        rollback()
+        return tree
+    elif isinstance(tree, FunctionConstraint):
+        tree.domain = skolemize_statement(screen, tree.domain, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.codomain = skolemize_statement(screen, tree.codomain, deps, depmin, sk, qz, mv, positive, blocked)
+        rollback()
+        return tree
+    elif isinstance(tree, DomainTuple):
+        for i in range(len(tree.sets)):
+             tree.sets[i] = skolemize_statement(screen, tree.sets[i], deps, depmin, sk, qz, mv, positive, blocked)
         rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
