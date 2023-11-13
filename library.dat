@@ -811,9 +811,9 @@ S \subseteq T
 
 Title: Set included in two others is included in their intersection
 Tags: #sets
-\forall S : Set, \forall T : Set, \forall C : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall C : Set(X)
 ------------------------------
-\forall c \in universe(C) c \in C \implies c \in S \wedge c \in T
+\forall c \in X c \in C \implies c \in S \wedge c \in T
 ------------------------------
 C \subseteq S \cap T
 
