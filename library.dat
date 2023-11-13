@@ -568,7 +568,7 @@ S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies 
 
 Title: Sets are equal iff they include one another
 Tags: #sets #definition
-\forall A : Set \forall B : Set
+\forall X : Set, \forall A : Set(X) \forall B : Set(X)
 ------------------------------
 ------------------------------
 A = B \iff A \subseteq B \wedge B \subseteq A

@@ -318,7 +318,7 @@ def initialise_sorts(screen, tl):
     insert_sort(screen, tl, Q, Z)
     insert_sort(screen, tl, Z, N)   
 
-def element_universe(x):
+def element_universe(screen, x):
     if isinstance(x, VarNode):
         return x.sort.sort
     elif isinstance(x, FunctionConstraint):
@@ -326,7 +326,7 @@ def element_universe(x):
     elif isinstance(x, CartesianConstraint):
         return x.sort # ?? may need to take universes of components ??
     elif isinstance(x, SetOfNode):
-        if isinstance(x.left, FunctionConstraint):
+        if isinstance(x.left, FunctionConstraint) or isinstance(x.left, CartesianConstraint):
             return x.left.sort
         else:
             return x.left
@@ -363,9 +363,9 @@ def propagate_sorts(screen, tl, tree0):
             if not ok:
                 return False
             if tree.domain:
-                tree.sort = SetSort(TupleSort([element_universe(tree.domain), element_universe(tree.codomain)]))
+                tree.sort = SetSort(TupleSort([element_universe(screen, tree.domain), element_universe(screen, tree.codomain)]))
             else:
-                tree.sort = SetSort(TupleSort([None, element_universe(tree.codomain)]))
+                tree.sort = SetSort(TupleSort([None, element_universe(screen, tree.codomain)]))
         if isinstance(tree, CartesianConstraint):
             for v in tree.sorts:
                 ok = propagate(v)
@@ -1937,10 +1937,7 @@ def modus_ponens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), varlist), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        if forward:
-            unifies, assign, macros = unify(screen, tl, qP2, qP1)
-        else:
-            unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
@@ -1959,7 +1956,6 @@ def modus_ponens(screen, tl, ttree):
             append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            screen.debug("here "+str(stmt))
             append_tree(screen.pad2, tlist2.data, stmt)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
@@ -2048,10 +2044,7 @@ def modus_tollens(screen, tl, ttree):
             unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), vars), assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        if forward:
-            unifies, assign, macros = unify(screen, tl, qP2, qP1)
-        else:
-            unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
