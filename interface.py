@@ -297,6 +297,8 @@ class Screen:
 
         self.edit_text = [] # text entered at the edit/status bar as chars
 
+        self.debug_on = False # whether to display debug messages
+
     def save_state(self):
         self.pad1.save_state()
         self.pad2.save_state()
@@ -339,6 +341,10 @@ class Screen:
             self.status(s)
             self.wait_key("\n")
         self.status("")
+
+    def debug(self, string):
+        if self.debug_on:
+            self.dialog(string)
 
     def switch_window(self):
         """Switch focus to next pad (0-2).

@@ -79,6 +79,9 @@ def main(stdscr):
             started = False
             ttree = None
             reset = True
+        elif c == 'd': # debug
+            skip = True
+            screen.debug_on = not screen.debug_on
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus
@@ -103,6 +106,8 @@ def main(stdscr):
                 pad.cursor_up()
                 pad.refresh()
                 tl.focus.line -= 1
+        else:
+            skip = True
         if started: # automated cleanup
             if not skip:
                 cleanup(screen, tl, ttree)

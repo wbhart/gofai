@@ -451,10 +451,10 @@ def propagate_sorts(screen, tl, tree0):
                not is_function_type(rsort):    
                 screen.dialog("Not a function in composition")
                 return False
-            if not sorts_equal(lsort.sort.sorts[1], rsort.sort.sorts[0]):
+            if not sorts_equal(lsort.sort.sorts[0], rsort.sort.sorts[1]):
                 screen.dialog("Type mismatch in function composition")
                 return False
-            tree.sort = SetSort(TupleSort([lsort.sort.sorts[0], rsort.sort.sorts[1]]))
+            tree.sort = SetSort(TupleSort([rsort.sort.sorts[0], lsort.sort.sorts[1]]))
         elif isinstance(tree, FnApplNode):
             if tree.name() in system_unary_functions or tree.name() in system_binary_functions:
                 tree.sort = tree.args[0].sort
@@ -670,7 +670,9 @@ def process_constraints(screen, tree, constraints, vars=None):
         gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
         del L[next(gen, None)]
 
-    if isinstance(tree, ForallNode) \
+    if tree == None:
+        return True
+    elif isinstance(tree, ForallNode) \
          or isinstance(tree, ExistsNode):
         name = tree.var.name()
         if vars != None:
@@ -731,6 +733,18 @@ def process_constraints(screen, tree, constraints, vars=None):
                 return False
     elif isinstance(tree, SymbolNode):
          ok = process_constraints(screen, tree.constraint, constraints, vars)
+         if not ok:
+             return False
+    elif isinstance(tree, FunctionConstraint):
+         ok = process_constraints(screen, tree.domain, constraints, vars)
+         if not ok:
+             return False
+         ok = process_constraints(screen, tree.codomain, constraints, vars)
+         if not ok:
+             return False
+    elif isinstance(tree, DomainTuple):
+         for v in tree.sets:
+             ok = process_constraints(screen, v, constraints, vars)
          if not ok:
              return False
     return True

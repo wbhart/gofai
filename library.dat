@@ -1225,7 +1225,7 @@ is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in X a \in
 
 Title: Definition of function value
 Tags: #sets #functions
-\forall X : Set, \forall A : Set, \forall B : Set, \forall f : A \to B, \forall c \in X, \forall d \in X
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall c \in X, \forall d \in X
 ------------------------------
 ------------------------------
 is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
@@ -1257,7 +1257,7 @@ x \in g \circ f \iff (\exists a \in X, \exists c \in X x = (a, c) \wedge a \in A
 
 Title: Composition is function
 Tags: #functions
-\forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
+\forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C
 ------------------------------
 is_function(f, A, B)
 is_function(g, B, C)
