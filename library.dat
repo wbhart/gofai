@@ -817,6 +817,15 @@ Tags: #sets
 ------------------------------
 C \subseteq S \cap T
 
+Title: Set contained in intersection is contained in sets
+Tags: #sets
+\forall C : Set, \forall S : Set, \forall T : Set
+------------------------------
+C \subseteq S \cap T
+------------------------------
+C \subseteq S
+C \subseteq T
+
 Title: Intersection distributes over union
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall U : Set
@@ -1007,15 +1016,6 @@ Tags: #sets
 ------------------------------
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
 
-Title: Set contained in intersection is contained in sets
-Tags: #sets
-\forall C : Set, \forall S : Set, \forall T : Set
-------------------------------
-C \subseteq S \cap T
-------------------------------
-C \subseteq S
-C \subseteq T
-
 Title: Definition of complement
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
@@ -1073,13 +1073,6 @@ Tags: #sets
 S \subseteq T
 ------------------------------
 complement(T) \subseteq complement(S)
-
-Title: Complement of the complement of a set is the set itself
-Tags: #sets
-\forall X : Set, \forall S : Set(X)
-------------------------------
-------------------------------
-complement(complement(S)) = S
 
 Title: Definition of set difference
 Tags: #sets #definition
