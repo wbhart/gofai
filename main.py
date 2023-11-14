@@ -4,7 +4,6 @@ from interface import Screen, iswide_char, nchars_to_chars
 from curses import wrapper
 from editor import get_text, edit
 from tree import TreeList
-from automation import AutoDict, automate
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality, targets_proved, TargetNode, \
      library_load, fill_macros, type_vars, process_sorts, initialise_sorts, \
@@ -13,7 +12,6 @@ from moves import cleanup, modus_ponens, modus_tollens, library_export, \
 def main(stdscr):
     screen = Screen() # object representing console/windows
     tl = TreeList() # object representing lists of parsed statements
-    ad = AutoDict() # get initial automation dictionary containing basic axioms
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
     skip = False # whether to skip checking completion
@@ -38,8 +36,6 @@ def main(stdscr):
                 tl.focus[line] = tree # insert tree in treelist
                 screen.focus[line] = str(tree) # insert unicode string into pad
             screen.focus.refresh()
-        # elif c == 'a': # a = automate
-        #    automate(screen, tl, ad)
         elif c == 'v': # equivalence
             if started:
                 equality(screen, tl)

@@ -1460,6 +1460,7 @@ def clear_tableau(screen, tl):
     tl.tars = dict()
     tl.constraints_processed = (0, 0, 0)
     tl.sorts_processed = (0, 0, 0)
+    tl.tlist1.dep = dict()
     pad2.refresh()
     pad1.refresh()
     pad0.refresh()
