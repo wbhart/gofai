@@ -7,7 +7,7 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
-
+from utility import sorts_equal, find_sort
 from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum, \
                   CartesianConstraint
 
@@ -261,6 +261,25 @@ def unify(screen, tl, tree1, tree2, assigned=[]):
         i += 1
     return True, assign, macros
 
+def check_macros(screen, tl, macros, assign, qz):
+    qz = qz[0] if len(qz) > 0 else []
+    # check macros after substitution
+    for (uni1, tree2) in macros:
+        tree = substitute(deepcopy(tree2.args[0]), assign)
+        if tree2.name() == 'universe':
+            tree = universe(tree, qz)
+        elif tree2.name() == 'domain':
+            tree = domain(tree, qz)
+        elif tree2.name() == 'codomain':
+            tree = codomain(tree, qz)
+        if tree == None:
+            return False
+        unified, assign, macr = unify(screen, tl, uni1, tree, assign)
+        macros.extend(macr)
+        if not unified:
+            return False
+    return True
+
 def subst(tree1, var, tree2):
     if tree1 == None:
         return tree1
@@ -334,24 +353,10 @@ def make_substitution(assign1, assign2):
     var1 = subst(deepcopy(var1), var2, expr2) # in case it is a function
     return (var1, subst(deepcopy(expr1), var2, expr2))
 
-class SortNode:
-    def __init__(self, sort):
-        self.sort = sort
-        self.subsorts = []
-
-def find_sort(screen, tl, stree, s):
-        if sorts_equal(s, stree.sort):
-            return stree
-        for t in stree.subsorts:
-            r = find_sort(screen, tl, t, s)
-            if r:
-                return r
-        return None
-
-def insert_sort(screen, tl, s1, s2):
-    # make s2 a subsort of s1
-    r = find_sort(screen, tl, tl.stree, s1)
-    r.subsorts.append(SortNode(s2))
+def substitute(tree, assign):
+   for (var, val) in assign:
+       tree = subst(tree, var, val)
+   return tree
 
 def sort_type_class(sort):
     if isinstance(sort, VarNode):
@@ -364,24 +369,6 @@ def sort_type_class(sort):
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
                    len(sort.sort.sorts) == 2
-
-def sorts_equal(s1, s2):
-    if type(s1) != type(s2):
-        return False
-    elif isinstance(s1, VarNode) or isinstance(s1, NumberSort):
-        return s1.name() == s2.name()
-    elif isinstance(s1, SetSort):
-        return sorts_equal(s1.sort, s2.sort)
-    elif isinstance(s1, TupleSort):
-        if len(s1.sorts) != len(s2.sorts):
-            return False
-        for i in range(len(s1.sorts)):
-            if not sorts_equal(s1.sorts[i], s2.sorts[i]):
-                return False
-        return True
-    elif isinstance(s1, PredSort) or isinstance(s1, Universum):
-        return True
-    return False
 
 def coerce_sorts(screen, tl, s1, s2, assign=None):
     # special case, used only by sorts_compatible for function domains

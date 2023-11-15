@@ -15,7 +15,12 @@ from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate, sort_type_class, \
      is_function_type, sorts_compatible, coerce_sorts, sorts_equal, \
-     SortNode, find_sort, insert_sort
+     check_macros, substitute
+from utility import unquantify, relabel, relabel_constraints, append_tree, \
+     replace_tree, add_sibling, add_descendant, skolemize_quantifiers, \
+     skolemize_statement, insert_sort, target_compatible, target_depends, \
+     deps_defunct, deps_intersect, deps_compatible, complement_tree
+import logic
 
 from editor import edit
 from parser import to_ast
@@ -25,41 +30,6 @@ from heapq import merge
 system_unary_functions = ['complement', 'universe']
 system_binary_functions = ['min', 'max']
 system_predicates = ['is_bounded', 'is_upper_bound', 'is_lower_bound', 'is_supremum', 'is_infimum', 'is_pair', 'is_function', 'is_injective', 'is_surjective', 'is_bijective']
-
-class TargetNode:
-    def __init__(self, num, andlist=[]):
-        self.num = num # which target this node corresponds to
-        self.proved = False # start in unproved state
-        self.andlist = andlist # a list of targets that would prove this target
-        self.metavars = [] # metavariables used by this target
-        self.unifies = [] # list of hyps this target unifies with on its own
-
-    def __str__(self):
-        if not self.andlist:
-            return "("+str(self.num)+")"
-        else:
-            return "("+str(self.num)+", ["+", ".join([str(j) for j in self.andlist])+"])"
-
-def is_ground(tree): # an expression is ground if it contains no metavars
-    if tree == None:
-        return True
-    elif isinstance(tree, LRNode):
-        if not is_ground(tree.left):
-            return False 
-        return search(tree.right)
-    elif isinstance(tree, VarNode):
-        return not tree.is_metavar
-    elif isinstance(tree, FnApplNode):
-        if tree.is_metavar:
-            return False
-        for v in tree.args:
-            if not is_ground(v):
-                return False
-    elif isinstance(tree, TupleNode):
-        for v in tree.args:
-            if not is_ground(v):
-                return False
-    return True
 
 def metavars_used(tree):
     used = []
@@ -304,20 +274,6 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
-def initialise_sorts(screen, tl):
-    stree = SortNode(Universum())
-    tl.stree = stree 
-    C = NumberSort("\\mathbb{C}", CompleteValuedFieldClass())
-    R = NumberSort("\\mathbb{R}", CompleteOrderedValuedFieldClass())
-    Q = NumberSort("\\mathbb{Q}", FieldClass())
-    Z = NumberSort("\\mathbb{Z}", OrderedRingClass())
-    N = NumberSort("\\mathbb{N}", OrderedSemiringClass())
-    insert_sort(screen, tl, Universum(), C)
-    insert_sort(screen, tl, C, R)
-    insert_sort(screen, tl, R, Q)
-    insert_sort(screen, tl, Q, Z)
-    insert_sort(screen, tl, Z, N)   
-
 def element_universe(screen, x):
     if isinstance(x, VarNode):
         return x.sort.sort
@@ -377,9 +333,6 @@ def propagate_sorts(screen, tl, tree0):
                 return False
             if not propagate(tree.right):
                 return False
-        #if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-        #    if not propagate(tree.var.constraint):
-        #        return False
         if isinstance(tree, SetOfNode):
             tree.sort = SetSort(tree.left)
         if isinstance(tree, SymbolNode):
@@ -412,8 +365,6 @@ def propagate_sorts(screen, tl, tree0):
             elif isinstance(tree.constraint, CartesianConstraint):
                 propagate(tree.constraint)
                 tree.sort = tree.constraint.sort
-            #elif isinstance(tree.constraint, TupleSort):
-            #    tree.sort = tree.constraint
             elif isinstance(tree.constraint, FunctionConstraint):
                 tree.sort = tree.constraint.sort
             elif isinstance(tree.constraint, NumberSort):
@@ -551,14 +502,6 @@ def propagate_sorts(screen, tl, tree0):
                 screen.dialog("Logical operator requires predicates")
                 return False
             tree.sort = PredSort()
-        #elif isinstance(tree, CartesianNode):
-        #    lsort = tree.left.sort
-        #    rsort = tree.right.sort
-        #    if not isinstance(lsort, SetSort) or \
-        #       not isinstance(rsort, SetSort):
-        #        screen.dialog("Arguments to cartesian product are not sets")
-        #        return False
-        #    tree.sort = SetSort(TupleSort([lsort.sort, rsort.sort]))
         elif isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) or \
              isinstance(tree, DiffNode):
             lsort = tree.left.sort
@@ -906,25 +849,6 @@ def fill_macros(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def check_macros(screen, tl, macros, assign, qz):
-    qz = qz[0] if len(qz) > 0 else []
-    # check macros after substitution
-    for (uni1, tree2) in macros:
-        tree = substitute(deepcopy(tree2.args[0]), assign)
-        if tree2.name() == 'universe':
-            tree = universe(tree, qz)
-        elif tree2.name() == 'domain':
-            tree = domain(tree, qz)
-        elif tree2.name() == 'codomain':
-            tree = codomain(tree, qz)
-        if tree == None:
-            return False
-        unified, assign, macr = unify(screen, tl, uni1, tree, assign)
-        macros.extend(macr)
-        if not unified:
-            return False
-    return True
-
 def mark_proved(screen, tl, ttree, n):
     if ttree.num == n:
         if not ttree.proved:
@@ -963,78 +887,6 @@ def mark_proved(screen, tl, ttree, n):
             return True
     return False
 
-def deps_compatible(screen, tl, ttree, i, j):
-    dep_list = tl.tlist1.dependency(j) # targets provable by hypothesis j
-    if -1 in dep_list: # hyp j can prove anything
-        return True
-
-    def find(ttree, i):
-        if ttree.num == i:
-            return ttree
-        for P in ttree.andlist:
-            t = find(P, i)
-            if t:
-                return t
-        return None
-
-    for d in dep_list:
-        root = find(ttree, d) # find target d
-        if find(root, i): # target i is a descendent of d
-            return True
-    return False
-
-def deps_intersect(screen, tl, ttree, i, j):
-    deps_i = tl.tlist1.dependency(i) # targets provable by hyp i
-    deps_j = tl.tlist1.dependency(j) # targets provable by hyp j
-    if -1 in deps_i:
-         return deps_j
-    if -1 in deps_j:
-         return deps_i
-    deps = []
-    for d1 in deps_j:
-        for d2 in deps_i:
-            if d1 < d2:
-                d1, d2 = d2, d1
-            if target_depends(screen, tl, ttree, d1, d2):
-                if d1 not in deps:
-                    deps.append(d1)
-    return deps
-
-def deps_defunct(screen, tl, ttree, i, j):
-    deps_j = tl.tlist1.dependency(j) # targets provable by hyp j
-    if -1 in deps_j: # hyp j can prove everything, can't be made defunct
-        return False
-
-    def find(ttree, i):
-        if ttree.num == i:
-            return ttree
-        for P in ttree.andlist:
-            t = find(P, i)
-            if t:
-                return t
-        return None
-
-    root = find(ttree, i)
-    for d in deps_j:
-        if not find(root, d): # we can't prove d from i
-            return False
-    return True
-
-def target_depends(screen, tl, ttree, i, j):
-     def find(ttree, i):
-        if ttree.num == i:
-            return ttree
-        for P in ttree.andlist:
-            t = find(P, i)
-            if t:
-                return t
-        return None
-
-     root = find(ttree, j) # find target j
-     if find(root, i): # i is a descendent of j
-         return True
-     return False
-
 def check_contradictions(screen, tl, ttree, tarmv):
     tlist1 = tl.tlist1.data
     for i in range(len(tlist1)):
@@ -1052,187 +904,6 @@ def check_contradictions(screen, tl, ttree, tarmv):
                         if unifies: # we found a contradiction
                             for t in di:
                                 mark_proved(screen, tl, ttree, t)
-                
-def relabel_varname(name, var_dict):
-    sp = name.split("_")
-    if sp.pop().isdigit():
-        name = '_'.join(sp)
-    if name in var_dict:
-        subscript = var_dict[name] + 1
-    else:
-        subscript = 0
-    var_dict[name] = subscript
-    return name+'_'+str(subscript)
-
-def qz_copy_var(screen, tl, extras, name, new_name):
-    node_to_copy = None
-    qz = tl.tlist0.data[0]
-    tree = qz
-
-    for v in extras: # extra variables to rename, from unquantify
-       if isinstance(v, ExistsNode) or isinstance(v, ForallNode):
-          if v.var.name() == name: # found the relevant variable
-              node_to_copy = v
-
-    while tree != None:
-       if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
-          if tree.var.name() == new_name:
-              return
-          if tree.var.name() == name: # found the relevant variable
-              node_to_copy = tree
-       if tree.left == None and node_to_copy != None: # this is the last node, make copy
-          new_node = copy(node_to_copy)
-          new_node.var = deepcopy(new_node.var)
-          if isinstance(new_node.var, VarNode):
-              new_node.var._name = new_name # rename
-          elif isinstance(new_node.var, FnApplNode):
-              new_node.var.var._name = new_name # rename
-          new_node.left = None
-          tree.left = new_node   
-       tree = tree.left
-    screen.pad0.pad[0] = str(qz)
-    screen.pad0.refresh()
-    screen.focus.refresh()
-       
-def relabel(screen, tl, extras, tree, tldict, update_qz=False):
-    # update_qz makes a copy of variable in QZ with new name, if set
-    vars_dict = dict()
-    
-    def process(tree, constraint=False):
-        if tree == None:
-            return
-        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-            name = tree.var.name()
-            new_name = relabel_varname(name, tldict)
-            vars_dict[name] = new_name
-            process(tree.var, constraint)
-            process(tree.left, constraint)
-            #process(tree.var.constraint, True) # seems to duplicate constraint proc below
-        elif isinstance(tree, VarNode):
-            process(tree.constraint, True)
-            name = tree.name()
-            if name in vars_dict:
-                new_name = vars_dict[name]
-                tree._name = new_name
-                if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
-            elif not constraint and tree.is_metavar:
-                new_name = relabel_varname(name, tldict)
-                vars_dict[name] = new_name
-                tree._name = new_name
-                if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
-        elif isinstance(tree, SetBuilderNode):
-            name = tree.left.left.name()
-            new_name = relabel_varname(name, tldict)
-            vars_dict[name] = new_name
-            process(tree.left, constraint)
-            process(tree.right, constraint)
-        elif isinstance(tree, LRNode):
-            process(tree.left, constraint)
-            process(tree.right, constraint)
-        elif isinstance(tree, FnApplNode):
-            name = tree.name()
-            if isinstance(tree.var, VarNode) and name in vars_dict:
-                new_name = vars_dict[name] # TODO : add setter for assignment
-                tree.var._name = new_name
-                if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
-            elif tree.is_metavar:
-                new_name = relabel_varname(name, tldict)
-                vars_dict[name] = new_name
-                tree.var._name = new_name
-                if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
-            else:
-                process(tree.var, constraint)
-            #######
-            for v in tree.args:
-                process(v, constraint)
-        elif isinstance(tree, TupleNode):
-            for v in tree.args:
-                process(v, constraint)
-        elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-            process(tree.constraint, constraint)
-        elif isinstance(tree, SetSort):
-            process(tree.sort, constraint)
-        elif isinstance(tree, TupleSort):
-            for v in tree.sorts:
-                process(v, constraint)
-        elif isinstance(tree, FunctionConstraint):
-            process(tree.domain, constraint)
-            process(tree.codomain, constraint)
-        elif isinstance(tree, CartesianConstraint):
-            for v in tree.sorts:
-                process(v, constraint)
-    t = tree
-    while isinstance(t, ForallNode) or isinstance(t, ExistsNode):
-        name = t.var.name()
-        new_name = relabel_varname(name, tldict)
-        vars_dict[name] = new_name
-        t.var._name = new_name # TODO : allow assignment of name for FnApplNode
-        process(t.var.constraint)
-        t = t.left
-
-    process(t)
-    return tree
-
-def relabel_constraints(screen, tl, tree):
-    vars_dict = dict()
-    tldict = tl.vars # current subscripts
-
-    def process(tree):
-        if tree == None:
-            return
-        if isinstance(tree, Universum):
-            name = tree.name()
-            if name == '\\mathcal{U}':
-                if name in vars_dict:
-                    tree._name = vars_dict[name]
-                else:
-                    new_name = relabel_varname(name, tldict)
-                    vars_dict[name] = new_name
-                    tree._name = new_name
-                    s = SortNode(tree) # insert new sort for new metavar universum
-                    s.subsorts.append(tl.stree)
-                    tl.stree = s
-        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-            process(tree.var.constraint)
-            process(tree.left)
-        elif isinstance(tree, VarNode):
-            process(tree.constraint)
-        elif isinstance(tree, SetBuilderNode):
-            process(tree.left)
-            process(tree.right)
-        elif isinstance(tree, LRNode):
-            process(tree.left)
-            process(tree.right)
-        elif isinstance(tree, FnApplNode):
-            process(tree.var)
-            for v in tree.args:
-                process(v)
-        elif isinstance(tree, TupleNode):
-            for v in tree.args:
-                process(v)
-        elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                      isinstance(tree.sort, VarNode):
-            process(tree.sort)
-        elif isinstance(tree, SetSort):
-            process(tree.sort)
-        elif isinstance(tree, FunctionConstraint):
-            process(tree.domain)
-            process(tree.codomain)
-        elif isinstance(tree, CartesianConstraint):
-            for v in tree.sorts:
-                process(v)
-        elif isinstance(tree, DomainTuple):
-            for v in tree.sets:
-                process(v)
-            for v in tree.sort.sets:
-                process(v)
-
-    process(tree)
-    return tree
 
 def select_substring(screen, tl):
     window = screen.win1
@@ -1585,7 +1256,7 @@ def library_import(screen, tl):
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
         pad1 = screen.pad1.pad
-        stmt = relabel(screen, tl, [], tree, tl.vars)
+        stmt = relabel(screen, tl, [], tree)
         ok = process_constraints(screen, stmt, tl.constraints)
         if ok:
             relabel_constraints(screen, tl, stmt)
@@ -1727,38 +1398,6 @@ def library_export(screen, tl):
     library.close()
     screen.focus.refresh()
 
-def complement_tree(tree):
-    
-    def complement(tree):
-        if isinstance(tree, ForallNode):
-            return ExistsNode(tree.var, complement(tree.left))
-        elif isinstance(tree, ExistsNode):
-            return ForallNode(tree.var, complement(tree.left))
-        elif isinstance(tree, EqNode):
-            return NeqNode(tree.left, tree.right)
-        elif isinstance(tree, NeqNode):
-            return EqNode(tree.left, tree.right)
-        elif isinstance(tree, LtNode):
-            return GeqNode(tree.left, tree.right)
-        elif isinstance(tree, GtNode):
-            return LeqNode(tree.left, tree.right)
-        elif isinstance(tree, LeqNode):
-            return GtNode(tree.left, tree.right)
-        elif isinstance(tree, GeqNode):
-            return LtNode(tree.left, tree.right)
-        elif isinstance(tree, AndNode):
-            return OrNode(complement(tree.left), complement(tree.right))
-        elif isinstance(tree, OrNode):
-            return AndNode(complement(tree.left), complement(tree.right))
-        elif isinstance(tree, ImpliesNode):
-            return AndNode(tree.left, complement(tree.right))
-        elif isinstance(tree, NotNode):
-            return tree.left
-        else:
-            return NotNode(tree)
-
-    return complement(deepcopy(tree))
-
 def select_hypothesis(screen, tl, second):
     window = screen.win1
     pad = screen.pad1
@@ -1794,43 +1433,6 @@ def select_hypothesis(screen, tl, second):
             continue
         else:
             return True, -1
-
-def unquantify(screen, tree, positive):
-    tree = deepcopy(tree)
-    mv = []
-    univs = []
-    while isinstance(tree, ForallNode):
-        mv.append(tree.var.name())
-        t = tree
-        tree = tree.left
-        t.left = None
-        univs.append(t)
-    tree = skolemize_statement(screen, tree, [], 0, [], [], mv, positive)
-    return tree, univs
-
-def target_compatible(screen, tl, ttree, dep_list, j, forward):
-    if forward: # return "intersection" of lists
-        deps_j = tl.tlist1.dependency(j) # targets provable from j
-        if -1 in deps_j:
-            return dep_list
-        if -1 in dep_list:
-            return deps_j
-        deps = []
-        for d1 in deps_j:
-            for d2 in dep_list:
-               if d1 < d2:
-                   d1, d2 = d2, d1
-               if target_depends(screen, tl, ttree, d1, d2):
-                   if d1 not in deps:
-                       deps.append(d1)
-        return deps
-    else: # return original list or [] depending if target j is target compatible
-        if -1 in dep_list:
-            return dep_list
-        for d in dep_list:
-            if target_depends(screen, tl, ttree, j, d):
-                return dep_list
-        return None
 
 """ Not needed at present
 def negate_target(screen, tl):
@@ -1872,9 +1474,10 @@ def modus_ponens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
-    tree1 = tlist1.data[line1]
-    tree1, univs = unquantify(screen, tree1, False) # remove quantifiers by taking temporary metavars
-    if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
+    t = tlist1.data[line1]
+    while isinstance(t, ForallNode): # implication is assumed to have only forall quantifiers
+        t = t.left
+    if not isinstance(t, ImpliesNode) and not isinstance(t, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -1887,21 +1490,11 @@ def modus_ponens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
-    dep = tlist1.dependency(line1)
-    dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-    if not dep:
-        screen.dialog("Not target compatible. Press Enter to continue.")
-        screen.restore_state()
-        screen.focus.refresh()
-        return
-    if forward:
-        qP1, u = unquantify(screen, tree1.left, True)
-    else:
-        tree1 = relabel(screen, tl, univs, tree1, tl.vars, True)
-        qP1, u = unquantify(screen, tree1.right, False)
-    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-    t = qP1
+    line2_list = [line2]
     n = 1
+    t = t.left if forward else t.right
+    while isinstance(t, ForallNode): # implication is assumed to have only forall quantifiers
+        t = t.left
     while isinstance(t, AndNode):
         t = t.left
         n += 1
@@ -1919,47 +1512,26 @@ def modus_ponens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
+        line2_list.append(line2)
+    # check everything is target compatible
+    dep = tlist1.dependency(line1)
+    for i in range(len(line2_list)):
+        line2 = line2_list[i]
         dep = target_compatible(screen, tl, ttree, dep, line2, forward)
         if not dep:
-            screen.dialog("Not target compatible. Press Enter to continue.")
+            if len(line2_list) == 1:
+                screen.dialog("Not target compatible. Press Enter to continue.")
+            else:
+                screen.dialog("Predicate "+str(i)+" not target compatible. Press Enter to continue.")
             screen.restore_state()
             screen.focus.refresh()
             return
-        new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-        tree2 = AndNode(tree2, new_tree2)
-    qP2 = tree2
-    if isinstance(qP2, ImpliesNode):
-        # treat P => Q as ¬P \wedge Q
-        varlist = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), varlist)))
-        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-        if unifies:
-            varlist = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), varlist), assign)
-            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-    else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
-        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-    if not unifies:
+    # run modus ponens
+    if not logic.modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection
-    if forward:
-        stmt = substitute(deepcopy(tree1.right), assign)
-        stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
-        append_tree(screen.pad1, tlist1.data, stmt)
-        tlist1.dep[len(tlist1.data) - 1] = dep
-    else:
-        stmt = substitute(deepcopy(tree1.left), assign)
-        if line2 in tl.tars: # we already reasoned from this target
-            stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
-        else:
-            append_tree(screen.pad2, tlist2.data, stmt)
-            add_descendant(ttree, line2, len(tlist2.data) - 1)
-            tl.tars[line2] = True
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
@@ -1978,13 +1550,14 @@ def modus_tollens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
-    tree1 = tlist1.data[line1]
-    tree1, univs = unquantify(screen, tree1, False)
-    if not isinstance(tree1, ImpliesNode) and not isinstance(tree1, IffNode): # no implication after quantifiers
+    t = tlist1.data[line1]
+    while isinstance(t, ForallNode): # implication is assumed to have only forall quantifiers
+        t = t.left
+    if not isinstance(t, ImpliesNode) and not isinstance(t, IffNode): # no implication after quantifiers
         screen.dialog("Not an implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
-        return 
+        return
     screen.status("Select predicate")
     forward, line2 = select_hypothesis(screen, tl, True)
     screen.status("")
@@ -1993,24 +1566,14 @@ def modus_tollens(screen, tl, ttree):
         screen.restore_state()
         screen.focus.refresh()
         return
-    dep = tlist1.dependency(line1)
-    dep = target_compatible(screen, tl, ttree, dep, line2, forward)
-    if not dep:
-        screen.dialog("Not target compatible. Press Enter to continue.")
-        screen.restore_state()
-        screen.focus.refresh()
-        return
-    tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-    if forward:
-        qP1, u = unquantify(screen, tree1.right, False)
-        qP1 = complement_tree(qP1)
-    else:
-        tree1 = relabel(screen, tl, univs, tree1, tl.vars, True)
-        qP1 = complement_tree(unquantify(screen, tree1.left, True)[0])
-    t1 = qP1
-    n = 1 # number of hypotheses/targets in conjunction
-    while isinstance(t1, AndNode):
-        t1 = t1.left
+    line2_list = [line2]
+    n = 1
+    t = t.left if forward else t.right
+    t = complement_tree(t) # modus tollens unifies with complement
+    while isinstance(t, ForallNode): # implication is assumed to have only forall quantifiers
+        t = t.left
+    while isinstance(t, AndNode):
+        t = t.left
         n += 1
     for i in range(1, n): # get remaining predicates
         screen.status("Select predicate "+str(i+1))
@@ -2026,91 +1589,32 @@ def modus_tollens(screen, tl, ttree):
             screen.restore_state()
             screen.focus.refresh()
             return
+        line2_list.append(line2)
+    # check everything is target compatible
+    dep = tlist1.dependency(line1)
+    for i in range(len(line2_list)):
+        line2 = line2_list[i]
         dep = target_compatible(screen, tl, ttree, dep, line2, forward)
         if not dep:
-            screen.dialog("Not target compatible. Press Enter to continue.")
+            if len(line2_list) == 1:
+                screen.dialog("Not target compatible. Press Enter to continue.")
+            else:
+                screen.dialog("Predicate "+str(i)+" not target compatible. Press Enter to continue.")
             screen.restore_state()
             screen.focus.refresh()
             return
-        new_tree2 = tlist1.data[line2] if forward else tlist2.data[line2]
-        tree2 = AndNode(tree2, new_tree2)
-    qP2 = tree2
-    if isinstance(qP2, ImpliesNode):
-        # treat P => Q as ¬P \wedge Q
-        vars = deepcopy(tl.vars) # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), vars)))
-        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-        if unifies:
-            vars = deepcopy(tl.vars) # assignments in or branches can be independent
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), vars), assign)
-            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-    else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
-        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-    if not unifies:
+    # run modus tollens
+    if not logic.modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection
-    if forward:
-        stmt = complement_tree(substitute(deepcopy(tree1.left), assign))
-        stmt = relabel(screen, tl, univs, stmt, tl.vars, True)
-        append_tree(screen.pad1, tlist1.data, stmt)
-        tlist1.dep[len(tlist1.data) - 1] = dep
-    else:
-        stmt = complement_tree(substitute(deepcopy(tree1.right), assign))
-        if line2 in tl.tars: # we already reasoned from this target
-            stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
-        else:
-            append_tree(screen.pad2, tlist2.data, stmt)
-            add_descendant(ttree, line2, len(tlist2.data) - 1)
-            tl.tars[line2] = True
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-
-def substitute(tree, assign):
-   for (var, val) in assign:
-       tree = subst(tree, var, val)
-   return tree
-
-def append_tree(pad, tl, stmt):
-    n = len(tl)
-    tl.append(stmt)
-    pad[n] = str(tl[n])
-            
-def replace_tree(pad, tl, i, stmt):
-    tl[i] = stmt
-    pad[i] = str(tl[i])
-
-def add_sibling(screen, tl, ttree, i, j):
-    for P in ttree.andlist:
-        if P.num == i:
-            jnode = TargetNode(j)
-            ttree.andlist.append(jnode)
-            for k in range(len(tl.tlist1.data)): # hyps that prove i also prove j
-                if k in tl.tlist1.dep:
-                     if i in tl.tlist1.dep[k]: # add j to list
-                          tl.tlist1.dep[k].append(j)
-            return True
-    for P in ttree.andlist:
-        if add_sibling(screen, tl, P, i, j):
-            return True
-    return False
-
-def add_descendant(ttree, i, j):
-    if ttree.num == i:
-        ttree.andlist = [TargetNode(j)]
-        return True
-    for P in ttree.andlist:
-        if add_descendant(P, i, j):
-            return True
-    return False
 
 def cleanup(screen, tl, ttree):
     tl0 = tl.tlist0.data # quantifier zone
@@ -2318,191 +1822,3 @@ def cleanup(screen, tl, ttree):
     screen.pad2.refresh()
     screen.focus.refresh()
     return
-
-def skolemize_quantifiers(tree, deps, sk, ex):
-    if isinstance(tree, ExistsNode):
-        if not tree.var.is_metavar and not tree.var.skolemized: # check we didn't already deal with this var
-            sk.append((tree.var.name(), len(deps), True))
-            ex.append(tree.var)
-            return skolemize_quantifiers(tree.left, deps, sk, ex)
-        else:
-            tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
-            return tree, deps, sk, ex
-    elif isinstance(tree, ForallNode):
-        deps.append(tree.var)
-        tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
-        return tree, deps, sk, ex
-    else:
-        return tree, deps, sk, ex
-
-def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocked=False):
-    d = len(deps)
-    s = len(sk)
-
-    def rollback():
-        while len(deps) > d:
-            deps.pop()
-        while len(sk) > s:
-            sk.pop()
-    
-    if isinstance(tree, NotNode) and isinstance(tree.left, EqNode):
-        neq = NeqNode(tree.left.left, tree.left.right)
-        neq.sort = PredSort # may be replacing an already typed node
-        return neq
-    if isinstance(tree, OrNode):
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, True)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, True)
-        return tree
-    elif isinstance(tree, ForallNode):
-        is_blocked = blocked
-        if not blocked:
-            if positive:
-                deps.append(tree.var)
-                qz.append(tree)
-            else:
-                if not isinstance(tree.left, ImpliesNode) and not \
-                       isinstance(tree.left, OrNode):
-                    tree.var.is_metavar = True
-                    deps.append(tree.var)
-                    mv.append(tree.var.name())
-                    qz.append(ExistsNode(tree.var, None))
-                else:
-                    is_blocked = True
-        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked or isinstance(tree.left, IffNode))
-        rollback()
-        return tree.left if not is_blocked else tree    
-    elif isinstance(tree, ExistsNode):
-        is_blocked = blocked
-        if not blocked:
-            sk.append((tree.var.name(), len(deps), False))
-            domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps[depmin:]]
-            if len(domain_constraints) > 1:
-                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), SetOfNode(tree.var.constraint))
-            elif len(domain_constraints) == 1:
-                fn_constraint = FunctionConstraint(domain_constraints[0], SetOfNode(tree.var.constraint))
-            else:
-                fn_constraint = FunctionConstraint(None, SetOfNode(tree.var.constraint))
-            if positive:
-                if not blocked:
-                    tree.var.is_metavar = True
-                    mv.append(tree.var.name())
-                    v = VarNode(tree.var.name(), fn_constraint, True)
-                    qz.append(ExistsNode(v, None))
-                if isinstance(tree.left, ImpliesNode) or isinstance(tree.left, OrNode):
-                    is_blocked = True
-            else:
-                v = VarNode(tree.var.name(), fn_constraint, False)
-                qz.append(ForallNode(v, None))
-        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked)
-        rollback()
-        return tree.left if not blocked else tree
-    elif isinstance(tree, SetBuilderNode):
-        if not blocked:
-            if positive:
-                deps.append(tree.left.left)
-            else:
-                tree.left.left.is_metavar = True
-                deps.append(tree.left.left) # free
-                mv.append(tree.left.left.name())
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, IffNode) or isinstance(tree, ImpliesNode):
-        is_blocked = blocked or isinstance(tree, IffNode)
-        t = tree
-        while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
-            t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, not positive, is_blocked)
-            t = t.left
-        t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, not positive, is_blocked)
-        if not isinstance(tree.right, ForallNode) and not isinstance(tree.right, ExistsNode):
-            tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, is_blocked)
-        else:
-            tree.right.var.constraint = skolemize_statement(screen, tree.right.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-            t = tree.right
-            while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
-                t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-                t = t.left
-            t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, positive, is_blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, LRNode):
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, VarNode):
-        is_meta = False
-        if tree.name() in mv:
-            is_meta = True
-            tree.is_metavar = True
-        n, is_orig = skolem_deps(tree.name(), sk)
-        if n == -1: # not a skolem variable
-            return tree
-        else:
-            depstart = 0 if is_orig else depmin
-            fn_args = [VarNode(deps[i].name(), deps[i].constraint, deps[i].is_metavar) \
-                    for i in range(depstart, n)]
-            fn = FnApplNode(VarNode(tree.name()), fn_args)
-            fn.is_skolem = True
-            if is_meta:
-                fn.is_metavar = True
-                fn.var.is_metavar = True
-            fn.sort = tree.sort # may be replacing an already typed node
-            fn.var.sort = tree.sort # may be replacing an already typed node
-            return fn
-    elif isinstance(tree, FnApplNode):
-        if tree.name() in mv:
-            tree.is_metavar = True
-            tree.var.is_metavar = True
-        n, is_orig = skolem_deps(tree.name(), sk)
-        if n != -1 and not tree.is_skolem: # skolem variable not already skolemized
-            tree.var = skolemize_statement(screen, tree.var, deps, depmin, sk, qz, mv, positive, blocked)
-            rollback()
-        for i in range(0, len(tree.args)):
-            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked)
-            rollback()
-        return tree
-    elif isinstance(tree, TupleNode):
-        for i in range(0, len(tree.args)):
-            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked)
-            rollback()
-        return tree
-    elif isinstance(tree, SetSort):
-        tree.sort = skolemize_statement(screen, tree.sort, deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, TupleSort):
-        for i in range(len(tree.sorts)):
-            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, CartesianConstraint):
-        for i in range(len(tree.sorts)):
-            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, FunctionConstraint):
-        tree.domain = skolemize_statement(screen, tree.domain, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.codomain = skolemize_statement(screen, tree.codomain, deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, DomainTuple):
-        for i in range(len(tree.sets)):
-             tree.sets[i] = skolemize_statement(screen, tree.sets[i], deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        tree.constraint = skolemize_statement(screen, tree.constraint, deps, depmin, sk, qz, mv, positive, blocked)
-        rollback()
-        return tree
-    else:
-        return tree
-        
-def skolem_deps(name, sk):
-    for (v, n, is_orig) in sk:
-        if v == name:
-            return n, is_orig
-    return -1, False
