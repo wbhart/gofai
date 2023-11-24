@@ -1008,43 +1008,7 @@ def find_all(string, substring):
         res.append(start)
         start += n
 
-def apply_equality(screen, tl, tree, string, n, subst, occurred=-1):
-    occur = occurred
-    found = False
-    if tree == None:
-        return False, None, occur
-    if str(tree) == string: # we found an occurrence
-        occur += 1
-        if occur == n: # we found the right occurrence
-            unifies, assign, macros = unify(screen, tl, subst.left, tree)
-            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-            if not unifies:
-                unifies, assign, macros = unify(screen, tl, subst.right, tree)
-                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                if not unifies:
-                    return False, tree, n # does not unify, bogus selection
-                else:
-                    return True, substitute(deepcopy(subst.left), assign), n
-            else:
-                return True, substitute(deepcopy(subst.right), assign), n
-    if isinstance(tree, LRNode):
-        found, tree.left, occur = apply_equality(screen, tl, tree.left, string, n, subst, occur)
-        if not found:
-            found, tree.right, occur = apply_equality(screen, tl, tree.right, string, n, subst, occur)
-        return found, tree, occur
-    elif isinstance(tree, LeafNode):
-        return found, tree, occur
-    elif isinstance(tree, TupleNode) or isinstance (tree, FnApplNode):
-        for i in range(0, len(tree.args)):
-            found, tree.args[i], occur = apply_equality(screen, tl, tree.args[i], string, n, subst, occur)
-            if found:
-                break
-        if not found and isinstance(tree, FnApplNode):
-            found, tree.var, occur = apply_equality(screen, tl, tree.var, string, n, subst, occur)
-        return found, tree, occur
-    raise Exception("Node not dealt with : "+str(type(tree)))
-
-def equality(screen, tl):
+def equality_substitution(screen, tl):
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -1055,9 +1019,10 @@ def equality(screen, tl):
         screen.restore_state()
         screen.focus.refresh()
         return
-    tree1 = tlist1.data[line1]
-    tree1, univs = unquantify(screen, tree1, True)
-    if not isinstance(tree1, EqNode): # not an equality
+    t = tlist1.data[line1]
+    while isinstance(t, ForallNode):
+        t = t.left
+    if not isinstance(t, EqNode): # not an equality
         screen.dialog("Not an equality. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
@@ -1083,14 +1048,12 @@ def equality(screen, tl):
         return
     idx = find_all(string, sub_string)
     n = idx.index(start) # which occurence of substring do we want (0-indexed)
-    found, tree, occur = apply_equality(screen, tl, sub_tlist.data[line2], sub_string, n, tree1)
-    if not found:
+    if not logic.equality_substitution(screen, tl, line1, line2, hyp2, sub_string, n):
         screen.dialog("Equality cannot be applied. Press Enter to continue")
         screen.restore_state()
         screen.focus.refresh()
         return
     else:
-        sub_tlist.data[line2] = tree
         sub_pad.pad[line2] = str(sub_tlist.data[line2])
         sub_pad.refresh()
     screen.restore_state()

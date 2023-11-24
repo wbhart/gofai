@@ -2,7 +2,8 @@ from utility import unquantify, relabel, append_tree, add_descendant, \
      target_compatible, complement_tree
 from unification import check_macros, unify, substitute
 from copy import deepcopy
-from nodes import AndNode, ImpliesNode
+from nodes import AndNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
+     TupleNode, FnApplNode
 
 def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
@@ -172,3 +173,69 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
     return True
+
+def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
+    """
+    Given that line1 of the hypothesis pane is an equality to be applied, apply
+    that equality to the n-th occurrence of the statement at line2 with exact
+    string representation equal to the given string. Numbering of occurrences
+    of string in this statement begins at 0.
+
+    If is_hyp = True, the statement to which the substitution is to be applied
+    is a hypothesis, otherwise it is a target.
+
+    The equality is first tried one way around, and if it fails, it is tried
+    the other way around. The expression that is to be modified need not match
+    one side of the equality exactly, it merely needs to unify with it. Any
+    assignments that result from unification are also applied.
+
+    If for some reason the unification fails, the function returns False and
+    no changes are made. Otherwise the tableau is updated with the changes.
+    """
+    subst = tl.tlist1.data[line1]
+    subst, univs = unquantify(screen, subst, True)
+    tree = tl.tlist1.data[line2] if is_hyp else tl.tlist2.data[line2]
+    
+    def find(tree, string, n, subst, occurrence=-1):
+        occur = occurrence
+        found = False
+        if tree == None:
+            return False, None
+        if str(tree) == string: # we found an occurrence
+            occur += 1
+            if occur == n: # we found the right occurrence
+                unifies, assign, macros = unify(screen, tl, subst.left, tree)
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                if not unifies:
+                    unifies, assign, macros = unify(screen, tl, subst.right, tree)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                    if not unifies:
+                        return False, tree # does not unify, bogus selection
+                    else:
+                        return True, substitute(deepcopy(subst.left), assign)
+                else:
+                    return True, substitute(deepcopy(subst.right), assign)
+        if isinstance(tree, LRNode):
+            found, tree.left = find(tree.left, string, n, subst, occur)
+            if not found:
+                found, tree.right = find(tree.right, string, n, subst, occur)
+            return found, tree
+        elif isinstance(tree, LeafNode):
+            return found, tree
+        elif isinstance(tree, TupleNode) or isinstance (tree, FnApplNode):
+            for i in range(0, len(tree.args)):
+                 found, tree.args[i] = find(tree.args[i], string, n, subst, occur)
+                 if found:
+                     break
+            if not found and isinstance(tree, FnApplNode):
+                found, tree.var = find(tree.var, string, n, subst, occur)
+            return found, tree
+        raise Exception("Node not dealt with : "+str(type(tree)))
+
+    found, tree = find(tree, string, n, subst)
+    if found:
+        if is_hyp:
+            tl.tlist1.data[line2] = tree
+        else:
+            tl.tlist2.data[line2] = tree
+    return found

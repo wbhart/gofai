@@ -5,7 +5,7 @@ from curses import wrapper
 from editor import get_text, edit
 from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
-     library_import, clear_tableau, equality, targets_proved, \
+     library_import, clear_tableau, equality_substitution, targets_proved, \
      library_load, fill_macros, type_vars, process_sorts, \
      update_constraints
 from utility import TargetNode, initialise_sorts
@@ -39,7 +39,7 @@ def main(stdscr):
             screen.focus.refresh()
         elif c == 'v': # equivalence
             if started:
-                equality(screen, tl)
+                equality_substitution(screen, tl)
         elif c == 's': # start automated cleanup
             fill_macros(screen, tl)
             type_vars(screen, tl)
