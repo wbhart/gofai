@@ -1,11 +1,69 @@
 from nodes import ForallNode, ExistsNode, FnApplNode, VarNode, SetBuilderNode, \
      LRNode, TupleNode, SymbolNode, NotNode, EqNode, NeqNode, GtNode, LtNode, \
-     LeqNode, GeqNode, AndNode, OrNode, IffNode, ImpliesNode
+     LeqNode, GeqNode, AndNode, OrNode, IffNode, ImpliesNode, UnionNode, \
+     IntersectNode, DiffNode, CartesianNode, SetOfNode
 from sorts import SetSort, TupleSort, FunctionConstraint, DomainTuple, \
      CartesianConstraint, Universum, NumberSort, PredSort
 from typeclass import CompleteValuedFieldClass, CompleteOrderedValuedFieldClass, \
      FieldClass, OrderedRingClass, OrderedSemiringClass
 from copy import deepcopy, copy
+from heapq import merge
+
+system_unary_functions = ['complement', 'universe']
+system_binary_functions = ['min', 'max']
+system_predicates = ['is_bounded', 'is_upper_bound', 'is_lower_bound', 'is_supremum', \
+                     'is_infimum', 'is_pair', 'is_function', 'is_injective', \
+                     'is_surjective', 'is_bijective']
+
+def universe(tree, qz):
+    """
+    Given a parse tree of a set object, compute the universe of the set. This
+    function is used to fill in the universe macro for set objects.
+    """
+    if isinstance(tree, VarNode):
+        t = get_constraint(tree, qz)
+        return t.sort
+    elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
+         isinstance(tree, DiffNode):
+        return universe(tree.left, qz)
+    elif isinstance(tree, CartesianNode):
+        return TupleSort([universe(tree.left, qz), universe(tree.right, qz)])
+    elif isinstance(tree, FnApplNode) and tree.name() == 'complement':
+        return universe(tree.args[0], qz)
+    elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
+        return tree.constraint
+    else:
+        return None # no universe
+
+def domain(tree, qz):
+    """
+    Given the parse tree for a variable with function constraint, return the
+    domain of the function. This function is used to fill in the domain macro
+    for function objects.
+    """
+    if isinstance(tree, VarNode):
+        if tree.is_metavar:
+            return None
+        else:
+            fn_constraint = get_constraint(tree, qz)
+            return fn_constraint.domain
+    else:
+        return None # no domain
+
+def codomain(tree, qz):
+    """
+    Given the parse tree for a variable with function constraint, return the
+    codomain of the function. This function is used to fill in the codomain
+    macro for function objects.
+    """
+    if isinstance(tree, VarNode):
+        if tree.is_metavar:
+            return None
+        else:
+            fn_constraint = get_constraint(tree, qz)
+            return fn_constraint.codomain
+    else:
+        return None # no codomain
 
 def complement_tree(tree):
     """
@@ -300,6 +358,38 @@ def replace_tree(pad, tlist, i, stmt):
     tlist[i] = stmt
     pad[i] = str(tlist[i])
 
+def metavars_used(tree):
+    """
+    Given a parsed statement, return a list of names of metavariables (as
+    strings) that occur in the given statement.
+    """
+    used = []
+
+    def search(tree):
+        if tree == None:
+            return
+        elif isinstance(tree, LRNode):
+            search(tree.left)
+            search(tree.right)
+        elif isinstance(tree, VarNode):
+            if tree.is_metavar:
+                name = tree.name()
+                if name not in used:
+                    used.append(name)
+        elif isinstance(tree, FnApplNode):
+            if tree.is_metavar:
+                name = tree.name()
+                if name not in used:
+                    used.append(name)
+            for v in tree.args:
+                search(v)
+        elif isinstance(tree, TupleNode):
+            for v in tree.args:
+                search(v)
+        
+    search(tree)
+    return used
+
 class TargetNode:
     """
     Used for building a tree of targets so we can keep track of which targets
@@ -320,6 +410,27 @@ class TargetNode:
             return "("+str(self.num)+")"
         else:
             return "("+str(self.num)+", ["+", ".join([str(j) for j in self.andlist])+"])"
+
+def target_metavars(screen, tl, ttree):
+    """
+    Return a sorted list of the names of all metavariables used in all targets
+    in the given target tree (which may be a subtree of the whole target tree).
+    """
+    target_metavars = []
+    tlist2 = tl.tlist2.data
+    
+    def mvars(ttree, target_metavars):
+        if ttree.proved:
+            return target_metavars
+        if ttree.num != -1:
+            ttree.metavars = metavars_used(tlist2[ttree.num])
+            ttree.metavars.sort()
+            target_metavars = list_merge(target_metavars, ttree.metavars)
+        for t in ttree.andlist:
+            target_metavars = mvars(t, target_metavars)
+        return target_metavars
+
+    return mvars(ttree, target_metavars)
 
 def add_sibling(screen, tl, ttree, i, j):
     """
@@ -580,6 +691,124 @@ def sorts_equal(s1, s2):
     elif isinstance(s1, PredSort) or isinstance(s1, Universum):
         return True
     return False
+
+# abbreviations for number types
+canonical_numconstraints = { "\\N" : "\\mathbb{N}",
+                       "\\Z" : "\\mathbb{Z}",
+                       "\\Q" : "\\mathbb{Q}",
+                       "\\R" : "\\mathbb{R}",
+                       "\\C" : "\\mathbb{C}"}
+
+def tags_to_list(tags):
+    """
+    Given a string of space separated hashtags, create a list of strings with
+    the individual tags as elements. The list may be empty.
+    No processing is done to check the tags are valid, or even that they are
+    hashtags.
+    """
+    t = tags[6:].split(" ")
+    if len(t) == 1 and t[0] == '':
+        t = []
+    return t
+
+def canonicalise_tags(tags):
+    """
+    Given a string of space separate hashtags, return the same string with
+    'Tags: ' prepended and with any number types canonicalised, i.e. such that
+    any abbreviations are replaced with their full latex.
+    No processing is done to check that the tags are valid, or even that they
+    are hashtags.
+    """
+    taglist = tags_to_list(tags)
+    for i in range(0, len(taglist)):
+        tag = taglist[i][1:]
+        if tag in canonical_numconstraints:
+            taglist[i] = "#"+canonical_numconstraints[tag]
+    return "Tags: "+' '.join(taglist)
+
+def filter_titles(titles, c):
+    """
+    Given a list of pairs consisting of a string representing a theorem title
+    and an integer (representing a position within the library file) and a
+    character c, return a similar list of pairs consisting of just those for
+    which the first letter of the title is the given character (or the upper
+    case version of it).
+    """
+    titles2 = []
+    for (line, v) in titles:
+        if v[0] == c or v[0] == c.upper():
+            titles2.append((line, v))
+    return titles2
+
+def trim_spaces(string, start, end):
+    """
+    Given a string and a range [start, end) delineating a substring, return a
+    pair consisting of a new start position and the substring of the original
+    substring with any spaces trimmed off each end.
+    """
+    while start <= end and string[start] == ' ':
+        start += 1
+    while end > start and string[end - 1] == ' ':
+        end -= 1
+    return start, string[start:end]
+
+def find_all(string, substring):
+    """
+    Return a list of all indices of the given substring in the given string.
+    Instances are excluded if they overlap.
+    """
+    start = 0
+    res = []
+    n = len(substring)
+    while True:
+        start = string.find(substring, start)
+        if start == -1:
+            return res
+        res.append(start)
+        start += n
+
+def find_start_index(lst, chosen_set):
+    """
+    Given a list lst of items, find the index of the first element of the list
+    such that no element from that point on (inclusive) is in the list of items
+    denoted chosen_set.
+    """
+    index = len(lst)
+    for i in reversed(range(len(lst))):
+        if lst[i] in chosen_set:
+            break
+        index = i
+    return index
+
+def list_merge(list1, list2):
+    """
+    Given two lists, merge the two lists together, eliminating duplicates from
+    the merge. Return the resulting merged list. Both lists are assumed to be
+    sorted and the standard comparison function is used to ensure the result
+    remains sorted.
+    """
+    r = []
+    L = merge(list1, list2)
+    v = ''
+    for var in L:
+        if var != v:
+           r.append(var)
+        v = var
+    return r
+
+def get_constraint(var, qz):
+    """
+    Given a variable var and the quantifier zone qz, find the constraint for
+    the variable in qz and return it. This function raises an exception if
+    the variable doesn't exist in qz.
+    """
+    tree = qz
+    name = var.name()
+    while qz:
+        if qz.var.name() == name:
+            return qz.var.constraint
+        qz = qz.left
+    raise Exception("Binder not found for "+var.name())
 
 def skolemize_quantifiers(tree, deps, sk, ex):
     """

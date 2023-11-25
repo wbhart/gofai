@@ -19,74 +19,38 @@ from unification import unify, subst, trees_unify, is_predicate, sort_type_class
 from utility import unquantify, relabel, relabel_constraints, append_tree, \
      replace_tree, add_sibling, add_descendant, skolemize_quantifiers, \
      skolemize_statement, insert_sort, target_compatible, target_depends, \
-     deps_defunct, deps_intersect, deps_compatible, complement_tree
+     deps_defunct, deps_intersect, deps_compatible, complement_tree, tags_to_list, \
+     canonicalise_tags, filter_titles, trim_spaces, find_all, find_start_index, \
+     metavars_used, target_metavars, domain, codomain, universe, \
+     system_unary_functions, system_binary_functions, system_predicates, list_merge, \
+     get_constraint
 import logic
 
 from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
-from heapq import merge
-
-system_unary_functions = ['complement', 'universe']
-system_binary_functions = ['min', 'max']
-system_predicates = ['is_bounded', 'is_upper_bound', 'is_lower_bound', 'is_supremum', 'is_infimum', 'is_pair', 'is_function', 'is_injective', 'is_surjective', 'is_bijective']
-
-def metavars_used(tree):
-    used = []
-
-    def search(tree):
-        if tree == None:
-            return
-        elif isinstance(tree, LRNode):
-            search(tree.left)
-            search(tree.right)
-        elif isinstance(tree, VarNode):
-            if tree.is_metavar:
-                name = tree.name()
-                if name not in used:
-                    used.append(name)
-        elif isinstance(tree, FnApplNode):
-            if tree.is_metavar:
-                name = tree.name()
-                if name not in used:
-                    used.append(name)
-            for v in tree.args:
-                search(v)
-        elif isinstance(tree, TupleNode):
-            for v in tree.args:
-                search(v)
-        
-    search(tree)
-    return used
-
-def list_merge(list1, list2):
-    r = []
-    L = merge(list1, list2)
-    v = ''
-    for var in L:
-        if var != v:
-           r.append(var)
-        v = var
-    return r
-
-def target_metavars(screen, tl, ttree):
-    target_metavars = []
-    tlist2 = tl.tlist2.data
-    
-    def mvars(ttree, target_metavars):
-        if ttree.proved:
-            return target_metavars
-        if ttree.num != -1:
-            ttree.metavars = metavars_used(tlist2[ttree.num])
-            ttree.metavars.sort()
-            target_metavars = list_merge(target_metavars, ttree.metavars)
-        for t in ttree.andlist:
-            target_metavars = mvars(t, target_metavars)
-        return target_metavars
-
-    return mvars(ttree, target_metavars)
 
 def annotate_ttree(screen, tl, ttree, hydras, tarmv):
+    """
+    Goes through the target dependency tree, ttree, and annotates each node
+    with a list (called unifies) of hypotheses that unify with the associated
+    target. In addition to this, a -1 indicates that the associated target is
+    an equality the sides of which unify with each other.
+    Furthermore, a pair (i, j) indicates a pair of hypotheses that unify to
+    the negation of one another which are target compatible with the given
+    target.
+    If such an annotation is made and the list of metavariables used in the
+    associated target is not a current hydra, add it to the list of hydras.
+    In the case of contradictions, we check that no additional metavariables
+    appear in the hypotheses i and j that don't appear in the target. To
+    enable this, the function must be supplied with a list, tarmv, of the
+    metavariables used in targets.
+    The function not only appends the list of unifications to the target
+    dependency tree nodes but also returns a list of the counts of such
+    unifications and a list of lists of the unifications in the format we
+    just described, one list for each target in numerical order (numbered
+    from zero).
+    """
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     ttree_full = ttree
@@ -149,15 +113,44 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
     mark(ttree)
     return unification_count, unifications
 
-def find_start_index(lst, chosen_set):
-    index = len(lst)
-    for i in reversed(range(len(lst))):
-        if lst[i] in chosen_set:
-            break
-        index = i
-    return index
-
 def generate_pairs(V, L, r, i=0, last_chosen_c=None):
+    """
+    Creates a generator for iterating through all possible ways of closing
+    targets. A target can only close if it belongs to a set of targets which
+    are all satisfied (either by matching a hypothesis, being proved by a
+    contradiction in the hypotheses or being an equality which is a tautology)
+    and the collective metavariables for which, do not appear elsewhere, and
+    can all be filled in via unification in a consistent way.
+    Of course, it may be that one such target is not a leaf in the target
+    dependency tree. In such a case, we are happy to prove that target, instead
+    of all its descendants in the tree, which creates a combinatorial explosion
+    in the number of ways to prove targets.
+
+    Here is a description of how this function works:
+    V is a list of nonempty lists. The length of V is r. Each list in V is a list
+    of indices in the range 0 to m - 1 inclusive. List L is a list of indices.
+
+    This function creates a generator for iterating over all lists S of pairs of
+    integers (c, d) defined as follows. The list S has length r. S[i] is a pair
+    of integers (c_i, d_i) as follows. The index c_i should be one of the integers
+    of V[i]. However, its index in V[i] should exceed that of the greatest index
+    j for which V[i][j] = c_k for some k < i. The integer d_i should be some
+    integer in the range 0 to L[c_i] - 1 inclusive.
+
+    The interpretation is as follows. The list item L[j] is a count of the number
+    of different unifications that could prove target j. The list item V[i] is a
+    list of targets that could be proved which would suffice to prove the i-th
+    target of some list of targets we've identified as being able to be proved
+    as a block (taking into account metavariables).
+
+    TODO: It's not clear that the condition to pick the c_i from the tail of the
+    V[i] not containing any previous c_k's is correct. If a c_i is picked which
+    is common to two V[i] lists then it proves both of the targets, but this
+    algorithm wouldn't seem to allow for both targets to be proved solely by
+    proving this one common target. Presumably the extra condition was added to
+    reduce complexity, but perhaps it should at least allow the same c_i to be
+    picked more than once.
+    """
     if last_chosen_c is None:
         last_chosen_c = []
     if i == r:
@@ -168,11 +161,26 @@ def generate_pairs(V, L, r, i=0, last_chosen_c=None):
             c = V[i][c_index]
             last_chosen_c.append(c)
             for d in range(L[c]):
-                for rest in generate_pairs(V, L, r, i+1, last_chosen_c):
+                for rest in generate_pairs(V, L, r, i + 1, last_chosen_c):
                     yield [(c, d)] + rest
             last_chosen_c.remove(c)
 
 def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
+    """
+    A hydra is essentially a list of metavariables which are connected because
+    they appear in common targets. One can prove a target only if one can prove
+    all the targets using metavariables in a hydra.
+    A head of the hydra is a path from the bottom of the target dependency tree
+    all the way to a leaf node that passes through a node making use of one of
+    the metavariables in the given hydra.
+    This function finds all the heads of a given hydra.
+    Along the way, this function may discover hydras that we don't know about.
+    This occurs when some path has a node with a metavariable appearing in the
+    current hydra, but there are other nodes in the path with metavariables
+    that would require expanding the current hydra. The new hydra so created
+    is added to the list of hydras_todo, assuming it is not already in the list
+    of hydras_done.
+    """
     hydra_heads = []
 
     def find(ttree, path, head_found, head_killable):
@@ -207,6 +215,15 @@ def find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra):
         return []
 
 def try_unifications(screen, tl, ttree, unifications, gen):
+    """
+    Given a list gen of pairs (c, d) each consisting of a target c and a list d
+    of unifications that might prove this target, try to do the unifications in
+    the list in a compatible way (wrt metavariable assignments coming from the
+    unifications). If such a unification is possible, mark all the targets in
+    the list as proved. Each of the unifications could be a unification of a
+    target with a hypothesis, unification of a hypothesis with the negation of
+    another or unification of two sides of a target that is an equality.
+    """
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with (or pair)
@@ -238,6 +255,15 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 mark_proved(screen, tl, ttree, c)
                 
 def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
+    """
+    Some targets do not contain metavariables, and when these can be unified
+    with a hypothesis that doesn't involve metavariables used in other targets
+    then this should be done. This function is needed as a special case because
+    the general machinery works on hydras, which are non-empty lists of
+    metavariables. As per the general machinery, a proof of a target in this
+    way could involve either unification with a hypothesis, contradiction of
+    two hypotheses or a target which is an equality with both sides the same.
+    """
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     for i in range(len(tlist1)):
@@ -261,6 +287,25 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                     mark_proved(screen, tl, ttree, i)
     
 def targets_proved(screen, tl, ttree):
+    """
+    This is the main wrapper which is called every move to see if we are done.
+    First it computes all metavariables used in the targets. It then checks a
+    special case of targets that can be proved without assigning any
+    metavariables that occur in targets. It then annotates the target
+    dependency tree with information about unifications that might prove each
+    of the targets. Along the way, it computes hydras, i.e. collections of
+    metavariables that occur in a collection of targets. For each such hydra
+    it computes a list of paths to leaf nodes which pass through a target
+    that makes use of at least one of the metavariables in the hydra. We call
+    these heads of the hydra. Each must be cut off to prove the targets for
+    that hydra. We then create a generator which will allow us to iterate over
+    all the ways of killing all the heads of the current hydra. We then try to
+    use unification to find a compatible set of assignments that will prove all
+    the targets required to kill the current hydra. Along the way, new hydras
+    may be created, and these are appended to the list if they aren't the same
+    as a hydra we already dealt with. If all the original targets are proved
+    at the end of this process, the function returns True, otherwise False.
+    """
     hydras_done = []
     hydras_todo = []
     tarmv = target_metavars(screen, tl, ttree)
@@ -274,7 +319,84 @@ def targets_proved(screen, tl, ttree):
         hydras_done.append(hydra)
     return all(t.proved for t in ttree.andlist)
 
+def mark_proved(screen, tl, ttree, n):
+    """
+    Given a target dependency tree, ttree, mark target n within this tree as
+    proved, along with all the descendents of that node. Also set all
+    hypotheses that can only be used to prove now proven nodes, to DeadNode
+    (which shows up as a dashed line in the tableau) along with all the now
+    proven nodes.
+    """
+    if ttree.num == n:
+        if not ttree.proved:
+            ttree.proved = True
+            if n >= 0:
+                screen.dialog("Target "+str(ttree.num)+" proved")
+            for i in range(0, len(tl.tlist1.data)):
+                if deps_defunct(screen, tl, ttree, n, i):
+                    tl.tlist1.data[i] = DeadNode()
+                    screen.pad1.pad[i] = str(tl.tlist1.data[i])
+            screen.pad1.refresh()
+            for i in range(0, len(tl.tlist2.data)):
+                if target_depends(screen, tl, ttree, i, n): 
+                    tl.tlist2.data[i] = DeadNode()
+                    screen.pad2.pad[i] = str(tl.tlist2.data[i])
+            screen.pad2.refresh()
+            screen.focus.refresh()
+        return True
+    for P in ttree.andlist:
+        if mark_proved(screen, tl, P, n):
+            if all(t.proved for t in ttree.andlist) and not ttree.proved:
+                ttree.proved = True
+                if ttree.num >= 0:
+                    screen.dialog("Target "+str(ttree.num)+" proved")
+                for i in range(0, len(tl.tlist2.data)):
+                    if deps_defunct(screen, tl, ttree, ttree.num, i):
+                        tl.tlist1.data[i] = DeadNode()
+                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+                screen.pad1.refresh()
+                for i in range(0, len(tl.tlist2.data)):
+                    if target_depends(screen, tl, ttree, i, ttree.num): 
+                        tl.tlist2.data[i] = DeadNode()
+                        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+                screen.pad2.refresh()
+                screen.focus.refresh()
+            return True
+    return False
+
+def check_contradictions(screen, tl, ttree, tarmv):
+    """
+    Check for any contradictions amongst hypotheses that don't involve metavars
+    in the list tarmv (taken to be a list of all metavars appearing in
+    targets). Mark any targets proved for which the contradicting hypotheses
+    are target compatible.
+    """
+    tlist1 = tl.tlist1.data
+    for i in range(len(tlist1)):
+        mv1 = metavars_used(tlist1[i])
+        if not any(v in tarmv for v in mv1):
+            tree1 = complement_tree(tlist1[i])
+            for j in range(0, i):
+                mv2 = metavars_used(tlist1[j])
+                if not any(v in tarmv for v in mv2):
+                    di = deps_intersect(screen, tl, ttree, i, j)
+                    if di: # hyps i and j can be used to prove targets
+                        tree2 = tlist1[j]
+                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                        if unifies: # we found a contradiction
+                            for t in di:
+                                mark_proved(screen, tl, ttree, t)
+
 def element_universe(screen, x):
+    """
+    Function constraints specify a codomain rather than a universe. This
+    function can be called to compute the appropriate universe for an element
+    of the codomain (or indeed the domain, if required). One must be careful
+    because the domain or codomain of a function may itself be expressed using
+    some other constraint, e.g. a variable, function constraint, cartesian
+    constraint, etc., and each case requires special handling.
+    """
     if isinstance(x, VarNode):
         return x.sort.sort
     elif isinstance(x, FunctionConstraint):
@@ -290,6 +412,12 @@ def element_universe(screen, x):
         return x
 
 def propagate_sorts(screen, tl, tree0):
+    """
+    Given a parse tree where all variables have been annotated with their
+    constraints, compute all the types for every node of the tree. The code
+    to propagate types up the the tree from components of the current node
+    comes first, followed by code to compute the types for the current node.
+    """
     stree = tl.stree
 
     def propagate(tree):
@@ -577,6 +705,14 @@ def propagate_sorts(screen, tl, tree0):
     return propagate(tree0)
 
 def process_sorts(screen, tl):
+    """
+    Every move, this function is called to recompute the types of nodes in any
+    quantifier zone, hypothesis or target that hasn't previously been processed
+    or which has been modified since last move. A record of the last binder in
+    the quantifier zone, the last hypothesis and the last target already
+    processed are stored in the tableau structure and these are reset if an
+    already processed line is changed.
+    """
     n0, n1, n2 = tl.sorts_processed
     i = 0
     if tl.tlist0.data:
@@ -601,17 +737,16 @@ def process_sorts(screen, tl):
             return False
     tl.sorts_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
     return True
-    
-def get_constraint(var, qz):
-    tree = qz
-    name = var.name()
-    while qz:
-        if qz.var.name() == name:
-            return qz.var.constraint
-        qz = qz.left
-    raise Exception("Binder not found for "+var.name())
 
 def process_constraints(screen, tree, constraints, vars=None):
+    """
+    Given a parse tree and a dictionary of constraints for variables, annotate
+    each occurrence of variables in tree with their constraints as stored in
+    the dictionary. If an existential or universal binder is encountered, the
+    constraint for the variable defined will be added to the dictionary. In
+    addition, if one needs a list of such variables for further processing,
+    pass a list through the vars parameter and it will be appended.
+    """
     def del_last(L, str):
         gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
         del L[next(gen, None)]
@@ -696,6 +831,12 @@ def process_constraints(screen, tree, constraints, vars=None):
     return True
 
 def type_vars(screen, tl):
+    """
+    When beginning to prove a theorem, the initial tableau needs each variable
+    annotated with its constraints as defined by its corresponding binder. This
+    function is called once manual or automated mode is started to do this
+    annotation.
+    """
     constraints = dict() # all constraints of all vars
     vars = [] # vars currently in scope
 
@@ -728,6 +869,16 @@ def type_vars(screen, tl):
     tl.constraints_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
 
 def update_constraints(screen, tl):
+    """
+    After every move, additional variables could have been added to the
+    quantifier zone, or additional hypotheses or targets could have been
+    added to the tableau. In such cases, this function can be called to
+    annotate all variables that appear in them with their constraints.
+    A count of the number of already processed binders in the quantifier
+    zone, hypotheses and targets is stored in the tableau structure. This
+    can be reset if a change is made to one of the already processed
+    lines of the tableau.
+    """
     n0, n1, n2 = tl.constraints_processed
     constraints = tl.constraints
 
@@ -761,44 +912,20 @@ def update_constraints(screen, tl):
             return False
     tl.constraints_processed = (i, len(hyps), len(tars))
     return True
-
-def universe(tree, qz):
-    if isinstance(tree, VarNode):
-        t = get_constraint(tree, qz)
-        return t.sort
-    elif isinstance(tree, UnionNode) or isinstance(tree, IntersectNode) or \
-         isinstance(tree, DiffNode):
-        return universe(tree.left, qz)
-    elif isinstance(tree, CartesianNode):
-        return TupleSort([universe(tree.left, qz), universe(tree.right, qz)])
-    elif isinstance(tree, FnApplNode) and tree.name() == 'complement':
-        return universe(tree.args[0], qz)
-    elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        return tree.constraint
-    else:
-        return None # no universe
-
-def domain(tree, qz):
-    if isinstance(tree, VarNode):
-        if tree.is_metavar:
-            return None
-        else:
-            fn_constraint = get_constraint(tree, qz)
-            return fn_constraint.domain
-    else:
-        return None # no domain
-
-def codomain(tree, qz):
-    if isinstance(tree, VarNode):
-        if tree.is_metavar:
-            return None
-        else:
-            fn_constraint = get_constraint(tree, qz)
-            return fn_constraint.codomain
-    else:
-        return None # no codomain
         
 def fill_macros(screen, tl):
+    """
+    When the tableau is initiall loaded, before any processing whatsoever,
+    there may be macros in the tableau (universe, domain, codomain, etc.)
+    which need to be computed. This function also needs to be called every
+    move as it is possible that some inference filled in a metavariable,
+    at which point a macro with that variable as parameter may now be
+    computed. Generally, this function must be called before any processing
+    of constraints or sorts. The only macros that can't be filled in are
+    those whose parameter is a metavariable about which the required
+    information is not known. This happens for example when theorems are
+    loaded from the library, before they are instantiated.
+    """
     def fill(tree, data):
         if tree == None:
             return None
@@ -849,63 +976,16 @@ def fill_macros(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
-def mark_proved(screen, tl, ttree, n):
-    if ttree.num == n:
-        if not ttree.proved:
-            ttree.proved = True
-            if n >= 0:
-                screen.dialog("Target "+str(ttree.num)+" proved")
-            for i in range(0, len(tl.tlist1.data)):
-                if deps_defunct(screen, tl, ttree, n, i):
-                    tl.tlist1.data[i] = DeadNode()
-                    screen.pad1.pad[i] = str(tl.tlist1.data[i])
-            screen.pad1.refresh()
-            for i in range(0, len(tl.tlist2.data)):
-                if target_depends(screen, tl, ttree, i, n): 
-                    tl.tlist2.data[i] = DeadNode()
-                    screen.pad2.pad[i] = str(tl.tlist2.data[i])
-            screen.pad2.refresh()
-            screen.focus.refresh()
-        return True
-    for P in ttree.andlist:
-        if mark_proved(screen, tl, P, n):
-            if all(t.proved for t in ttree.andlist) and not ttree.proved:
-                ttree.proved = True
-                if ttree.num >= 0:
-                    screen.dialog("Target "+str(ttree.num)+" proved")
-                for i in range(0, len(tl.tlist2.data)):
-                    if deps_defunct(screen, tl, ttree, ttree.num, i):
-                        tl.tlist1.data[i] = DeadNode()
-                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
-                screen.pad1.refresh()
-                for i in range(0, len(tl.tlist2.data)):
-                    if target_depends(screen, tl, ttree, i, ttree.num): 
-                        tl.tlist2.data[i] = DeadNode()
-                        screen.pad2.pad[i] = str(tl.tlist2.data[i])
-                screen.pad2.refresh()
-                screen.focus.refresh()
-            return True
-    return False
-
-def check_contradictions(screen, tl, ttree, tarmv):
-    tlist1 = tl.tlist1.data
-    for i in range(len(tlist1)):
-        mv1 = metavars_used(tlist1[i])
-        if not any(v in tarmv for v in mv1):
-            tree1 = complement_tree(tlist1[i])
-            for j in range(0, i):
-                mv2 = metavars_used(tlist1[j])
-                if not any(v in tarmv for v in mv2):
-                    di = deps_intersect(screen, tl, ttree, i, j)
-                    if di: # hyps i and j can be used to prove targets
-                        tree2 = tlist1[j]
-                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        if unifies: # we found a contradiction
-                            for t in di:
-                                mark_proved(screen, tl, ttree, t)
-
 def select_substring(screen, tl):
+    """
+    Interface function for getting the user to select a substring of some
+    hypothesis or target that an equality substitution is going to be applied
+    to. The function returns a quadruple hyp, line, start, end. The value hyp
+    is True if the selected substring is in a hypothesis, otherwise it is in
+    a target. The index within the hypothesis/target pane is given by line.
+    The start and end character indices are also returned, standing for the
+    substring including the start index but not the end index.
+    """
     window = screen.win1
     pad = screen.pad1
     tlist = tl.tlist1
@@ -990,25 +1070,13 @@ def select_substring(screen, tl):
             screen.status("")
             return True, 0, 0, 0 
 
-def trim_spaces(string, start, end):
-    while start <= end and string[start] == ' ':
-        start += 1
-    while end > start and string[end - 1] == ' ':
-        end -= 1
-    return start, string[start:end]
-
-def find_all(string, substring):
-    start = 0
-    res = []
-    n = len(substring)
-    while True:
-        start = string.find(substring, start)
-        if start == -1:
-            return res
-        res.append(start)
-        start += n
-
 def equality_substitution(screen, tl):
+    """
+    Gets the index of a hypothesis from the user which is an equality, and
+    gets a substring of a hypothesis or target to apply it to and does the
+    substitution. See the corresponding function in the logic module for
+    details.
+    """
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -1060,6 +1128,9 @@ def equality_substitution(screen, tl):
     screen.focus.refresh()
     
 def clear_tableau(screen, tl):
+    """
+    Clear the tableau and reset it ready to prove another theorem.
+    """
     tlist0 = tl.tlist0
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -1100,35 +1171,16 @@ def clear_tableau(screen, tl):
     pad0.refresh()
     screen.focus = screen.pad0
     tl.focus = tl.tlist0
-    
-canonical_numconstraints = { "\\N" : "\\mathbb{N}",
-                       "\\Z" : "\\mathbb{Z}",
-                       "\\Q" : "\\mathbb{Q}",
-                       "\\R" : "\\mathbb{R}",
-                       "\\C" : "\\mathbb{C}"}
-
-def tags_to_list(tags):
-    t = tags[6:].split(" ")
-    if len(t) == 1 and t[0] == '':
-        t = []
-    return t
-
-def canonicalise_tags(tags):
-    taglist = tags_to_list(tags)
-    for i in range(0, len(taglist)):
-        tag = taglist[i][1:]
-        if tag in canonical_numconstraints:
-            taglist[i] = "#"+canonical_numconstraints[tag]
-    return "Tags: "+' '.join(taglist)
-
-def filter_titles(titles, c):
-    titles2 = []
-    for (line, v) in titles:
-        if v[0] == c or v[0] == c.upper():
-            titles2.append((line, v))
-    return titles2
 
 def library_import(screen, tl):
+    """
+    Read a theorem from the library to be added to the hypotheses of
+    the current tableau. The function will first request a list of
+    hashtags to filter by (which can be empty for no filtering) and
+    will subsequently allow pressing a letter key to filter library
+    results whose title begins with that letter (optional). Pressing
+    Enter then loads the given result from the library into the tableau. 
+    """
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
@@ -1229,6 +1281,14 @@ def library_import(screen, tl):
     library.close()
 
 def library_load(screen, tl):
+    """
+    Load a tableau from the library to be proved. The function will
+    first request a list of hashtags to filter by (which can be empty
+    for no filtering) and will subsequently allow pressing a letter
+    key to filter library results whose title begins with that letter
+    (optional). Pressing Enter then loads the given result from the
+    library into the tableau. 
+    """
     tags = edit(screen, "Tags: ", 6, True)
     if tags == None:
         return
@@ -1314,6 +1374,13 @@ def library_load(screen, tl):
     library.close()
 
 def library_export(screen, tl):
+    """
+    Write the current tableau out as a library result. This can only be done
+    before manual mode or automation has been started, i.e. before creation
+    of metavariables and skolemization and appending other information to the
+    parse tree. The function will prompt to give a label for the theorem,
+    which can be anything, and any hashtags to be specified for the theorem.
+    """
     title = edit(screen, "Title: ", 7, True)
     if title == None:
         return
@@ -1362,6 +1429,13 @@ def library_export(screen, tl):
     screen.focus.refresh()
 
 def select_hypothesis(screen, tl, second):
+    """
+    Allows the user to select a hypothesis, or if second is True, a target
+    (after pressing TAB to switch panes). The function returns a tuple
+    (forward, line) where forward is True if a hypothesis was selected,
+    False if it was a target, and line is the line index in the relevant
+    pane.
+    """
     window = screen.win1
     pad = screen.pad1
     tlist = tl.tlist1
@@ -1427,6 +1501,13 @@ def negate_target(screen, tl):
 """
 
 def modus_ponens(screen, tl, ttree):
+    """
+    The modus ponens move, i.e. given P => Q and P, infers Q. The move accepts
+    quantified implications and P can be a conjunction, in which the user will
+    be prompted for multiple predicates to conjoin. The move can be applied for
+    both forwards and backwards reasoning. P can also be matched against an
+    implication S => T which will be interpreted as ¬S \wedge T.
+    """
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -1503,6 +1584,13 @@ def modus_ponens(screen, tl, ttree):
     screen.focus.refresh()
 
 def modus_tollens(screen, tl, ttree):
+    """
+    The modus ponens move, i.e. given ¬Q => ¬P and P, infers Q. The move accepts
+    quantified implications and P can be a conjunction, in which the user will
+    be prompted for multiple predicates to conjoin. The move can be applied for
+    both forwards and backwards reasoning. P can also be matched against an
+    implication S => T which will be interpreted as ¬S \wedge T.
+    """
     screen.save_state()
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
@@ -1580,6 +1668,33 @@ def modus_tollens(screen, tl, ttree):
     screen.focus.refresh()
 
 def cleanup(screen, tl, ttree):
+    """
+    Automated cleanup moves. This applies numerous moves that the user will
+    essentially always want to do. This is applied automatically after every
+    move to make less work for the user. The moves applied are the following:
+      * skolemization of existentially bound variables
+      * creation of metavariables
+      * moving outside binders on hypotheses/targets to the quantifier zone
+    For hypotheses we perform the following moves:
+      * convert P \vee P to P
+      * convert ¬P \vee Q to P => Q
+      * convert P \iff Q to P => Q and Q => P
+      * replace P \wedge P with P
+      * convert P \wedge Q to P and Q
+      * convert ¬(P \implies Q) to P and ¬Q
+      * convert (P \vee Q) => R to P => R and Q => R if such implications
+        would not introduce new metavariables
+      * convert P => (Q \wedge R) to P => Q and P => R
+    For targets we perform the following moves:
+      * for P \vee Q introduce a hypothesis ¬P and replace the implication with Q,
+        with appropriate dependency tracking
+      * for P => Q introduce a hypothesis P and replace the implication with Q, with
+        appropriate dependency tracking
+      * convert P \wedge P to P
+      * convert P \wedge Q to P and Q
+      * convert ¬(P \implies Q) to P and ¬Q
+    These are applied repeatedly until no further automated moves are possible.
+    """
     tl0 = tl.tlist0.data # quantifier zone
     tl1 = tl.tlist1.data # hypotheses
     tl2 = tl.tlist2.data # targets
@@ -1684,7 +1799,7 @@ def cleanup(screen, tl, ttree):
                     replace_tree(screen.pad1, tl1, i, stmt)
                     rollback()
                 while isinstance(tl1[i], AndNode):
-                    # First check we don't have P \vee P
+                    # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
