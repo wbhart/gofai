@@ -1017,77 +1017,76 @@ def process_constraints(screen, tree, constraints, vars=None):
         if vars != None:
             vars.append(name)
         constraints[tree.var.name()] = tree.var.constraint
-        ok = process_constraints(screen, tree.var.constraint, constraints, vars)
+        ok, error = process_constraints(screen, tree.var.constraint, constraints, vars)
         if not ok:
-            return False
-        ok = process_constraints(screen, tree.left, constraints, vars)
+            return False, error
+        ok, error = process_constraints(screen, tree.left, constraints, vars)
         if vars != None:
             del_last(vars, name)
         if not ok:
-            return False
+            return False, error
     elif isinstance(tree, SetBuilderNode):
         name = tree.left.left.name()
         if vars != None:
             vars.append(name)
         constraints[tree.left.left.name()] = tree.left.left.constraint
-        ok = process_constraints(screen, tree.left, constraints, vars)
+        ok, error = process_constraints(screen, tree.left, constraints, vars)
         if not ok:
             if vars != None:
                 del_last(vars, name)
-            return False
-        ok = process_constraints(screen, tree.right, constraints, vars)
+            return False, error
+        ok, error = process_constraints(screen, tree.right, constraints, vars)
         if vars != None:
             del_last(vars, name)
         if not ok:
-            return False
+            return False, error
     elif isinstance(tree, VarNode):
         varnames = vars if vars != None else constraints
         if not tree.name() in varnames:
             if tree.name() not in system_unary_functions and \
                tree.name() not in system_binary_functions and \
                tree.name() not in system_predicates:
-               screen.dialog(f"Unknown variable/function {tree.name()}")
-               return False
+               return False, f"Unknown variable/function {tree.name()}"
         else:
             tree.constraint = constraints[tree.name()]
     elif isinstance(tree, LRNode):
-        ok = process_constraints(screen, tree.left, constraints, vars)
+        ok, error = process_constraints(screen, tree.left, constraints, vars)
         if not ok:
-            return False
-        ok = process_constraints(screen, tree.right, constraints, vars)
+            return False, error
+        ok, error = process_constraints(screen, tree.right, constraints, vars)
         if not ok:
-            return False
+            return False, error
     elif isinstance(tree, FnApplNode):
-        ok = process_constraints(screen, tree.var, constraints, vars)
+        ok, error = process_constraints(screen, tree.var, constraints, vars)
         if not ok:
-            return False
+            return False, error
         for v in tree.args:
-            ok = process_constraints(screen, v, constraints, vars)
+            ok, error = process_constraints(screen, v, constraints, vars)
             if not ok:
-                return False
+                return False, error
     elif isinstance(tree, TupleNode):
         for v in tree.args:
-            ok = process_constraints(screen, v, constraints, vars)
+            ok, error = process_constraints(screen, v, constraints, vars)
             if not ok:
-                return False
+                return False, error
     elif isinstance(tree, SymbolNode):
-         ok = process_constraints(screen, tree.constraint, constraints, vars)
+         ok, error = process_constraints(screen, tree.constraint, constraints, vars)
          if not ok:
-             return False
+             return False, error
     elif isinstance(tree, FunctionConstraint):
-         ok = process_constraints(screen, tree.domain, constraints, vars)
+         ok, error = process_constraints(screen, tree.domain, constraints, vars)
          if not ok:
-             return False
-         ok = process_constraints(screen, tree.codomain, constraints, vars)
+             return False, error
+         ok, error = process_constraints(screen, tree.codomain, constraints, vars)
          if not ok:
-             return False
+             return False, error
     elif isinstance(tree, DomainTuple):
          for v in tree.sets:
-             ok = process_constraints(screen, v, constraints, vars)
+             ok, error = process_constraints(screen, v, constraints, vars)
          if not ok:
-             return False
-    return True
-    
+             return False, error
+    return True, None
+
 def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocked=False):
     """
     Given a statement, tree, return a version of it in which all variables that

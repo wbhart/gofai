@@ -225,6 +225,9 @@ def try_unifications(screen, tl, ttree, unifications, gen):
     target with a hypothesis, unification of a hypothesis with the negation of
     another or unification of two sides of a target that is an equality.
     """
+    dirty1 = []
+    dirty2 = []
+    plist = []
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     for v in gen: # list of pairs (c, d) where c = targ to unify, d is index into list of hyps that it may unify with (or pair)
@@ -253,7 +256,11 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 break
         if unifies:
             for (c, d) in v:
-                mark_proved(screen, tl, ttree, c)
+                d1, d2, pl = mark_proved(screen, tl, ttree, c)
+                dirty1 += d1
+                dirty2 += d2
+                plist += pl
+    return dirty1, dirty2, plist
                 
 def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
     """
@@ -265,6 +272,9 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
     way could involve either unification with a hypothesis, contradiction of
     two hypotheses or a target which is an equality with both sides the same.
     """
+    dirty1 = []
+    dirty2 = []
+    plist = []
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     for i in range(len(tlist1)):
@@ -277,16 +287,105 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                         unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
-                            mark_proved(screen, tl, ttree, j)
-    check_contradictions(screen, tl, ttree, tarmv)
+                            d1, d2, pl = mark_proved(screen, tl, ttree, j)
+                            dirty1 += d1
+                            dirty2 += d2
+                            plist += pl
+    d1, d2, pl = check_contradictions(screen, tl, ttree, tarmv)
+    dirty1 += d1
+    dirty2 += d2
+    plist += pl
     for i in range(len(tlist2)):
         if isinstance(tlist2[i], EqNode):
             if not metavars_used(tlist2[i]):
                 unifies, assign, macros = unify(screen, tl, tlist2[i].left, tlist2[i].right)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if unifies:
-                    mark_proved(screen, tl, ttree, i)
-    
+                    d1, d2, p1 = mark_proved(screen, tl, ttree, i)
+                    dirty1 += d1
+                    dirty2 += d2
+                    plist += pl
+    return dirty1, dirty2, plist
+
+def mark_proved(screen, tl, ttree, n):
+    """
+    Given a target dependency tree, ttree, mark target n within this tree as
+    proved, along with all the descendents of that node. Also set all
+    hypotheses that can only be used to prove now proven nodes, to DeadNode
+    (which shows up as a dashed line in the tableau) along with all the now
+    proven nodes.
+    """
+    dirty1 = []
+    dirty2 = []
+    plist = [] # list of targets proved
+
+    def process(dirty1, dirty2, plist, ttree, n):
+        if ttree.num == n:
+            if not ttree.proved:
+                ttree.proved = True
+                if n >= 0:
+                    plist.append(ttree.num)
+                for i in range(0, len(tl.tlist1.data)):
+                    if deps_defunct(screen, tl, ttree, n, i):
+                        tl.tlist1.data[i] = DeadNode()
+                        dirty1.append(i)
+                screen.pad1.refresh()
+                for i in range(0, len(tl.tlist2.data)):
+                    if target_depends(screen, tl, ttree, i, n): 
+                        tl.tlist2.data[i] = DeadNode()
+                        dirty2.append(i)
+            return True
+        for P in ttree.andlist:
+            if process(dirty1, dirty2, plist, P, n):
+                if all(t.proved for t in ttree.andlist) and not ttree.proved:
+                    ttree.proved = True
+                    if ttree.num >= 0:
+                        plist.append(ttree.num)
+                    for i in range(0, len(tl.tlist2.data)):
+                        if deps_defunct(screen, tl, ttree, ttree.num, i):
+                            tl.tlist1.data[i] = DeadNode()
+                            dirty1.append(i)
+                    for i in range(0, len(tl.tlist2.data)):
+                        if target_depends(screen, tl, ttree, i, ttree.num): 
+                            tl.tlist2.data[i] = DeadNode()
+                            dirty2.append(i)
+                return True
+        return False
+
+    process(dirty1, dirty2, plist, ttree, n)
+    return dirty1, dirty2, plist
+
+def check_contradictions(screen, tl, ttree, tarmv):
+    """
+    Check for any contradictions amongst hypotheses that don't involve metavars
+    in the list tarmv (taken to be a list of all metavars appearing in
+    targets). Mark any targets proved for which the contradicting hypotheses
+    are target compatible.
+    """
+    dirty1 = []
+    dirty2 = []
+    plist = []
+    tlist1 = tl.tlist1.data
+    for i in range(len(tlist1)):
+        mv1 = metavars_used(tlist1[i])
+        if not any(v in tarmv for v in mv1):
+            tree1 = complement_tree(tlist1[i])
+            for j in range(0, i):
+                mv2 = metavars_used(tlist1[j])
+                if not any(v in tarmv for v in mv2):
+                    di = deps_intersect(screen, tl, ttree, i, j)
+                    if di: # hyps i and j can be used to prove targets
+                        tree2 = tlist1[j]
+                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                        if unifies: # we found a contradiction
+                            for t in di:
+                                d1, d2, pl = mark_proved(screen, tl, ttree, t)
+                                dirty1 += d1
+                                dirty2 += d2
+                                plist += pl
+    return dirty1, dirty2, plist
+
 def targets_proved(screen, tl, ttree):
     """
     This is the main wrapper which is called every move to see if we are done.
@@ -307,87 +406,36 @@ def targets_proved(screen, tl, ttree):
     as a hydra we already dealt with. If all the original targets are proved
     at the end of this process, the function returns True, otherwise False.
     """
+    dirty1 = []
+    dirty2 = []
+    plist = []
     hydras_done = []
     hydras_todo = []
     tarmv = target_metavars(screen, tl, ttree)
-    check_zero_metavar_unifications(screen, tl, ttree, tarmv)
+    d1, d2, pl = check_zero_metavar_unifications(screen, tl, ttree, tarmv)
+    dirty1 += d1
+    dirty2 += d2
+    plist += pl
     unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo, tarmv)
     while hydras_todo:
         hydra = hydras_todo.pop()
         heads = find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra)
         gen = generate_pairs(heads, unification_count, len(heads))
-        try_unifications(screen, tl, ttree, unifications, gen)
+        d1, d2, pl = try_unifications(screen, tl, ttree, unifications, gen)
+        dirty1 += d1
+        dirty2 += d2
+        plist += pl
         hydras_done.append(hydra)
+    for i in dirty1:
+        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+    for i in dirty2:
+        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+    for i in plist:
+        screen.dialog("Target "+str(i)+" proved.")
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus.refresh()
     return all(t.proved for t in ttree.andlist)
-
-def mark_proved(screen, tl, ttree, n):
-    """
-    Given a target dependency tree, ttree, mark target n within this tree as
-    proved, along with all the descendents of that node. Also set all
-    hypotheses that can only be used to prove now proven nodes, to DeadNode
-    (which shows up as a dashed line in the tableau) along with all the now
-    proven nodes.
-    """
-    if ttree.num == n:
-        if not ttree.proved:
-            ttree.proved = True
-            if n >= 0:
-                screen.dialog("Target "+str(ttree.num)+" proved")
-            for i in range(0, len(tl.tlist1.data)):
-                if deps_defunct(screen, tl, ttree, n, i):
-                    tl.tlist1.data[i] = DeadNode()
-                    screen.pad1.pad[i] = str(tl.tlist1.data[i])
-            screen.pad1.refresh()
-            for i in range(0, len(tl.tlist2.data)):
-                if target_depends(screen, tl, ttree, i, n): 
-                    tl.tlist2.data[i] = DeadNode()
-                    screen.pad2.pad[i] = str(tl.tlist2.data[i])
-            screen.pad2.refresh()
-            screen.focus.refresh()
-        return True
-    for P in ttree.andlist:
-        if mark_proved(screen, tl, P, n):
-            if all(t.proved for t in ttree.andlist) and not ttree.proved:
-                ttree.proved = True
-                if ttree.num >= 0:
-                    screen.dialog("Target "+str(ttree.num)+" proved")
-                for i in range(0, len(tl.tlist2.data)):
-                    if deps_defunct(screen, tl, ttree, ttree.num, i):
-                        tl.tlist1.data[i] = DeadNode()
-                        screen.pad1.pad[i] = str(tl.tlist1.data[i])
-                screen.pad1.refresh()
-                for i in range(0, len(tl.tlist2.data)):
-                    if target_depends(screen, tl, ttree, i, ttree.num): 
-                        tl.tlist2.data[i] = DeadNode()
-                        screen.pad2.pad[i] = str(tl.tlist2.data[i])
-                screen.pad2.refresh()
-                screen.focus.refresh()
-            return True
-    return False
-
-def check_contradictions(screen, tl, ttree, tarmv):
-    """
-    Check for any contradictions amongst hypotheses that don't involve metavars
-    in the list tarmv (taken to be a list of all metavars appearing in
-    targets). Mark any targets proved for which the contradicting hypotheses
-    are target compatible.
-    """
-    tlist1 = tl.tlist1.data
-    for i in range(len(tlist1)):
-        mv1 = metavars_used(tlist1[i])
-        if not any(v in tarmv for v in mv1):
-            tree1 = complement_tree(tlist1[i])
-            for j in range(0, i):
-                mv2 = metavars_used(tlist1[j])
-                if not any(v in tarmv for v in mv2):
-                    di = deps_intersect(screen, tl, ttree, i, j)
-                    if di: # hyps i and j can be used to prove targets
-                        tree2 = tlist1[j]
-                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        if unifies: # we found a contradiction
-                            for t in di:
-                                mark_proved(screen, tl, ttree, t)
 
 def element_universe(screen, x):
     """
@@ -423,49 +471,53 @@ def propagate_sorts(screen, tl, tree0):
 
     def propagate(tree):
         if tree == None:
-            return True
+            return True, None
         if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
-            ok = propagate(tree.var.constraint)
+            ok, error = propagate(tree.var.constraint)
             if not ok:
-                return False
-            ok = propagate(tree.var)
+                return False, error
+            ok, error = propagate(tree.var)
             if not ok:
-                return False
+                return False, error
         if isinstance(tree, FnApplNode) or isinstance(tree, TupleNode):
             for v in tree.args:
-                ok = propagate(v)
+                ok, error = propagate(v)
                 if not ok:
-                    return False
+                    return False, error
         if isinstance(tree, FnApplNode):
-            ok = propagate(tree.var)
+            ok, error = propagate(tree.var)
             if not ok:
-                return False
+                return False, error
         if isinstance(tree, FunctionConstraint):
-            ok = propagate(tree.domain)
+            ok, error = propagate(tree.domain)
             if not ok:
-                return False
-            ok = propagate(tree.codomain)
+                return False, error
+            ok, error = propagate(tree.codomain)
             if not ok:
-                return False
+                return False, error
             if tree.domain:
                 tree.sort = SetSort(TupleSort([element_universe(screen, tree.domain), element_universe(screen, tree.codomain)]))
             else:
                 tree.sort = SetSort(TupleSort([None, element_universe(screen, tree.codomain)]))
         if isinstance(tree, CartesianConstraint):
             for v in tree.sorts:
-                ok = propagate(v)
+                ok, error = propagate(v)
                 if not ok:
-                    return False
+                    return False, error
             tree.sort = TupleSort([s.sort for s in tree.sorts])
         if isinstance(tree, LRNode):
-            if not propagate(tree.left):
-                return False
-            if not propagate(tree.right):
-                return False
+            ok, error = propagate(tree.left)
+            if not ok:
+                return False, error
+            ok, error = propagate(tree.right)
+            if not ok:
+                return False, error
         if isinstance(tree, SetOfNode):
             tree.sort = SetSort(tree.left)
         if isinstance(tree, SymbolNode):
-            propagate(tree.constraint)
+            ok, error = propagate(tree.constraint)
+            if not ok:
+                return False, error
             if tree.name() == "\\emptyset":
                  if isinstance(tree.constraint, VarNode):
                      tree.sort = SetSort(tree.constraint)
@@ -481,18 +533,18 @@ def propagate_sorts(screen, tl, tree0):
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, FnApplNode): # check it is a universe of metavar
                 if tree.constraint.name() != "universe":
-                    screen.dialog(f"Variable {tree.name()} has invalid constraint")
                     # leave sort as None
-                    return False
+                    return False, f"Variable {tree.name()} has invalid constraint"
             elif isinstance(tree.constraint, VarNode): # check it is in a set
                 if not isinstance(tree.constraint.constraint, SetSort):
-                    screen.dialog(f"Variable {tree.name()} has invalid constraint")
-                    return False
+                    return False, f"Variable {tree.name()} has invalid constraint"
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, Universum): # variable is in universum
                 tree.sort = tree.constraint
             elif isinstance(tree.constraint, CartesianConstraint):
-                propagate(tree.constraint)
+                ok, error = propagate(tree.constraint)
+                if not ok:
+                    return False, error
                 tree.sort = tree.constraint.sort
             elif isinstance(tree.constraint, FunctionConstraint):
                 tree.sort = tree.constraint.sort
@@ -501,42 +553,34 @@ def propagate_sorts(screen, tl, tree0):
         elif isinstance(tree, TupleComponentNode):
             lsort = tree.left.sort
             if not isinstance(lsort, TupleSort):
-                screen.dialog("Invalid tuple in component operation")
-                return False
+                return False, "Invalid tuple in component operation"
             idx = tree.right.value
             if idx < 0 or idx >= len(lsort.sorts):
-                screen.dialog("Invalid tuple index")
-                return False
+                return False, "Invalid tuple index"
             tree.sort = lsort.sorts[idx].sort
         elif isinstance(tree, CartesianNode):
             if not isinstance(tree.left.sort, SetSort) or \
                not isinstance(tree.right.sort, SetSort):
-                screen.dialog("Cartesian product requires sets")
-                return False
+                return False, "Cartesian product requires sets"
             tree.sort = SetSort(TupleSort([tree.left.sort.sort, tree.right.sort.sort]))
         elif isinstance(tree, NaturalNode):
             pass # dealt with by constructor
         elif isinstance(tree, ExpNode):
             if isinstance(tree.left.sort, Sort) and not isinstance(tree.left.sort, NumberSort):
-                screen.dialog("Cannot raise {str(tree.left)} to power")
-                return False
+                return False, "Cannot raise {str(tree.left)} to power"
             elif not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                    screen.dialog("Cannot raise {str(tree.left)} to power")
-                    return False
+                    return False, "Cannot raise {str(tree.left)} to power"
             if not isinstance(tree.right.sort, NumberSort) or tree.right.sort.name() != "Natural":
-                    screen.dialog("Powering operation not supported")
-                    return False
+                    return False, "Powering operation not supported"
             tree.sort = tree.left.sort
         elif isinstance(tree, CircNode):
             lsort = tree.left.sort
             rsort = tree.right.sort
             if not is_function_type(lsort) or \
                not is_function_type(rsort):    
-                screen.dialog("Not a function in composition")
-                return False
+                return False, "Not a function in composition"
             if not sorts_equal(lsort.sort.sorts[0], rsort.sort.sorts[1]):
-                screen.dialog("Type mismatch in function composition")
-                return False
+                return False, "Type mismatch in function composition"
             tree.sort = SetSort(TupleSort([rsort.sort.sorts[0], lsort.sort.sorts[1]]))
         elif isinstance(tree, FnApplNode):
             if tree.name() in system_unary_functions or tree.name() in system_binary_functions:
@@ -546,34 +590,28 @@ def propagate_sorts(screen, tl, tree0):
             elif len(tree.args) == 0: # constant function
                 fn_sort = tree.var.sort
                 if fn_sort.sort.sort.sorts[0] != None:
-                     screen.dialog(f"Wrong number of arguments to function {tree.name()}")
-                     return False
+                     return False, f"Wrong number of arguments to function {tree.name()}"
                 tree.sort = fn_sort.sort.sort.sorts[1]
             else:
                 fn_sort = tree.var.sort
                 if isinstance(fn_sort, PredSort):
                     if len(tree.args) != 1:
-                        screen.dialog(f"Wrong number of arguments in predicate {tree.name()}")
-                        return False
+                        return False, f"Wrong number of arguments in predicate {tree.name()}"
                     tree.sort = PredSort()
                 else:
                     domain_sort = fn_sort.sort.sort.sorts[0]
                     codomain_sort = fn_sort.sort.sort.sorts[1]
                     if domain_sort == None:
-                        screen.dialog(f"Wrong number of arguments to function {tree.name()}")
-                        return False
+                        return False, f"Wrong number of arguments to function {tree.name()}"
                     if len(tree.args) == 1:
                         if not coerce_sorts(screen, tl, domain_sort, tree.args[0].sort):
-                            screen.dialog(f"Type mismatch for argument {0} of {tree.name()}")
-                            return False
+                            return False, f"Type mismatch for argument {0} of {tree.name()}"
                     else:
                         if len(tree.args) != len(domain_sort.sorts):
-                            screen.dialog(f"Wrong number of arguments to function {tree.name()}")
-                            return False
+                            return False, f"Wrong number of arguments to function {tree.name()}"
                         for i in range(len(tree.args)):
                             if not coerce_sorts(screen, tl, domain_sort.sorts[i], tree.args[i].sort):
-                                screen.dialog(f"Type mismatch for argument {i} of {tree.name()}")
-                                return False
+                                return False, f"Type mismatch for argument {i} of {tree.name()}"
                     tree.sort = codomain_sort
         elif isinstance(tree, LambdaNode):
             # can only be created by the system
@@ -583,53 +621,42 @@ def propagate_sorts(screen, tl, tree0):
             tree.sort = TupleSort([v.sort for v in tree.args])
         elif isinstance(tree, PowerSetNode):
             if not isinstance(tree.left.sort, SetSort):
-                screen.dialog("Argument to power set not a set")
-                return False
+                return False, "Argument to power set not a set"
             tree.sort = SetSort(tree.left.sort)
         elif isinstance(tree, AddNode):
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                screen.dialog("Type mismatch in addition")
-                return False
+                return False, "Type mismatch in addition"
             if not isinstance(sort_type_class(tree.left.sort), MonoidClass):
-                screen.dialog("Invalid type for addition")
-                return False
+                return False, "Invalid type for addition"
             if not isinstance(sort_type_class(tree.right.sort), MonoidClass):
-                screen.dialog("Invalid type for addition")
-                return False
+                return False, "Invalid type for addition"
             tree.sort = tree.left.sort
         elif isinstance(tree, MulNode) or isinstance(tree, SubNode) or \
              isinstance(tree, DivNode):
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                screen.dialog("Type mismatch in arithmetic operation")
-                return False
+                return False, "Type mismatch in arithmetic operation"
             if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                screen.dialog("Invalid type for arithmetic operation")
-                return False
+                return False, "Invalid type for arithmetic operation"
             if not isinstance(sort_type_class(tree.right.sort), SemiringClass):
-                screen.dialog("Invalid type for arithmetic operation")
-                return False
+                return False, "Invalid type for arithmetic operation"
             tree.sort = tree.left.sort
         elif isinstance(tree, LtNode) or isinstance(tree, GtNode) or \
              isinstance(tree, LeqNode) or isinstance(tree, GeqNode):
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                screen.dialog("Type mismatch in order relation")
-                return False
+                return False, "Type mismatch in order relation"
             if not isinstance(sort_type_class(tree.left.sort), PosetClass):
-                screen.dialog("Invalid types for order relation")
-                return False
+                return False, "Invalid types for order relation"
             tree.sort = PredSort()
         elif isinstance(tree, EqNode) or isinstance(tree, NeqNode):
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                screen.dialog("Type mismatch in equality relation")
-                return False
+                return False, "Type mismatch in equality relation"
             # many things can be assigned/compared equal, so can't restrict types
             tree.sort = PredSort()
         elif isinstance(tree, ImpliesNode) or isinstance(tree, IffNode) or \
              isinstance(tree, AndNode) or isinstance(tree, OrNode):
             if not isinstance(tree.left.sort, PredSort) or \
                not isinstance(tree.right.sort, PredSort):
-                screen.dialog("Logical operator requires predicates")
-                return False
+                return False, "Logical operator requires predicates"
             tree.sort = PredSort()
         elif isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) or \
              isinstance(tree, DiffNode):
@@ -637,11 +664,9 @@ def propagate_sorts(screen, tl, tree0):
             rsort = tree.right.sort
             if not isinstance(lsort, SetSort) or \
                not isinstance(rsort, SetSort):
-                screen.dialog("Arguments to set operation are not sets")
-                return False
+                return False, "Arguments to set operation are not sets"
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
-                screen.dialog("Incompatible sets in set operation")
-                return False
+                return False, "Incompatible sets in set operation"
             tree.sort = lsort
         elif isinstance(tree, SubsetneqNode) or isinstance(tree, SubseteqNode) or \
              isinstance(tree, SupsetneqNode) or isinstance(tree, SupseteqNode):
@@ -649,40 +674,31 @@ def propagate_sorts(screen, tl, tree0):
             rsort = tree.right.sort
             if not isinstance(lsort, SetSort) or \
                not isinstance(rsort, SetSort):
-                screen.dialog("Arguments to set relation are not sets")
-                return False
+                return False, "Arguments to set relation are not sets"
             if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
-                screen.dialog("Incompatible sets in set relation")
-                return False
+                return False, "Incompatible sets in set relation"
             tree.sort = PredSort()
         elif isinstance(tree, SetBuilderNode):
             if not isinstance(tree.left.right.sort, SetSort):
-                screen.dialog("Set comprehension must range over set")
-                return False
+                return False, "Set comprehension must range over set"
             tree.sort = tree.left.right.sort
         elif isinstance(tree, AbsNode):
             if isinstance(tree.left.sort, SetSort):
-                screen.dialog("Cannot take absolute value of set")
-                return False
+                return False, "Cannot take absolute value of set"
             if not isinstance(sort_type_class(tree.left.sort), ValuedFieldClass):
-                screen.dialog("Incompatible argument type in absolute value")
-                return False
+                return False, "Incompatible argument type in absolute value"
             tree.sort = tree.left.sort
         elif isinstance(tree, NegNode):
             if isinstance(tree.left.sort, SetSort):
-                screen.dialog("Cannot negate a set")
-                return False
+                return False, "Cannot negate a set"
             if isinstance(tree.left.sort, PredSort):
-                screen.dialog("Cannot negate a predicate")
-                return False
+                return False, "Cannot negate a predicate"
             if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                screen.dialog("Invalid type for arithmetic operation")
-                return False
+                return False, "Invalid type for arithmetic operation"
             tree.sort = tree.left.sort
         elif isinstance(tree, NotNode):
             if not isinstance(tree.left.sort, PredSort):
-                screen.dialog("Logical negation requires predicate")
-                return False
+                return False, "Logical negation requires predicate"
             tree.sort = PredSort()
         elif isinstance(tree, BoolNode):
             tree.sort = PredSort()
@@ -690,19 +706,21 @@ def propagate_sorts(screen, tl, tree0):
             tree.sort = PredSort()
         elif isinstance(tree, ElemNode):
             if not isinstance(tree.right.sort, SetSort):
-                screen.dialog("Not a set in element relation")
-                return False
+                return False, "Not a set in element relation"
             if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
-                screen.dialog("Type mismatch in element relation")
-                return False
+                return False, "Type mismatch in element relation"
             tree.sort = PredSort()
         elif isinstance(tree, SetSort):
             if tree.sort != tree:
-                propagate(tree.sort)
+                ok, error = propagate(tree.sort)
+                if not ok:
+                    return False, error
         elif isinstance(tree, TupleSort):
             for i in range(len(tree.sorts)):
-                propagate(tree.sorts[i])
-        return True
+                ok, error = propagate(tree.sorts[i])
+                if not ok:
+                    return False, error
+        return True, None
     return propagate(tree0)
 
 def process_sorts(screen, tl):
@@ -722,19 +740,22 @@ def process_sorts(screen, tl):
             data = data.left # skip quantifiers we already typed
             i += 1
         if data:
-            ok = propagate_sorts(screen, tl, data)
+            ok, error = propagate_sorts(screen, tl, data)
             if not ok:
+                screen.dialog(error)
                 return False
             while data != None:
                 data = data.left
                 i += 1
     for j in range(n1, len(tl.tlist1.data)):
-        ok = propagate_sorts(screen, tl, tl.tlist1.data[j])
+        ok, error = propagate_sorts(screen, tl, tl.tlist1.data[j])
         if not ok:
+            screen.dialog(error)
             return False
     for k in range(n2, len(tl.tlist2.data)):
-        ok = propagate_sorts(screen, tl, tl.tlist2.data[k])
+        ok, error = propagate_sorts(screen, tl, tl.tlist2.data[k])
         if not ok:
+            screen.dialog(error)
             return False
     tl.sorts_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
     return True
@@ -758,21 +779,24 @@ def type_vars(screen, tl):
     while qz != None:
         vars.append(qz.var.name())
         constraints[qz.var.name()] = qz.var.constraint
-        ok = process_constraints(screen, qz.var.constraint, constraints, vars)
+        ok, error = process_constraints(screen, qz.var.constraint, constraints, vars)
         if not ok:
+            screen.dialog(error)
             return
         qz = qz.left
         i += 1
 
     hyps = tl.tlist1.data
     for tree in hyps:
-        ok = process_constraints(screen, tree, constraints, vars)
+        ok, error = process_constraints(screen, tree, constraints, vars)
         if not ok:
+            screen.dialog(error)
             return
     tars = tl.tlist2.data
     for tree in tars:
-        ok = process_constraints(screen, tree, constraints, vars)
+        ok, error = process_constraints(screen, tree, constraints, vars)
         if not ok:
+            screen.dialog(error)
             return
     tl.constraints = constraints
     tl.constraints_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
@@ -803,21 +827,24 @@ def update_constraints(screen, tl):
 
     while qz != None:
         constraints[qz.var.name()] = qz.var.constraint
-        ok = process_constraints(screen, qz.var.constraint, constraints)
+        ok, error = process_constraints(screen, qz.var.constraint, constraints)
         if not ok:
+            screen.dialog(error)
             return False
         qz = qz.left
         i += 1
 
     hyps = tl.tlist1.data
     for j in range(n1, len(hyps)):
-        ok = process_constraints(screen, hyps[j], constraints)
+        ok, error = process_constraints(screen, hyps[j], constraints)
         if not ok:
+            screen.dialog(error)
             return False
     tars = tl.tlist2.data
     for k in range(n2, len(tars)):
-        ok = process_constraints(screen, tars[k], constraints)
+        ok, error = process_constraints(screen, tars[k], constraints)
         if not ok:
+            screen.dialog(error)
             return False
     tl.constraints_processed = (i, len(hyps), len(tars))
     return True
