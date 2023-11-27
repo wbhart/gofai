@@ -379,9 +379,16 @@ def library_export(screen, tl, library, title, tags):
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     c0 = get_constants(screen, tl, tlist0[0]) 
-    c1 = merge_lists([get_constants(screen, tl, v) for v in tlist1])
-    c2 = merge_lists([get_constants(screen, tl, v) for v in tlist2])
-    consts = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]"        
+    if len(tlist1) == 0 and len(tlist2) == 1 and \
+       (isinstance(tlist2[0], IffNode) or isinstance(tlist2[0], EqNode)):
+        is_iff = True
+        c1 = get_constants(screen, tl, tlist2[0].left)
+        c2 = get_constants(screen, tl, tlist2[0].right)
+    else:
+        is_iff = False
+        c1 = merge_lists([get_constants(screen, tl, v) for v in tlist1])
+        c2 = merge_lists([get_constants(screen, tl, v) for v in tlist2])
+    consts = "["+str(is_iff)+", "+str(c0)+", "+str(c1)+", "+str(c2)+"]\n"
     library.write(title+"\n")
     library.write(consts+"\n")
     library.write(tags+"\n")
