@@ -109,15 +109,23 @@ def main(stdscr):
             if not skip:
                 cleanup(screen, tl, ttree)
                 fill_macros(screen, tl)
-                ok = update_constraints(screen, tl)
+                ok, error = update_constraints(screen, tl)
                 if ok:
-                    ok = process_sorts(screen, tl)
+                    ok, error = process_sorts(screen, tl)
                     if ok:
-                        if targets_proved(screen, tl, ttree):
+                        done, plist = targets_proved(screen, tl, ttree)
+                        for i in plist:
+                            screen.dialog("Target "+str(i)+" proved!")
+                        screen.focus.refresh()
+                        if done:
                             screen.dialog("All targets proved")
                             started = False
                     else:
+                        screen.dialog(error)
                         started = False
+                else:
+                    screen.dialog(error)
+                    started = False
             skip = False
             if reset:
                 # reset dependencies

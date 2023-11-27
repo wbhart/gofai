@@ -271,6 +271,7 @@ def clear_tableau(screen, tl):
     tl.constraints_processed = (0, 0, 0)
     tl.sorts_processed = (0, 0, 0)
     tl.tlist1.dep = dict()
+    tl.loaded_theorem = None
     tl.focus = tl.tlist0
 
 def library_load(screen, tl, library, filepos):

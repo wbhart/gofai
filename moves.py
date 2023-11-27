@@ -430,12 +430,10 @@ def targets_proved(screen, tl, ttree):
         screen.pad1.pad[i] = str(tl.tlist1.data[i])
     for i in dirty2:
         screen.pad2.pad[i] = str(tl.tlist2.data[i])
-    for i in plist:
-        screen.dialog("Target "+str(i)+" proved.")
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-    return all(t.proved for t in ttree.andlist)
+    return all(t.proved for t in ttree.andlist), plist
 
 def element_universe(screen, x):
     """
@@ -742,23 +740,20 @@ def process_sorts(screen, tl):
         if data:
             ok, error = propagate_sorts(screen, tl, data)
             if not ok:
-                screen.dialog(error)
-                return False
+                return False, error
             while data != None:
                 data = data.left
                 i += 1
     for j in range(n1, len(tl.tlist1.data)):
         ok, error = propagate_sorts(screen, tl, tl.tlist1.data[j])
         if not ok:
-            screen.dialog(error)
-            return False
+            return False, error
     for k in range(n2, len(tl.tlist2.data)):
         ok, error = propagate_sorts(screen, tl, tl.tlist2.data[k])
         if not ok:
-            screen.dialog(error)
-            return False
+            return False, error
     tl.sorts_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
-    return True
+    return True, None
 
 def type_vars(screen, tl):
     """
@@ -829,8 +824,7 @@ def update_constraints(screen, tl):
         constraints[qz.var.name()] = qz.var.constraint
         ok, error = process_constraints(screen, qz.var.constraint, constraints)
         if not ok:
-            screen.dialog(error)
-            return False
+            return False, error
         qz = qz.left
         i += 1
 
@@ -838,16 +832,14 @@ def update_constraints(screen, tl):
     for j in range(n1, len(hyps)):
         ok, error = process_constraints(screen, hyps[j], constraints)
         if not ok:
-            screen.dialog(error)
-            return False
+            return False, error
     tars = tl.tlist2.data
     for k in range(n2, len(tars)):
         ok, error = process_constraints(screen, tars[k], constraints)
         if not ok:
-            screen.dialog(error)
-            return False
+            return False, error
     tl.constraints_processed = (i, len(hyps), len(tars))
-    return True
+    return True, None
         
 def fill_macros(screen, tl):
     """
@@ -1221,6 +1213,7 @@ def library_load(screen, tl):
                 screen.focus.refresh()
                 return
         filepos = filtered_titles2[i][0]
+        tl.loaded_theorem = filepos
         dirty1, dirty2 = logic.library_load(screen, tl, library, filepos)
         screen.pad0.pad[0] = str(tl.tlist0.data[0])
         screen.pad0.refresh()
