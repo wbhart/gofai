@@ -1,4 +1,5 @@
 Title: Addition on both sides of an equality
+[['Real'], ['='], ['+', '=']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -7,6 +8,7 @@ a = b
 a + c = b + c
 
 Title: Subtraction on both sides of an equality
+[['Real'], ['='], ['-', '=']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -15,6 +17,7 @@ a = b
 a - c = b - c
 
 Title: Multiplication on both sides of an equality
+[['Real'], ['='], ['*', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -23,6 +26,7 @@ a = b
 a*c = b*c
 
 Title: Division on both sides of an equality
+[['Real'], ['=', '\\mathbb{N}', '\\neq'], ['/', '=']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -32,6 +36,7 @@ c \neq 0
 a/c = b/c
 
 Title: Commutativity of equality
+[['Real'], ['='], ['=']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -40,6 +45,7 @@ a = b
 b = a
 
 Title: Multiplication by zero
+[['Real'], [], ['*', '=', '\\mathbb{N}']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -47,6 +53,7 @@ Tags: #algebra #\mathbb{R}
 a*0 = 0
 
 Title: Multiplication by one
+[['Real'], [], ['*', '=', '\\mathbb{N}']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -54,6 +61,7 @@ Tags: #algebra #\mathbb{R}
 a*1 = a
 
 Title: Addition of zero
+[['Real'], [], ['+', '=', '\\mathbb{N}']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -61,6 +69,7 @@ Tags: #algebra #\mathbb{R}
 a + 0 = a
 
 Title: Commutativity of addition
+[['Real'], [], ['+', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -68,6 +77,7 @@ Tags: #algebra #\mathbb{R}
 a + b = b + a
 
 Title: Reciprocal of positive value less than 1
+[['Real'], ['<', '>', '\\mathbb{N}', '\\wedge'], ['/', '>', '\\mathbb{N}']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -76,6 +86,7 @@ a > 0 \wedge a < 1
 1/a > 1
 
 Title: Reciprocal of value greater than 1
+[['Real'], ['>', '\\mathbb{N}'], ['/', '<', '>', '\\mathbb{N}']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -85,6 +96,7 @@ a > 1
 1/a < 1
 
 Title: Commutativity of multiplication
+[['Real'], [], ['*', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -92,6 +104,7 @@ Tags: #algebra #\mathbb{R}
 a*b = b*a
 
 Title: Distributivity of multiplication over addition
+[['Real'], [], ['*', '+', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -99,6 +112,7 @@ Tags: #algebra #\mathbb{R}
 a*(b + c) = a*b + a*c
 
 Title: Less than equivalent to equality with addition of positive constant
+[['Real'], ['<'], ['+', '=', '>', 'Real', '\\mathbb{N}', '\\wedge']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -107,6 +121,7 @@ a < b
 \exists \epsilon \in \mathbb{R} \epsilon > 0 \wedge b = a + \epsilon
 
 Title: Less than or equal split into cases
+[['Real'], ['\\leq'], ['<', '=', '\\vee']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -115,6 +130,7 @@ a \leq b
 a < b \vee a = b
 
 Title: Not less than is greater than or equal
+[['Real'], ['<', '\\neg'], ['\\geq']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -123,6 +139,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \geq b
 
 Title: Not less than or equal is greater than
+[['Real'], ['\\leq', '\\neg'], ['>']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -131,6 +148,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a > b
 
 Title: Value is less than itself plus a positive value
+[['Real'], ['>', '\\mathbb{N}'], ['+', '<']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall \epsilon \in \mathbb{R}
 ------------------------------
@@ -139,6 +157,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a < a + \epsilon
 
 Title: Addition of value to both sides of a less than
+[['Real'], ['<'], ['+', '<']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -147,6 +166,7 @@ a < b
 a + c < b + c
 
 Title: Subtraction of a value from both sides of a less than
+[['Real'], ['<'], ['-', '<']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -155,6 +175,7 @@ a < b
 a - c < b - c
 
 Title: Multiplication of both sides of a less than by a positive value
+[['Real'], ['<', '>', '\\mathbb{N}'], ['*', '<']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -164,6 +185,7 @@ c > 0
 a*c < b*c
 
 Title: Multiplication of both sides of a less than by a negative value
+[['Real'], ['<', '\\mathbb{N}'], ['*', '>']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -173,6 +195,7 @@ c < 0
 a*c > b*c
 
 Title: Division of both sides of a less than by a positive value
+[['Real'], ['<', '>', '\\mathbb{N}'], ['/', '<']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -182,6 +205,7 @@ c > 0
 a/c < b/c
 
 Title: Dividing both sides of a less than by a negative value
+[['Real'], ['<', '\\mathbb{N}'], ['/', '>']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -191,6 +215,7 @@ c < 0
 a/c > b/c
 
 Title: Less than reversed is greater than
+[['Real'], ['<'], ['>']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -199,6 +224,7 @@ a < b
 b > a
 
 Title: Less than or equal reversed is greater than or equal
+[['Real'], ['\\leq'], ['\\geq']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -207,6 +233,7 @@ a \leq b
 b \geq a
 
 Title: Transitivity of less than
+[['Real'], ['<'], ['<']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -216,6 +243,7 @@ b < c
 a < c
 
 Title: Relaxed transitivity of less than on first inequality
+[['Real'], ['<', '\\leq'], ['<']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -225,6 +253,7 @@ b < c
 a < c
 
 Title: Relaxed transitivity of less than on second inequality
+[['Real'], ['<', '\\leq'], ['<']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -234,6 +263,7 @@ b \leq c
 a < c
 
 Title: Transitivity of less than or equal
+[['Real'], ['\\leq'], ['\\leq']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -243,6 +273,7 @@ b \leq c
 a \leq c
 
 Title: Antisymmetry of less than or equal
+[['Real'], ['\\leq'], ['=']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -252,6 +283,7 @@ b \leq a
 a = b
 
 Title: Trichotomy of less than equals and greater than
+[['Real'], [], ['<', '=', '>', '\\vee']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -259,6 +291,7 @@ Tags: #inequalities #\mathbb{R}
 a < b \vee a = b \vee a > b
 
 Title: Exclusivity of less than, equals and greater than
+[['Real'], [], ['<', '=', '>', '\\neg', '\\wedge']]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -267,6 +300,7 @@ Tags: #inequalities #\mathbb{R}
 \neg(a < b \wedge a > b)
 
 Title: Value squared is zero iff value is zero
+[['Real'], ['=', '\\mathbb{N}', '^'], ['=', '\\mathbb{N}']]
 Tags: #inequalities #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -275,6 +309,7 @@ a^2 = 0
 a = 0
 
 Title: Value squared is positive iff value is nonzero
+[['Real'], ['>', '\\mathbb{N}', '^'], ['\\mathbb{N}', '\\neq']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -283,6 +318,7 @@ a^2 > 0
 a \neq 0
 
 Title: Product is positive iff values have same sign
+[['Real'], ['*', '>', '\\mathbb{N}'], ['<', '>', '\\mathbb{N}', '\\vee', '\\wedge']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -291,6 +327,7 @@ a*b > 0
 a > 0 \wedge b > 0 \vee a < 0 \wedge b < 0
 
 Title: Value less than or equal to all positive values is nonpositive
+[['Real'], ['>', '\\implies', '\\leq', '\\mathbb{N}'], ['\\leq', '\\mathbb{N}']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
 ------------------------------
@@ -299,6 +336,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \leq 0
 
 Title: Value less than all positive values is nonpositive
+[['Real'], ['<', '>', '\\implies', '\\mathbb{N}'], ['\\leq', '\\mathbb{N}']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
 ------------------------------
@@ -307,6 +345,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \leq 0
 
 Title: Average of values is between values
+[['Real'], ['\\leq'], ['+', '/', '\\leq', '\\mathbb{N}']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -316,6 +355,7 @@ a \leq (a + b)/2
 (a + b)/2 \leq b
 
 Title: Average of two values is strictly between values if they are not equal
+[['Real'], ['<'], ['+', '/', '<', '\\mathbb{N}']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -325,6 +365,7 @@ a < (a + b)/2
 (a + b)/2 < b
 
 Title: Absolute value of a value is greater than or equal to zero
+[['Real'], [], ['\\geq', '\\mathbb{N}', '||']]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -332,6 +373,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a| \geq 0
 
 Title: Absolute value is zero iff value is zero
+[['Real'], ['=', '\\mathbb{N}', '||'], ['=', '\\mathbb{N}']]
 Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -340,6 +382,7 @@ Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
 a = 0
 
 Title: Absolute value of product is product of absolute values
+[['Real'], [], ['*', '=', '||']]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -347,6 +390,7 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 |a*b| = |a|*|b|
 
 Title: Triangle inequality
+[['Real'], [], ['+', '\\leq', '||']]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -354,6 +398,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a + b| \leq |a| + |b|
 
 Title: Absolute value is independent of sign
+[['Real'], [], ['-', '=', '||']]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -361,6 +406,7 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 |-a| = |a|
 
 Title: Absolute value less than or equal inequality split into two inequalities
+[['Real'], ['\\leq', '||'], ['-', '\\leq']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -370,6 +416,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \leq b
 
 Title: Less than or equal inequalities for absolute value
+[['Real'], [], ['-', '\\leq', '||']]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -378,6 +425,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 a \leq |a|
 
 Title: Absolute value less than inequality split into two inequalities
+[['Real'], ['<', '||'], ['-', '<']]
 Tags: #inequalities #iff #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -387,6 +435,7 @@ Tags: #inequalities #iff #absolutevalue #\mathbb{R}
 a < b
 
 Title: Negation of both sides of an equality
+[['Real'], ['='], ['-', '=']]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -395,6 +444,7 @@ a = b
 -a = -b
 
 Title: Multiplication by minus one negates a value
+[['Real'], [], ['*', '-', '=', '\\mathbb{N}']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -402,6 +452,7 @@ Tags: #algebra #\mathbb{R}
 a*-1 = -a
 
 Title: Addition of negated value equal to difference of values
+[['Real'], [], ['+', '-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -409,6 +460,7 @@ Tags: #algebra #\mathbb{R}
 a + -b = a - b
 
 Title: Reverse triangle inequality
+[['Real'], [], ['-', '\\leq', '||']]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -416,6 +468,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 ||a| - |b|| \leq |a - b|
 
 Title: Triangle inequality variant with subtraction
+[['Real'], [], ['+', '-', '\\leq', '||']]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -423,6 +476,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a - b| \leq |a| + |b|
 
 Title: Expansion of negated sum
+[['Real'], [], ['+', '-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -430,6 +484,7 @@ Tags: #algebra #\mathbb{R}
 -(a + b) = -a - b
 
 Title: Expansion of negated difference
+[['Real'], [], ['+', '-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -437,6 +492,7 @@ Tags: #algebra #\mathbb{R}
 -(a - b) = -a + b
 
 Title: Expansion of negated difference, variant
+[['Real'], [], ['+', '-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -444,6 +500,7 @@ Tags: #algebra #\mathbb{R}
 -(-a + b) = a - b
 
 Title: Simplification of double negation
+[['Real'], [], ['-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -451,6 +508,7 @@ Tags: #algebra #\mathbb{R}
 --a = a
 
 Title: Expansion of negated difference, variant
+[['Real'], [], ['+', '-', '=']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -458,6 +516,7 @@ Tags: #algebra #\mathbb{R}
 -(-a - b) = a + b
 
 Title: Maximum is greater than or equal to its arguments
+[['Real'], [], ['\\geq', 'max']]
 Tags: #inequalities #max #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -466,6 +525,7 @@ max(a, b) \geq a
 max(a, b) \geq b
 
 Title: Minimum is less than or equal to its arguments
+[['Real'], [], ['\\leq', 'min']]
 Tags: #inequalities #min #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -474,6 +534,7 @@ min(a, b) \leq a
 min(a, b) \leq b
 
 Title: Maximum is equal to one of its arguments
+[['Real'], [], ['=', '\\vee', 'max']]
 Tags: #inequalities #algebra #max #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -481,6 +542,7 @@ Tags: #inequalities #algebra #max #\mathbb{R}
 max(a, b) = a \vee max(a, b) = b
 
 Title: Minimum is equal to one of its arguments
+[['Real'], [], ['=', '\\vee', 'min']]
 Tags: #inequalities #algebra #min #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -488,6 +550,7 @@ Tags: #inequalities #algebra #min #\mathbb{R}
 min(a, b) = a \vee min(a, b) = b
 
 Title: Definition of upper bound
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_upper_bound'], ['\\implies', '\\in', '\\leq']]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -497,6 +560,7 @@ is_upper_bound(S, u)
 x \in S \implies x \leq u
 
 Title: Definition of lower bound
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_lower_bound'], ['\\geq', '\\implies', '\\in']]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -506,6 +570,7 @@ is_lower_bound(S, l)
 x \in S \implies x \geq l
 
 Title: Definition of bounded
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_bounded'], ['\\geq', '\\implies', '\\in', '\\leq', '\\wedge']]
 Tags: #inequalities #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -515,6 +580,7 @@ is_bounded(S, l, u)
 x \in S \implies x \leq u \wedge x \geq l
 
 Title: Definition of supremum
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_supremum'], ['Real', '\\implies', '\\leq', 'is_upper_bound']]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall u \in \mathbb{R}
 ------------------------------
@@ -525,6 +591,7 @@ is_supremum(U, u)
 \forall w \in \mathbb{R} is_upper_bound(U, w) \implies u \leq w
 
 Title: Definition of infimum
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_infimum'], ['Real', '\\geq', '\\implies', 'is_lower_bound']]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall l \in \mathbb{R}
 ------------------------------
@@ -535,6 +602,7 @@ is_infimum(U, l)
 \forall w \in \mathbb{R} is_lower_bound(U, w) \implies l \geq w
 
 Title: Every subset of the reals with an upper bound has a supremum
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_upper_bound'], ['Real', 'is_supremum']]
 Tags: #inequalities #iff #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall u \in \mathbb{R}
 ------------------------------
@@ -544,6 +612,7 @@ is_upper_bound(U, u)
 \exists v \in \mathbb{R} is_supremum(U, v)
 
 Title: Every subset of the reals with a lower bound has an infimum
+[['Real', 'Set'], ['Real', '\\subseteq', 'is_lower_bound'], ['Real', 'is_infimum']]
 Tags: #inequalities #iff \mathbb{R}
 \forall U : Set(\mathbb{R}) \forall l \in \mathbb{R}
 ------------------------------
@@ -553,6 +622,7 @@ is_lower_bound(U, l)
 \exists v \in \mathbb{R} is_infimum(U, v)
 
 Title: Definition of set inclusion
+[['Set', '\\mathcal{U}'], [], ['\\iff', '\\implies', '\\in', '\\subseteq']]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -560,6 +630,7 @@ Tags: #sets #definition
 A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 
 Title: Extensionality of sets
+[['Set', '\\mathcal{U}'], [], ['=', '\\iff', '\\implies', '\\in', '\\wedge']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -567,6 +638,7 @@ Tags: #sets #definition
 S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
 
 Title: Sets are equal iff they include one another
+[['Set', '\\mathcal{U}'], [], ['=', '\\iff', '\\subseteq', '\\wedge']]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X) \forall B : Set(X)
 ------------------------------
@@ -574,6 +646,7 @@ Tags: #sets #definition
 A = B \iff A \subseteq B \wedge B \subseteq A
 
 Title: Definition of strict set inclusion
+[['Set', '\\mathcal{U}'], [], ['\\iff', '\\neq', '\\subseteq', '\\subsetneq', '\\wedge']]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -581,6 +654,7 @@ Tags: #sets #definition
 A \subsetneq B \iff A \subseteq B \wedge A \neq B
 
 Title: Transitivity of set inclusion
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -590,6 +664,7 @@ B \subseteq C
 A \subseteq C
 
 Title: Mixed transitivity of set inclusion (right strict)
+[['Set', '\\mathcal{U}'], ['\\subseteq', '\\subsetneq'], ['\\subsetneq']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -599,6 +674,7 @@ B \subsetneq C
 A \subsetneq C
 
 Title: Mixed transitivity of set inclusion (left strict)
+[['Set', '\\mathcal{U}'], ['\\subseteq', '\\subsetneq'], ['\\subsetneq']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -608,6 +684,7 @@ B \subseteq C
 A \subsetneq C
 
 Title: Transitivity of strict set inclusion
+[['Set', '\\mathcal{U}'], ['\\subsetneq'], ['\\subsetneq']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -617,6 +694,7 @@ B \subsetneq C
 A \subsetneq C
 
 Title: Element of a set is an element of a superset
+[['Set', '\\mathcal{U}'], ['\\in', '\\subseteq'], ['\\in']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -626,6 +704,7 @@ x \in A
 x \in B
 
 Title: Element of a set is an element of a strict superset
+[['Set', '\\mathcal{U}'], ['\\in', '\\subsetneq'], ['\\in']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -635,6 +714,7 @@ x \in A
 x \in B
 
 Title: Cycle of set inclusions implies equality of those sets
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['=']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -645,6 +725,7 @@ C \subseteq A
 A = B
 
 Title: Definition of empty set
+[['Set', '\\mathcal{U}'], [], ['\\emptyset', '\\in', '\\neg']]
 Tags: #sets
 \forall X : Set, \forall x \in X
 ------------------------------
@@ -652,6 +733,7 @@ Tags: #sets
 \neg(x \in \emptyset(X))
 
 Title: Empty set is a subset of every set
+[['Set', '\\mathcal{U}'], [], ['\\emptyset', '\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -659,6 +741,7 @@ Tags: #sets
 \emptyset(X) \subseteq S
 
 Title: Definition of set union
+[['Set', '\\mathcal{U}'], [], ['\\cup', '\\iff', '\\in', '\\vee']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X) \forall T : Set(X) \forall x \in X
 ------------------------------
@@ -666,6 +749,7 @@ Tags: #sets #definition
 x \in S \cup T \iff x \in S \vee x \in T
 
 Title: Subset of the empty set is empty
+[['Set', '\\mathcal{U}'], ['\\emptyset', '\\subseteq'], ['=', '\\emptyset']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -674,6 +758,7 @@ S \subseteq \emptyset(universe(S))
 S = \emptyset(universe(S))
 
 Title: Empty set strictly included in set implies set has an element
+[['Set', '\\mathcal{U}'], ['\\emptyset', '\\subsetneq'], ['\\in']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -682,6 +767,7 @@ Tags: #sets
 \exists s \in X s \in S
 
 Title: Problem : A set containing an element strictly includes the empty set
+[['Set', '\\mathcal{U}'], ['\\in'], ['\\emptyset', '\\subsetneq']]
 Tags: #sets #tests
 \forall X : Set, \forall S : Set(X), \forall s \in X
 ------------------------------
@@ -690,6 +776,7 @@ s \in S
 \emptyset(universe(S)) \subsetneq S
 
 Title: Commutativity of set union
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -697,6 +784,7 @@ Tags: #sets
 S \cup T = T \cup S
 
 Title: Union of sets includes the sets individually
+[['Set', '\\mathcal{U}'], [], ['\\cup', '\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -704,6 +792,7 @@ Tags: #sets
 S \subseteq S \cup T
 
 Title: Union equal to one of the sets implies the other is included in it
+[['Set', '\\mathcal{U}'], ['=', '\\cup'], ['\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -712,6 +801,7 @@ S \cup T = S
 T \subseteq S
 
 Title: Subset of one of two sets is subset of their union
+[['Set', '\\mathcal{U}'], ['\\subseteq', '\\vee'], ['\\cup', '\\subseteq']]
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -720,6 +810,7 @@ C \subseteq S \vee C \subseteq T
 C \subseteq S \cup T
 
 Title: Elements of set contained in two sets implies set is subset of their union
+[['Set', '\\mathcal{U}'], ['\\implies', '\\in', '\\vee'], ['\\cup', '\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -728,6 +819,7 @@ Tags: #sets
 C \subseteq S \cup T
 
 Title: Union of set with the empty set is the original set
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup', '\\emptyset']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -735,6 +827,7 @@ Tags: #sets
 S \cup \emptyset = S
 
 Title: Union of a set with itself is itself
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -742,6 +835,7 @@ Tags: #sets
 S \cup S = S
 
 Title: Union is nonempty implies one of the sets has an element
+[['Set', '\\mathcal{U}'], ['\\cup', '\\emptyset', '\\neq'], ['\\in', '\\vee']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -750,6 +844,7 @@ S \cup T \neq \emptyset(X)
 \exists x \in X x \in S \vee x \in T
 
 Title: Union is empty implies the sets are empty
+[['Set', '\\mathcal{U}'], ['=', '\\cup', '\\emptyset'], ['=', '\\emptyset', '\\wedge']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -758,6 +853,7 @@ S \cup T = \emptyset(universe(S))
 S = \emptyset(universe(S)) \wedge T = \emptyset(universe(S))
 
 Title: Definition of set intersection
+[['Set', '\\mathcal{U}'], [], ['\\cap', '\\iff', '\\in', '\\wedge']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X
 ------------------------------
@@ -765,6 +861,7 @@ Tags: #sets #definition
 x \in S \cap T \iff x \in S \wedge x \in T
 
 Title: Commutativity of set intersection
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -772,6 +869,7 @@ Tags: #sets
 S \cap T = T \cap S
 
 Title: Intersection of sets is a subset of the sets
+[['Set', '\\mathcal{U}'], [], ['\\cap', '\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -779,6 +877,7 @@ Tags: #sets
 S \cap T \subseteq S
 
 Title: Intersection with the empty set is trivial
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\emptyset']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -786,6 +885,7 @@ Tags: #sets
 S \cap \emptyset(universe(S)) = \emptyset(universe(S))
 
 Title: Problem : An element in one set of an empty intersection is not in the other
+[['Set', '\\mathcal{U}'], ['=', '\\cap', '\\emptyset', '\\in'], ['\\in', '\\neg']]
 Tags: #sets #tests 
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall s \in X
 ------------------------------
@@ -795,6 +895,7 @@ s \in S
 \neg(s \in T)
 
 Title: Intersection of a set with itself is itself
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -802,6 +903,7 @@ Tags: #sets
 S \cap S = S
 
 Title: Subset of intersection is subset of the second set
+[['Set', '\\mathcal{U}'], ['\\cap', '\\subseteq'], ['\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -810,6 +912,7 @@ S \subseteq S \cap T
 S \subseteq T
 
 Title: Set included in two others is included in their intersection
+[['Set', '\\mathcal{U}'], ['\\implies', '\\in', '\\wedge'], ['\\cap', '\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall C : Set(X)
 ------------------------------
@@ -818,6 +921,7 @@ Tags: #sets
 C \subseteq S \cap T
 
 Title: Set contained in intersection is contained in sets
+[['Set', '\\mathcal{U}'], ['\\cap', '\\subseteq'], ['\\subseteq']]
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -827,6 +931,7 @@ C \subseteq S
 C \subseteq T
 
 Title: Intersection distributes over union
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall U : Set
 ------------------------------
@@ -834,6 +939,7 @@ Tags: #sets
 S \cap (T \cup U) = S \cap T \cup (S \cap U)
 
 Title: Union distributes over intersection
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall U : Set
 ------------------------------
@@ -841,6 +947,7 @@ Tags: #sets
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
 Title: Components of pair
+[['Set', '\\mathcal{U}', '\\times'], [], ['=', 'Tuple(2)', '[]', '\\implies', '\\mathbb{N}', '\\wedge']]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall c \in S, \forall d \in T, \forall x \in S \times T
 ------------------------------
@@ -848,6 +955,7 @@ Tags: #sets
 x = (c, d) \implies x[0] = c \wedge x[1] = d
 
 Title: Equality of pairs
+[['Set', '\\mathcal{U}'], [], ['=', 'Tuple(2)', '\\iff', '\\wedge']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in S, \forall b \in T, \forall c \in X, \forall d \in X
 ------------------------------
@@ -855,6 +963,7 @@ Tags: #sets #definition
 (a, b) = (c, d) \iff a = c \wedge b = d
 
 Title: Definition of pair
+[['Set', '\\mathcal{U}', '\\times'], [], ['=', 'Tuple(2)', '[]', '\\iff', '\\in', '\\mathbb{N}', '\\wedge', 'is_pair']]
 Tags: #sets #definition
 \forall S : Set, \forall T : Set, \forall x \in S \times T
 ------------------------------
@@ -862,6 +971,7 @@ Tags: #sets #definition
 is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
 
 Title: Definition of cartesian product
+[['Set', '\\mathcal{U}', '\\times'], [], ['\\iff', '\\in', '\\times', 'is_pair']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -869,6 +979,7 @@ Tags: #sets #definition
 is_pair(x, S, T) \iff x \in S \times T
 
 Title: Element of cartesian product has components in the sets
+[['Set', '\\mathcal{U}', '\\times'], [], ['[]', '\\implies', '\\in', '\\mathbb{N}', '\\times', '\\wedge']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -876,6 +987,7 @@ Tags: #sets
 x \in S \times T \implies x[0] \in S \wedge x[1] \in T
 
 Title: Pair in a cartesian product if elements in sets
+[['Set', '\\mathcal{U}'], [], ['Tuple(2)', '\\iff', '\\in', '\\times', '\\wedge']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X
 ------------------------------
@@ -883,6 +995,7 @@ Tags: #sets
 a \in S \wedge b \in T \iff (a, b) \in S \times T
 
 Title: Cartesian product with the empty set is empty (right)
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\times']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -890,6 +1003,7 @@ Tags: #sets
 S \times \emptyset(universe(T)) = \emptyset(universe(S \times T))
 
 Title: Cartesian product with the empty set is empty (left)
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\times']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -897,6 +1011,7 @@ Tags: #sets
 \emptyset(universe(S)) \times T = \emptyset(universe(S \times T))
 
 Title: Cartesian product on the right preserves subset relation
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\subseteq', '\\times']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -905,6 +1020,7 @@ A \subseteq B
 A \times C \subseteq B \times C
 
 Title: Cartesian product on the left preserves subset relation
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\subseteq', '\\times']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -913,6 +1029,7 @@ B \subseteq C
 A \times B \subseteq A \times C
 
 Title: Problem : Subset on left and right of cartesian product gives subset
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\subseteq', '\\times']]
 Tags: #sets #tests
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -922,6 +1039,7 @@ B \subseteq D
 A \times B \subseteq C \times D
 
 Title: Cartesian product is empty implies one of the sets is empty
+[['Set', '\\mathcal{U}'], ['=', '\\emptyset', '\\times'], ['=', '\\emptyset', '\\vee']]
 Tags: #sets
 \forall A : Set, \forall B : Set
 ------------------------------
@@ -930,6 +1048,7 @@ A \times B = \emptyset(universe(A)) \times \emptyset(universe(B))
 A = \emptyset(universe(A)) \vee B = \emptyset(universe(B))
 
 Title: Cartesian products are contained implies the sets are contained
+[['Set', '\\mathcal{U}'], ['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -941,6 +1060,7 @@ A \subseteq C
 B \subseteq D
 
 Title: Cartesian products are contained implies the sets are contained (left)
+[['Set', '\\mathcal{U}'], ['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -950,6 +1070,7 @@ B \neq \emptyset(universe(B))
 A \subseteq C
 
 Title: Strict containment of cartesian product of sets implies containment of sets
+[['Set', '\\mathcal{U}'], ['\\emptyset', '\\neq', '\\subsetneq', '\\times'], ['\\subsetneq', '\\vee']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -960,6 +1081,7 @@ B \neq \emptyset(universe(B))
 A \subsetneq C \vee B \subsetneq D
 
 Title: Union of cartesian products is contained in product of unions
+[['Set', '\\mathcal{U}'], [], ['\\cup', '\\subseteq', '\\times']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -967,6 +1089,7 @@ Tags: #sets
 A \times B \cup C \times D \subseteq (A \cup C) \times (B \cup D)
 
 Title: Intersection of cartesian products equals cartesian product of intersections
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\times']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -974,6 +1097,7 @@ Tags: #sets
 A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 
 Title: Definition of powerset
+[['Set', '\\mathcal{U}'], [], ['\\iff', '\\in', '\\mathcal{P}', '\\subseteq']]
 Tags: #sets #definition
 \forall S : Set, \forall U : Set
 ------------------------------
@@ -981,6 +1105,7 @@ Tags: #sets #definition
 U \in \mathcal{P}(S) \iff U \subseteq S
 
 Title: A set is an element of the powerset of the empty set iff it is empty
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\iff', '\\in', '\\mathcal{P}']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -988,6 +1113,7 @@ Tags: #sets
 S \in \mathcal{P}(\emptyset(universe(S))) \iff S = \emptyset(universe(S))
 
 Title: Power sets are contained if the sets are contained
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\mathcal{P}', '\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -996,6 +1122,7 @@ S \subseteq T
 \mathcal{P}(S) \subseteq \mathcal{P}(T)
 
 Title: Empty set is an element of the powerset of every set
+[['Set', '\\mathcal{U}'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -1003,6 +1130,7 @@ Tags: #sets
 \emptyset(universe(S)) \in \mathcal{P}(S)
 
 Title: Power set of an intersection is the intersection of the power sets
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\mathcal{P}']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1010,6 +1138,7 @@ Tags: #sets
 \mathcal{P}(S \cap T) = \mathcal{P}(S) \cap \mathcal{P}(T)
 
 Title: Union of powersets is contained in powerset of the union
+[['Set', '\\mathcal{U}'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1017,6 +1146,7 @@ Tags: #sets
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
 
 Title: Definition of complement
+[['Set', '\\mathcal{U}'], [], ['\\iff', '\\in', '\\neg', '\\wedge', 'complement', 'universe']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
@@ -1024,6 +1154,7 @@ Tags: #sets #definition
 x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 
 Title: Definition of set universe
+[['Set', '\\mathcal{U}'], [], ['\\implies', '\\in', 'universe']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
@@ -1031,6 +1162,7 @@ Tags: #sets
 x \in S \implies x \in universe(S)
 
 Title: Complement of complement of a set is equal to that set
+[['Set', '\\mathcal{U}'], [], ['=', 'complement']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -1038,6 +1170,7 @@ Tags: #sets
 complement(complement(S)) = S
 
 Title: Union of sets is the complement of the union of their complements
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1045,6 +1178,7 @@ Tags: #sets
 S \cup T = complement(complement(S) \cap complement(T))
 
 Title: Union of set and complement is universe
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup', 'complement', 'universe']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1052,6 +1186,7 @@ Tags: #sets
 S \cup complement(S) = universe(S)
 
 Title: Intersection of a set with its complement is the empty set
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\emptyset', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1059,6 +1194,7 @@ Tags: #sets
 S \cap complement(S) = \emptyset(X)
 
 Title: Complement of a set equal to its universe is the empty set
+[['Set', '\\mathcal{U}'], ['=', '\\emptyset', 'complement'], ['=', '\\emptyset', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1067,6 +1203,7 @@ S = complement(\emptyset(X))
 complement(S) = \emptyset(X)
 
 Title: Complement reverses order of inclusion
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\subseteq', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1075,6 +1212,7 @@ S \subseteq T
 complement(T) \subseteq complement(S)
 
 Title: Definition of set difference
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\setminus', 'complement']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1082,6 +1220,7 @@ Tags: #sets #definition
 S \setminus T = S \cap complement(T)
 
 Title: Problem : Complement of set difference is complement of first set union second set
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup', '\\setminus', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1089,6 +1228,7 @@ Tags: #sets
 complement(S \setminus T) = complement(S) \cup T
 
 Title: Problem : Complement of set diff is complement of set union the intersection
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup', '\\setminus', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1096,6 +1236,7 @@ Tags: #sets
 complement(S \setminus T) = complement(S) \cup (S \cap T)
 
 Title: Difference of complements is reverse difference
+[['Set', '\\mathcal{U}'], [], ['=', '\\setminus', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1103,6 +1244,7 @@ Tags: #sets
 complement(S) \setminus complement(T) = T \setminus S
 
 Title: Problem : Difference with intersection is union of differences
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1110,6 +1252,7 @@ Tags: #sets
 C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 
 Title: Problem: Difference with union is intersection of differences
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1117,6 +1260,7 @@ Tags: #sets
 C \setminus (A \cup B) = (C \setminus A) \cap (C \setminus B)
 
 Title: Problem: Difference with difference is union of intersection and difference
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1124,6 +1268,7 @@ Tags: #sets
 C \setminus (B \setminus A) = C \cap A \cup (C \setminus B)
 
 Title: Problem : Difference with difference from same set is intersection
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1131,6 +1276,7 @@ Tags: #sets
 C \setminus (C \setminus A) = C \cap A
 
 Title: Problem: Intersection with difference is difference with intersection
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1138,6 +1284,7 @@ Tags: #sets
 (B \setminus A) \cap C = B \cap C \setminus A
 
 Title: Problem : Intersection with difference is intersection with other difference
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1145,6 +1292,7 @@ Tags: #sets
 (B \setminus A) \cap C = B \cap (C \setminus A)
 
 Title: Problem : Union with difference is difference of union and difference
+[['Set', '\\mathcal{U}'], [], ['=', '\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1152,6 +1300,7 @@ Tags: #sets
 (B \setminus A) \cup C = B \cup C \setminus (A \setminus C)
 
 Title: Difference of a set with itself is empty
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\setminus']]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1159,6 +1308,7 @@ Tags: #sets
 A \setminus A = \emptyset(universe(A))
 
 Title: Difference of any set with empty set is empty
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\setminus']]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1166,6 +1316,7 @@ Tags: #sets
 \emptyset \setminus A = \emptyset(universe(A))
 
 Title: Difference of empty set with any set is that set
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\setminus']]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1173,6 +1324,7 @@ Tags: #sets
 A \setminus \emptyset(universe(A)) = A
 
 Title: Difference of a set and its universe is the empty set
+[['Set', '\\mathcal{U}'], [], ['=', '\\emptyset', '\\setminus', 'complement']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -1180,6 +1332,7 @@ Tags: #sets
 A \setminus complement(\emptyset(X)) = \emptyset(X)
 
 Title: Containment of sets is reversed upon taking differences with another set
+[['Set', '\\mathcal{U}'], ['\\subseteq'], ['\\setminus', '\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1188,6 +1341,7 @@ A \subseteq B
 C \setminus B \subseteq C \setminus A
 
 Title: Problem : Difference is contained if different difference is contained
+[['Set', '\\mathcal{U}'], ['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1196,6 +1350,7 @@ B \setminus C \subseteq A
 B \setminus A \subseteq C
 
 Title: Definition of set builder
+[['Pred', 'Set', '\\mathcal{U}'], [], ['\\iff', '\\in', '\\wedge', '{|}']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set, \forall x \in X, \forall P : Pred
 ------------------------------
@@ -1203,6 +1358,7 @@ Tags: #sets #definition
 (x \in {y \in S | P(y)}) \iff P(x) \wedge x \in S
 
 Title: Intersection in terms of set builder
+[['Set', '\\mathcal{U}'], [], ['=', '\\cap', '\\in', '{|}']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1210,6 +1366,7 @@ Tags: #sets
 {x \in S | x \in T} = S \cap T
 
 Title: Definition of function
+[['->', 'Set', '\\mathcal{U}'], [], ['=', 'Tuple(2)', '\\iff', '\\implies', '\\in', '\\subseteq', '\\times', '\\wedge', 'is_function']]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -1217,6 +1374,7 @@ Tags: #sets #functions
 is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in X a \in A \implies (\exists b \in X b \in B \wedge (a, b) \in f)) \wedge (\forall a \in X a \in A \implies (\forall b \in X, \forall c \in X (a, b) \in f \wedge (a, c) \in f \implies b = c))
 
 Title: Definition of function value
+[['->', 'Set', '\\mathcal{U}'], [], ['=', 'Tuple(2)', '\\iff', '\\implies', '\\in', 'is_function']]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall c \in X, \forall d \in X
 ------------------------------
@@ -1224,6 +1382,7 @@ Tags: #sets #functions
 is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
 Title: Function value in codomain
+[['->', 'Set', '\\mathcal{U}'], ['\\in', '\\wedge', 'is_function'], ['\\in']]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall a \in X
 ------------------------------
@@ -1232,6 +1391,7 @@ is_function(f, A, B) \wedge a \in A
 f(a) \in B
 
 Title: Pair with function value in function
+[['->', 'Set', '\\mathcal{U}'], ['\\in', '\\wedge', 'is_function'], ['Tuple(2)', '\\in']]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
 ------------------------------
@@ -1240,6 +1400,7 @@ is_function(f, A, B) \wedge a \in A
 (a, f(a)) \in f
 
 Title: Definition of function composition
+[['->', 'Set', '\\mathcal{U}', '\\times'], ['is_function'], ['=', 'Tuple(2)', '\\circ', '\\iff', '\\in', '\\wedge']]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall x \in A \times C
 ------------------------------
@@ -1249,6 +1410,7 @@ is_function(g, B, C)
 x \in g \circ f \iff (\exists a \in X, \exists c \in X x = (a, c) \wedge a \in A \wedge c = g(f(a)))
 
 Title: Composition is function
+[['->', 'Set', '\\mathcal{U}'], ['is_function'], ['\\circ', 'is_function']]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -1258,6 +1420,7 @@ is_function(g, B, C)
 is_function(g \circ f, A, C)
 
 Title: Function values of composition
+[['->', 'Set', '\\mathcal{U}'], ['is_function'], ['=', '\\circ', '\\implies', '\\in']]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall a \in X
 ------------------------------
@@ -1267,6 +1430,7 @@ is_function(g, B, C)
 a \in A \implies (g \circ f)(a) = g(f(a))
 
 Title: Functions restrict to subsets
+[['->', 'Set', '\\mathcal{U}'], ['\\subseteq', 'is_function'], ['->', '=', '\\implies', '\\in', '\\wedge', 'is_function']]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : B \to C
 ------------------------------
@@ -1276,6 +1440,7 @@ A \subseteq B
 \exists g : A \to C is_function(g, A, C) \wedge (\forall a \in X a \in A \implies f(a) = g(a))
 
 Title: Composition of functions is associative
+[['->', 'Set', '\\mathcal{U}'], ['is_function'], ['=', '\\circ']]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set, \forall f : C \to D, \forall g : B \to C, \forall h : A \to B
 ------------------------------
@@ -1286,6 +1451,7 @@ is_function(h, A, B)
 (f \circ g) \circ h = f \circ (g \circ h)
 
 Title: Definition of injective
+[['->', 'Set', '\\mathcal{U}'], [], ['=', '\\iff', '\\implies', '\\in', '\\wedge', 'is_function', 'is_injective']]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -1293,6 +1459,7 @@ Tags: #functions
 is_function(f, A, B) \implies (is_injective(f) \iff (\forall a \in X, \forall b \in X a \in A \wedge b \in A \wedge f(a) = f(b) \implies a = b))
 
 Title: Composition of injective functions is injective
+[['->', 'Set', '\\mathcal{U}'], ['is_function', 'is_injective'], ['\\circ', 'is_injective']]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -1304,6 +1471,7 @@ is_injective(g)
 is_injective(g \circ f)
 
 Title: Definition of surjective
+[['->', 'Set', '\\mathcal{U}'], [], ['=', '\\iff', '\\implies', '\\in', '\\wedge', 'is_function', 'is_surjective']]
 Tags: #functions
 \forall X : Set, \forall D : Set(X), \forall C : Set(X), \forall f : D \to C
 ------------------------------
@@ -1311,6 +1479,7 @@ Tags: #functions
 is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c \in X c \in C \implies (\exists d \in X d \in D \wedge f(d) = c)))
 
 Title: Composition of surjective functions is surjective
+[['->', 'Set', '\\mathcal{U}'], ['is_function', 'is_surjective'], ['\\circ', 'is_surjective']]
 Tags: #functions
 \forall S : Set, \forall T : Set, \forall U : Set, \forall f : S \to T, \forall g : T \to U
 ------------------------------
