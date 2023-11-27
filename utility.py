@@ -1,13 +1,16 @@
 from nodes import ForallNode, ExistsNode, FnApplNode, VarNode, SetBuilderNode, \
      LRNode, TupleNode, SymbolNode, NotNode, EqNode, NeqNode, GtNode, LtNode, \
      LeqNode, GeqNode, AndNode, OrNode, IffNode, ImpliesNode, UnionNode, \
-     IntersectNode, DiffNode, CartesianNode, SetOfNode
+     IntersectNode, DiffNode, CartesianNode, SetOfNode, NaturalNode, ExpNode, \
+     CircNode, TupleComponentNode, PowerSetNode, AddNode, SubNode, MulNode, \
+     DivNode, SubsetneqNode, SubseteqNode, SupsetneqNode, SupseteqNode, \
+     AbsNode, NegNode, ElemNode, BoolNode, DeadNode, LambdaNode
 from sorts import SetSort, TupleSort, FunctionConstraint, DomainTuple, \
      CartesianConstraint, Universum, NumberSort, PredSort
 from typeclass import CompleteValuedFieldClass, CompleteOrderedValuedFieldClass, \
      FieldClass, OrderedRingClass, OrderedSemiringClass
 from copy import deepcopy, copy
-from heapq import merge
+from heapq import merge  
 
 system_unary_functions = ['complement', 'universe']
 system_binary_functions = ['min', 'max']
@@ -818,6 +821,20 @@ def list_merge(list1, list2):
         v = var
     return r
 
+def merge_lists(lol):
+    """
+    Given a list of lists, merge the lists together into a single list.
+    """
+    if len(lol) == 0:
+        return []
+    elif len(lol) == 1:
+        return lol[0]
+    else:
+        L = lol[0]
+        for i in range(1, len(lol)):
+            L = list_merge(L, lol[i])
+        return L
+
 def get_constraint(var, qz):
     """
     Given a variable var and the quantifier zone qz, find the constraint for
@@ -831,6 +848,114 @@ def get_constraint(var, qz):
             return qz.var.constraint
         qz = qz.left
     raise Exception("Binder not found for "+var.name())
+
+constant_dict = {
+        NaturalNode : '\\mathbb{N}',
+        ExpNode : '^',
+        CircNode : '\\circ',
+        TupleComponentNode : '[]',
+        PowerSetNode : '\\mathcal{P}',
+        AddNode : '+',
+        SubNode : '-',
+        MulNode : '*',
+        DivNode : '/',
+        LtNode : '<',
+        GtNode : '>',
+        LeqNode : '\\leq',
+        GeqNode : '\\geq',
+        EqNode : '=',
+        NeqNode : '\\neq',
+        ImpliesNode : '\\implies',
+        IffNode : '\\iff',
+        AndNode : '\\wedge',
+        OrNode : '\\vee',
+        CartesianNode : '\\times',
+        IntersectNode : '\\cap',
+        UnionNode : '\\cup',
+        SubsetneqNode : '\\subsetneq',
+        SubseteqNode : '\\subseteq',
+        SupsetneqNode : '\\supsetneq',
+        SupseteqNode : '\\supseteq',
+        DiffNode : '\\setminus',
+        SetBuilderNode : '{|}',
+        AbsNode : '||',
+        NotNode : '\\neg',
+        NegNode : '-',
+        ElemNode : '\\in',
+        BoolNode : 'T/F',
+        CartesianConstraint : '\\times',
+        FunctionConstraint : '->',
+        SetSort : 'Set',
+        Universum : '\\mathcal{U}',
+        PredSort : 'Pred'   
+    }
+
+def append_unique(list, item):
+    """
+    Given a list, if the given item is not in the list, append it.
+    """
+    if item not in list:
+        list.append(item)
+
+def get_constants(screen, tl, tree):
+    """
+    Given a parse tree, return a list of all constants used in the statement,
+    i.e. excluding all variable names but including function names which are
+    meaningful to the system. Each name appears once and the list will be
+    sorted.
+    """
+    constants = []
+    
+    def process(tree):
+        if tree == None:
+            return
+        if isinstance(tree, SymbolNode):
+            append_unique(constants, tree.name())
+        elif isinstance(tree, VarNode) or isinstance(tree, SetOfNode) \
+          or isinstance(tree, DeadNode) or isinstance(tree, LambdaNode) \
+          or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            pass
+        elif isinstance(tree, FnApplNode):
+            if isinstance(tree.var, VarNode):
+                name = tree.var.name()
+                if (name in system_unary_functions) or \
+                   (name in system_binary_functions) or \
+                   (name in system_predicates):
+                    append_unique(constants, name)
+        elif isinstance(tree, TupleNode):
+            append_unique(constants, 'Tuple('+str(len(tree.args))+')')
+        elif isinstance(tree, NumberSort):
+            append_unique(constants, tree.name())
+        elif isinstance(tree, TupleSort):
+            append_unique(constants, 'Tuple('+str(len(tree.sorts))+')')
+        else:
+            append_unique(constants, constant_dict[type(tree)])
+        
+        if isinstance(tree, LRNode):
+            process(tree.left)
+            process(tree.right)
+        if isinstance(tree, TupleNode) or isinstance(tree, FnApplNode):
+            for v in tree.args:
+                process(v)
+        if isinstance(tree, FnApplNode):
+            process(tree.var) # for composite functions
+        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
+            process(tree.var.constraint)
+        if isinstance(tree, CartesianConstraint) or isinstance(tree, TupleSort):
+            for v in tree.sorts:
+                process(v)
+        if isinstance(tree, FunctionConstraint):
+            process(tree.domain)
+            process(tree.codomain)
+        if isinstance(tree, DomainTuple):
+            for v in tree.sets:
+                process(v)
+        if isinstance(tree, SetSort):
+            process(tree.sort)
+        
+    process(tree)
+    constants.sort()
+    return constants
 
 def skolemize_quantifiers(tree, deps, sk, ex):
     """

@@ -23,7 +23,8 @@ from utility import unquantify, relabel, relabel_constraints, append_tree, \
      complement_tree, tags_to_list, canonicalise_tags, filter_titles, \
      trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
      domain, codomain, universe, system_unary_functions, \
-     system_binary_functions, system_predicates, list_merge, get_constraint
+     system_binary_functions, system_predicates, list_merge, get_constraint, \
+     get_constants, merge_lists
 import logic
 
 from editor import edit
@@ -1180,6 +1181,7 @@ def library_import(screen, tl):
     filtered_titles = []
     title = library.readline()
     while title: # check for EOF
+        library.readline() # skip constants for now
         libtaglist = tags_to_list(library.readline()[0:-1])
         if all(elem in libtaglist for elem in taglist):
             filtered_titles.append((library.tell(), title[7:-1]))
@@ -1288,6 +1290,7 @@ def library_load(screen, tl):
     filtered_titles = []
     title = library.readline()
     while title: # check for EOF
+        library.readline() # skip constants for now
         libtaglist = tags_to_list(library.readline()[0:-1])
         if all(elem in libtaglist for elem in taglist):
             filtered_titles.append((library.tell(), title[7:-1]))
@@ -1353,8 +1356,13 @@ def library_export(screen, tl):
     if tags == None:
         return
     tags = canonicalise_tags(tags) # deal with constraint shorthands
+    c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
+    c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
+    c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
+    consts = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]"        
     library = open("library.dat", "a")
     library.write(title+"\n")
+    library.write(consts+"\n")
     library.write(tags+"\n")
     tlist0 = tl.tlist0.data
     tlist1 = tl.tlist1.data
@@ -1876,18 +1884,28 @@ def cleanup(screen, tl, ttree):
     screen.focus.refresh()
     return
 
-def convert(screen, tl):
-    library = open("library.dat", "r")
-    titles = []
-    title = library.readline() # read title
-    while title: # check for EOF
-        library.readline()[0:-1] # read tags
-        titles.append((library.tell(), title[7:-1]))
-        while title != '\n':
-            title = library.readline()
-        title = library.readline()
-    for i in range(len(titles)):
-        filepos = titles[i][0]
-        logic.library_load(screen, tl, library, filepos)
-        logic.clear_tableau(screen, tl)
-    library.close()
+#def convert(screen, tl):
+#    library = open("library.dat", "r")
+#    library2 = open("library2.dat", "a")
+#    title = library.readline() # read title
+#    while title: # check for EOF
+#        tags = library.readline() # read tags
+#        filepos = library.tell()
+#        logic.library_load(screen, tl, library, filepos)
+#        c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
+#        c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
+#        c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
+#        const_str = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]\n"
+#        library2.write(title)
+#        library2.write(const_str)
+#        library2.write(tags)
+#        library.seek(filepos)
+#        fstr = library.readline()
+#        while fstr != '\n':
+#            library2.write(fstr)
+#            fstr = library.readline()
+#        library2.write('\n')
+#        logic.clear_tableau(screen, tl)
+#        title = library.readline()
+#    library.close()
+#    library2.close()
