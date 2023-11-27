@@ -1,11 +1,13 @@
-from utility import unquantify, relabel, append_tree, add_descendant, \
-     target_compatible, complement_tree, process_constraints, \
-     relabel_constraints, get_constants, merge_lists
+from utility import unquantify, relabel, append_tree, replace_tree, \
+     add_descendant, target_compatible, complement_tree, process_constraints, \
+     relabel_constraints, get_constants, merge_lists, skolemize_quantifiers, \
+     skolemize_statement, add_sibling
 from unification import check_macros, unify, substitute
 from copy import deepcopy
-from nodes import AndNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
-     ExistsNode, TupleNode, FnApplNode
+from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
+     ExistsNode, TupleNode, FnApplNode, NotNode, IffNode, SetOfNode
 from parser import to_ast
+from sorts import FunctionConstraint, DomainTuple
 
 def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
@@ -413,3 +415,232 @@ def library_export(screen, tl, library, title, tags):
             tar = tar.left
         library.write(repr(tar)+"\n")
     library.write("\n")
+
+def cleanup(screen, tl, ttree):
+    """
+    Automated cleanup moves. This applies numerous moves that the user will
+    essentially always want to do. This is applied automatically after every
+    move to make less work for the user. The moves applied are the following:
+      * skolemization of existentially bound variables
+      * creation of metavariables
+      * moving outside binders on hypotheses/targets to the quantifier zone
+    For hypotheses we perform the following moves:
+      * convert P \vee P to P
+      * convert ¬P \vee Q to P => Q
+      * convert P \iff Q to P => Q and Q => P
+      * replace P \wedge P with P
+      * convert P \wedge Q to P and Q
+      * convert ¬(P \implies Q) to P and ¬Q
+      * convert (P \vee Q) => R to P => R and Q => R if such implications
+        would not introduce new metavariables
+      * convert P => (Q \wedge R) to P => Q and P => R
+    For targets we perform the following moves:
+      * for P \vee Q introduce a hypothesis ¬P and replace the implication with Q,
+        with appropriate dependency tracking
+      * for P => Q introduce a hypothesis P and replace the implication with Q, with
+        appropriate dependency tracking
+      * convert P \wedge P to P
+      * convert P \wedge Q to P and Q
+      * convert ¬(P \implies Q) to P and ¬Q
+    These are applied repeatedly until no further automated moves are possible.
+    """
+    tl0 = tl.tlist0.data # quantifier zone
+    tl1 = tl.tlist1.data # hypotheses
+    tl2 = tl.tlist2.data # targets
+    dirty1 = []
+    dirty2 = []
+    deps = []
+    sk = []
+    qz = []
+    mv = []
+    if tl0:
+        sq, deps, sk, ex = skolemize_quantifiers(tl0[0], deps, sk, [])
+        qzext = []
+        if len(ex) > 0: # constraint of new skolem variable will need to be recomputed
+           tl.constraints_processed = (0, 0, 0)
+           tl.sorts_processed = (0, 0, 0)
+        for i in range(len(ex)):
+            n = sk[i][1] # number of dependencies
+            domain_constraints = [v.var.constraint if isinstance(v, ForallNode) else v.constraint for v in deps[0:n]]
+            if len(domain_constraints) > 1:
+                fn_constraint = FunctionConstraint(DomainTuple(domain_constraints), SetOfNode(ex[i].constraint))
+            elif len(domain_constraints) == 1:
+                fn_constraint = FunctionConstraint(domain_constraints[0], SetOfNode(ex[i].constraint))
+            else:
+                fn_constraint = FunctionConstraint(None, SetOfNode(ex[i].constraint))
+            var = VarNode(ex[i].name(), fn_constraint)
+            var.skolemized = True # make sure we don't skolemize it again
+            qzext.append(ExistsNode(var, None))
+        if qzext:
+            root = qzext[0]
+            t = root
+            t.left = None
+            for i in range(1, len(qzext)):
+                v = qzext[i]
+                v.left = None
+                t.left = v
+                t = t.left
+            if sq:
+                t.left = sq
+            tl.tlist0.data[0] = root
+        else:
+            tl.tlist0.data[0] = sq
+        
+    d = len(deps)
+    s = len(sk)
+    m = len(mv)
+
+    def rollback():
+        while len(deps) > d:
+            deps.pop()
+        while len(sk) > s:
+            sk.pop()
+    
+    depmin = d # avoid dependencies on original qz variables
+
+    if tl0: # process constraints of variables in qz
+        tree = tl0[0]
+        while tree:
+            tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, True, False)
+            rollback()
+            tree = tree.left
+
+    hyps_done = False
+    tars_done = False
+    i = 0
+    j = 0
+    while not hyps_done or not tars_done:
+        if not hyps_done:
+            hyps_done = True
+            while i < len(tl1):
+                tl1[i] = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False, False)
+                rollback()
+                t = tl1[i]
+                if isinstance(t, ExistsNode) or isinstance(t, ForallNode):
+                    while isinstance(t, ExistsNode) or isinstance(t, ForallNode) \
+                           and not isinstance(t.left, OrNode):
+                        t = t.left
+                    if isinstance(t.left, OrNode):
+                        t.left = ImpliesNode(complement_tree(t.left.left), t.left.right)
+                        if isinstance(t.left.left, NotNode) and isinstance(t.left.right, NotNode):
+                            temp = t.left.left.left
+                            t.left.left = t.left.right.left
+                            t.left.right = temp
+                        dirty1.append(i)
+                if isinstance(tl1[i], OrNode):
+                    # First check we don't have P \vee P
+                    unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                    if unifies and not assign:
+                        replace_tree(tl1, i, tl1[i].left, dirty1)
+                    else:
+                        stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
+                        if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
+                            temp = stmt.left.left
+                            stmt.left = stmt.right.left
+                            stmt.right = temp
+                        replace_tree(tl1, i, stmt, dirty1)
+                if isinstance(tl1[i], IffNode):
+                    tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
+                    impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
+                    append_tree(tl1, impl, dirty1)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                    stmt = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False)
+                    replace_tree(tl1, i, stmt, dirty1)
+                    rollback()
+                while isinstance(tl1[i], AndNode):
+                    # First check we don't have P \wedge P
+                    unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                    if unifies and not assign:
+                        replace_tree(tl1, i, tl1[i].left, dirty1)
+                    else:
+                        append_tree(tl1, tl1[i].right, dirty1)
+                        replace_tree(tl1, i, tl1[i].left, dirty1)
+                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
+                    append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
+                    replace_tree(tl1, i, tl1[i].left.left, dirty1)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
+                    var1 = metavars_used(tl1[i].left.left)
+                    var2 = metavars_used(tl1[i].left.right)
+                    var = metavars_used(tl1[i].right)
+                    # make sure no additional metavars are introduced
+                    if set(var).issubset(var1) and set(var).issubset(var2):
+                        P = tl1[i].left.left
+                        Q = tl1[i].left.right
+                        R = tl1[i].right
+                        append_tree(tl1, ImpliesNode(Q, R), dirty1)
+                        replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
+                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
+                    stmt = ImpliesNode(deepcopy(tl1[i].left), tl1[i].right.left)
+                    append_tree(tl1, stmt, dirty1)
+                    stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
+                    replace_tree(tl1, i, stmt, dirty1)
+                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                dirty1.append(i)
+                i += 1
+                while len(mv) > m:
+                    mv.pop()
+        if not tars_done:
+            tars_done = True
+            while j < len(tl2):
+                tl2[j] = skolemize_statement(screen, tl2[j], deps, depmin, sk, qz, mv, True)
+                rollback()
+                if isinstance(tl2[j], OrNode):
+                    append_tree(tl1, complement_tree(tl2[j].left), dirty1)
+                    hyps_done = False
+                    replace_tree(tl2, j, tl2[j].right, dirty2)
+                    tl.tlist1.dep[len(tl1) - 1] = [j]
+                if isinstance(tl2[j], ImpliesNode):
+                    # can't relabel or metavar dependencies between existing targets broken
+                    # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
+                    left = tl2[j].left
+                    append_tree(tl1, left, dirty1)
+                    hyps_done = False
+                    # can't relabel or metavar dependencies between existing targets broken
+                    # right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
+                    right = tl2[j].right
+                    replace_tree(tl2, j, right, dirty2)
+                    tl.tlist1.dep[len(tl1) - 1] = [j]
+                while isinstance(tl2[j], AndNode):
+                    # First check we don't have P \wedge P
+                    unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                    if unifies and not assign:
+                        replace_tree(tl2, j, tl2[j].left, dirty2)
+                    else:
+                        append_tree(tl2, tl2[j].right, dirty2)
+                        replace_tree(tl2, j, tl2[j].left, dirty2)
+                        add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
+                    append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
+                    replace_tree(tl2, j, tl2[j].left.left, dirty2)
+                    add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                dirty2.append(j)
+                if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
+                   and not isinstance(tl2[j], ImpliesNode):
+                    j += 1
+                while len(mv) > m:
+                    mv.pop()
+    
+    if qz:
+        tl.constraints_processed = (0, 0, 0)
+        tl.sorts_processed = (0, 0, 0)
+        if tl0:
+            t = tl0[0]
+            while t.left:
+                t = t.left
+            r = range(0, len(qz))
+        else:
+            tl0.append(qz[0])
+            t = qz[0]
+            r = range(1, len(qz))
+        for i in r:
+            t.left = qz[i]
+            t = t.left
+        t.left = None
+
+    return dirty1, dirty2
