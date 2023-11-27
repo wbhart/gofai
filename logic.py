@@ -1,5 +1,6 @@
 from utility import unquantify, relabel, append_tree, add_descendant, \
-     target_compatible, complement_tree
+     target_compatible, complement_tree, process_constraints, \
+     relabel_constraints
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -309,3 +310,58 @@ def library_load(screen, tl, library, filepos):
             append_tree(tlist2, stmt, dirty2)
             fstr = library.readline()
     return dirty1, dirty2
+
+def library_import(screen, tl, library, filepos):
+    """
+    Given an open library file (library) and a fileposition (filepos), load the
+    theorem/definition at the given position into the hypotheses. The function
+    returns True if the operation was successful, otherwise False. In theory,
+    the function should not fail.
+    """
+    library.seek(filepos)
+    fstr = library.readline()
+    hyps = []
+    tars = []
+    if fstr != '------------------------------\n':
+        tree = to_ast(screen, fstr[0:-1])
+        t = tree
+        while t.left:
+            t = t.left
+        library.readline()
+        fstr = library.readline()
+        while fstr != '------------------------------\n':
+            hyps.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            tars.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        if hyps:
+            jhyps = hyps[0]
+            for node in hyps[1:]:
+                jhyps = AndNode(jhyps, node)
+        jtars = tars[0]
+        for i in tars[1:]:
+            jtars = AndNode(jtars, i)
+        if hyps:
+            t.left = ImpliesNode(jhyps, jtars)
+        else:
+            t.left = jtars
+    else:
+        library.readline()
+        library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            tars.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        tree = tars[0]
+        for i in tars[1:]:
+            tree = AndNode(tree, i)
+    tlist1 = tl.tlist1.data
+    pad1 = screen.pad1
+    stmt = relabel(screen, tl, [], tree)
+    ok = process_constraints(screen, stmt, tl.constraints)
+    if ok:
+        relabel_constraints(screen, tl, stmt)
+        append_tree(tlist1, stmt, None)
+    return ok

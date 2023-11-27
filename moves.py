@@ -24,7 +24,7 @@ from utility import unquantify, relabel, relabel_constraints, append_tree, \
      trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
      domain, codomain, universe, system_unary_functions, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
-     get_constants, merge_lists
+     get_constants, merge_lists, process_constraints
 import logic
 
 from editor import edit
@@ -739,98 +739,6 @@ def process_sorts(screen, tl):
     tl.sorts_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
     return True
 
-def process_constraints(screen, tree, constraints, vars=None):
-    """
-    Given a parse tree and a dictionary of constraints for variables, annotate
-    each occurrence of variables in tree with their constraints as stored in
-    the dictionary. If an existential or universal binder is encountered, the
-    constraint for the variable defined will be added to the dictionary. In
-    addition, if one needs a list of such variables for further processing,
-    pass a list through the vars parameter and it will be appended.
-    """
-    def del_last(L, str):
-        gen = (len(L) - 1 - i for i, v in enumerate(reversed(L)) if v == str)
-        del L[next(gen, None)]
-
-    if tree == None:
-        return True
-    elif isinstance(tree, ForallNode) \
-         or isinstance(tree, ExistsNode):
-        name = tree.var.name()
-        if vars != None:
-            vars.append(name)
-        constraints[tree.var.name()] = tree.var.constraint
-        ok = process_constraints(screen, tree.var.constraint, constraints, vars)
-        if not ok:
-            return False
-        ok = process_constraints(screen, tree.left, constraints, vars)
-        if vars != None:
-            del_last(vars, name)
-        if not ok:
-            return False
-    elif isinstance(tree, SetBuilderNode):
-        name = tree.left.left.name()
-        if vars != None:
-            vars.append(name)
-        constraints[tree.left.left.name()] = tree.left.left.constraint
-        ok = process_constraints(screen, tree.left, constraints, vars)
-        if not ok:
-            if vars != None:
-                del_last(vars, name)
-            return False
-        ok = process_constraints(screen, tree.right, constraints, vars)
-        if vars != None:
-            del_last(vars, name)
-        if not ok:
-            return False
-    elif isinstance(tree, VarNode):
-        varnames = vars if vars != None else constraints
-        if not tree.name() in varnames:
-            if tree.name() not in system_unary_functions and \
-               tree.name() not in system_binary_functions and \
-               tree.name() not in system_predicates:
-               screen.dialog(f"Unknown variable/function {tree.name()}")
-               return False
-        else:
-            tree.constraint = constraints[tree.name()]
-    elif isinstance(tree, LRNode):
-        ok = process_constraints(screen, tree.left, constraints, vars)
-        if not ok:
-            return False
-        ok = process_constraints(screen, tree.right, constraints, vars)
-        if not ok:
-            return False
-    elif isinstance(tree, FnApplNode):
-        ok = process_constraints(screen, tree.var, constraints, vars)
-        if not ok:
-            return False
-        for v in tree.args:
-            ok = process_constraints(screen, v, constraints, vars)
-            if not ok:
-                return False
-    elif isinstance(tree, TupleNode):
-        for v in tree.args:
-            ok = process_constraints(screen, v, constraints, vars)
-            if not ok:
-                return False
-    elif isinstance(tree, SymbolNode):
-         ok = process_constraints(screen, tree.constraint, constraints, vars)
-         if not ok:
-             return False
-    elif isinstance(tree, FunctionConstraint):
-         ok = process_constraints(screen, tree.domain, constraints, vars)
-         if not ok:
-             return False
-         ok = process_constraints(screen, tree.codomain, constraints, vars)
-         if not ok:
-             return False
-    elif isinstance(tree, DomainTuple):
-         for v in tree.sets:
-             ok = process_constraints(screen, v, constraints, vars)
-         if not ok:
-             return False
-    return True
-
 def type_vars(screen, tl):
     """
     When beginning to prove a theorem, the initial tableau needs each variable
@@ -1222,52 +1130,9 @@ def library_import(screen, tl):
                 screen.focus.refresh()
                 return
         filepos = filtered_titles2[i][0]
-        library.seek(filepos)
-        fstr = library.readline()
-        hyps = []
-        tars = []
-        if fstr != '------------------------------\n':
-            tree = to_ast(screen, fstr[0:-1])
-            t = tree
-            while t.left:
-                t = t.left
-            library.readline()
-            fstr = library.readline()
-            while fstr != '------------------------------\n':
-                hyps.append(to_ast(screen, fstr[0:-1]))
-                fstr = library.readline()
-            fstr = library.readline()
-            while fstr != '\n':
-                tars.append(to_ast(screen, fstr[0:-1]))
-                fstr = library.readline()
-            if hyps:
-                jhyps = hyps[0]
-                for node in hyps[1:]:
-                    jhyps = AndNode(jhyps, node)
-            jtars = tars[0]
-            for i in tars[1:]:
-                jtars = AndNode(jtars, i)
-            if hyps:
-                t.left = ImpliesNode(jhyps, jtars)
-            else:
-                t.left = jtars
-        else:
-            library.readline()
-            library.readline()
-            fstr = library.readline()
-            while fstr != '\n':
-                tars.append(to_ast(screen, fstr[0:-1]))
-                fstr = library.readline()
-            tree = tars[0]
-            for i in tars[1:]:
-                tree = AndNode(tree, i)
-        tlist1 = tl.tlist1.data
-        pad1 = screen.pad1
-        stmt = relabel(screen, tl, [], tree)
-        ok = process_constraints(screen, stmt, tl.constraints)
-        if ok:
-            relabel_constraints(screen, tl, stmt)
-            append_tree2(pad1, tlist1, stmt)
+        if logic.library_import(screen, tl, library, filepos):
+            n = len(tl.tlist1.data) - 1
+            screen.pad1.pad[n] = str(tl.tlist1.data[n])
             screen.pad1.refresh()
             screen.focus.refresh()
     library.close()
