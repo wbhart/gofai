@@ -45,7 +45,7 @@ a = b
 b = a
 
 Title: Multiplication by zero
-[False, ['Real'], [], ['*', '=', '\\mathbb{N}']]
+[True, ['Real'], ['*', '\\mathbb{N}'], ['\\mathbb{N}']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -53,7 +53,7 @@ Tags: #algebra #\mathbb{R}
 a*0 = 0
 
 Title: Multiplication by one
-[False, ['Real'], [], ['*', '=', '\\mathbb{N}']]
+[True, ['Real'], ['*', '\\mathbb{N}'], []]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -61,7 +61,7 @@ Tags: #algebra #\mathbb{R}
 a*1 = a
 
 Title: Addition of zero
-[False, ['Real'], [], ['+', '=', '\\mathbb{N}']]
+[True, ['Real'], ['+', '\\mathbb{N}'], []]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -69,7 +69,7 @@ Tags: #algebra #\mathbb{R}
 a + 0 = a
 
 Title: Commutativity of addition
-[False, ['Real'], [], ['+', '=']]
+[True, ['Real'], ['+'], ['+']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -96,7 +96,7 @@ a > 1
 1/a < 1
 
 Title: Commutativity of multiplication
-[False, ['Real'], [], ['*', '=']]
+[True, ['Real'], ['*'], ['*']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -104,7 +104,7 @@ Tags: #algebra #\mathbb{R}
 a*b = b*a
 
 Title: Distributivity of multiplication over addition
-[False, ['Real'], [], ['*', '+', '=']]
+[True, ['Real'], ['*', '+'], ['*', '+']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -382,7 +382,7 @@ Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
 a = 0
 
 Title: Absolute value of product is product of absolute values
-[False, ['Real'], [], ['*', '=', '||']]
+[True, ['Real'], ['*', '||'], ['*', '||']]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -398,7 +398,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a + b| \leq |a| + |b|
 
 Title: Absolute value is independent of sign
-[False, ['Real'], [], ['-', '=', '||']]
+[True, ['Real'], ['-', '||'], ['||']]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -444,7 +444,7 @@ a = b
 -a = -b
 
 Title: Multiplication by minus one negates a value
-[False, ['Real'], [], ['*', '-', '=', '\\mathbb{N}']]
+[True, ['Real'], ['*', '-', '\\mathbb{N}'], ['-']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -452,7 +452,7 @@ Tags: #algebra #\mathbb{R}
 a*-1 = -a
 
 Title: Addition of negated value equal to difference of values
-[False, ['Real'], [], ['+', '-', '=']]
+[True, ['Real'], ['+', '-'], ['-']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -476,7 +476,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a - b| \leq |a| + |b|
 
 Title: Expansion of negated sum
-[False, ['Real'], [], ['+', '-', '=']]
+[True, ['Real'], ['+', '-'], ['-']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -484,7 +484,7 @@ Tags: #algebra #\mathbb{R}
 -(a + b) = -a - b
 
 Title: Expansion of negated difference
-[False, ['Real'], [], ['+', '-', '=']]
+[True, ['Real'], ['-'], ['+', '-']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -492,7 +492,7 @@ Tags: #algebra #\mathbb{R}
 -(a - b) = -a + b
 
 Title: Expansion of negated difference, variant
-[False, ['Real'], [], ['+', '-', '=']]
+[True, ['Real'], ['+', '-'], ['-']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -500,7 +500,7 @@ Tags: #algebra #\mathbb{R}
 -(-a + b) = a - b
 
 Title: Simplification of double negation
-[False, ['Real'], [], ['-', '=']]
+[True, ['Real'], ['-'], []]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -508,7 +508,7 @@ Tags: #algebra #\mathbb{R}
 --a = a
 
 Title: Expansion of negated difference, variant
-[False, ['Real'], [], ['+', '-', '=']]
+[True, ['Real'], ['-'], ['+']]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -776,7 +776,7 @@ s \in S
 \emptyset(universe(S)) \subsetneq S
 
 Title: Commutativity of set union
-[False, ['Set'], [], ['=', '\\cup']]
+[True, ['Set'], ['\\cup'], ['\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -819,7 +819,7 @@ Tags: #sets
 C \subseteq S \cup T
 
 Title: Union of set with the empty set is the original set
-[False, ['Set'], [], ['=', '\\cup', '\\emptyset']]
+[True, ['Set'], ['\\cup', '\\emptyset'], []]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -827,7 +827,7 @@ Tags: #sets
 S \cup \emptyset = S
 
 Title: Union of a set with itself is itself
-[False, ['Set'], [], ['=', '\\cup']]
+[True, ['Set'], ['\\cup'], []]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -861,7 +861,7 @@ Tags: #sets #definition
 x \in S \cap T \iff x \in S \wedge x \in T
 
 Title: Commutativity of set intersection
-[False, ['Set'], [], ['=', '\\cap']]
+[True, ['Set'], ['\\cap'], ['\\cap']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -877,7 +877,7 @@ Tags: #sets
 S \cap T \subseteq S
 
 Title: Intersection with the empty set is trivial
-[False, ['Set'], [], ['=', '\\cap', '\\emptyset']]
+[True, ['Set'], ['\\cap', '\\emptyset'], ['\\emptyset']]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -895,7 +895,7 @@ s \in S
 \neg(s \in T)
 
 Title: Intersection of a set with itself is itself
-[False, ['Set'], [], ['=', '\\cap']]
+[True, ['Set'], ['\\cap'], []]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -931,7 +931,7 @@ C \subseteq S
 C \subseteq T
 
 Title: Intersection distributes over union
-[False, ['Set'], [], ['=', '\\cap', '\\cup']]
+[True, ['Set'], ['\\cap', '\\cup'], ['\\cap', '\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall U : Set
 ------------------------------
@@ -939,7 +939,7 @@ Tags: #sets
 S \cap (T \cup U) = S \cap T \cup (S \cap U)
 
 Title: Union distributes over intersection
-[False, ['Set'], [], ['=', '\\cap', '\\cup']]
+[True, ['Set'], ['\\cap', '\\cup'], ['\\cap', '\\cup']]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall U : Set
 ------------------------------
@@ -995,7 +995,7 @@ Tags: #sets
 a \in S \wedge b \in T \iff (a, b) \in S \times T
 
 Title: Cartesian product with the empty set is empty (right)
-[False, ['Set'], [], ['=', '\\emptyset', '\\times']]
+[True, ['Set'], ['\\emptyset', '\\times'], ['\\emptyset']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1003,7 +1003,7 @@ Tags: #sets
 S \times \emptyset(universe(T)) = \emptyset(universe(S \times T))
 
 Title: Cartesian product with the empty set is empty (left)
-[False, ['Set'], [], ['=', '\\emptyset', '\\times']]
+[True, ['Set'], ['\\emptyset', '\\times'], ['\\emptyset']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1089,7 +1089,7 @@ Tags: #sets
 A \times B \cup C \times D \subseteq (A \cup C) \times (B \cup D)
 
 Title: Intersection of cartesian products equals cartesian product of intersections
-[False, ['Set'], [], ['=', '\\cap', '\\times']]
+[True, ['Set'], ['\\cap', '\\times'], ['\\cap', '\\times']]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -1130,7 +1130,7 @@ Tags: #sets
 \emptyset(universe(S)) \in \mathcal{P}(S)
 
 Title: Power set of an intersection is the intersection of the power sets
-[False, ['Set'], [], ['=', '\\cap', '\\mathcal{P}']]
+[True, ['Set'], ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}']]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1162,7 +1162,7 @@ Tags: #sets
 x \in S \implies x \in universe(S)
 
 Title: Complement of complement of a set is equal to that set
-[False, ['Set'], [], ['=', 'complement']]
+[True, ['Set'], ['complement'], []]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -1170,7 +1170,7 @@ Tags: #sets
 complement(complement(S)) = S
 
 Title: Union of sets is the complement of the union of their complements
-[False, ['Set'], [], ['=', '\\cap', '\\cup', 'complement']]
+[True, ['Set'], ['\\cup'], ['\\cap', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1178,7 +1178,7 @@ Tags: #sets
 S \cup T = complement(complement(S) \cap complement(T))
 
 Title: Union of set and complement is universe
-[False, ['Set'], [], ['=', '\\cup', 'complement', 'universe']]
+[True, ['Set'], ['\\cup', 'complement'], ['universe']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1186,7 +1186,7 @@ Tags: #sets
 S \cup complement(S) = universe(S)
 
 Title: Intersection of a set with its complement is the empty set
-[False, ['Set'], [], ['=', '\\cap', '\\emptyset', 'complement']]
+[True, ['Set'], ['\\cap', 'complement'], ['\\emptyset']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1212,7 +1212,7 @@ S \subseteq T
 complement(T) \subseteq complement(S)
 
 Title: Definition of set difference
-[False, ['Set'], [], ['=', '\\cap', '\\setminus', 'complement']]
+[True, ['Set'], ['\\setminus'], ['\\cap', 'complement']]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1220,7 +1220,7 @@ Tags: #sets #definition
 S \setminus T = S \cap complement(T)
 
 Title: Problem : Complement of set difference is complement of first set union second set
-[False, ['Set'], [], ['=', '\\cup', '\\setminus', 'complement']]
+[True, ['Set'], ['\\setminus', 'complement'], ['\\cup', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1228,7 +1228,7 @@ Tags: #sets
 complement(S \setminus T) = complement(S) \cup T
 
 Title: Problem : Complement of set diff is complement of set union the intersection
-[False, ['Set'], [], ['=', '\\cap', '\\cup', '\\setminus', 'complement']]
+[True, ['Set'], ['\\setminus', 'complement'], ['\\cap', '\\cup', 'complement']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1236,7 +1236,7 @@ Tags: #sets
 complement(S \setminus T) = complement(S) \cup (S \cap T)
 
 Title: Difference of complements is reverse difference
-[False, ['Set'], [], ['=', '\\setminus', 'complement']]
+[True, ['Set'], ['\\setminus', 'complement'], ['\\setminus']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1244,7 +1244,7 @@ Tags: #sets
 complement(S) \setminus complement(T) = T \setminus S
 
 Title: Problem : Difference with intersection is union of differences
-[False, ['Set'], [], ['=', '\\cap', '\\cup', '\\setminus']]
+[True, ['Set'], ['\\cap', '\\setminus'], ['\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1252,7 +1252,7 @@ Tags: #sets
 C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 
 Title: Problem: Difference with union is intersection of differences
-[False, ['Set'], [], ['=', '\\cap', '\\cup', '\\setminus']]
+[True, ['Set'], ['\\cup', '\\setminus'], ['\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1260,7 +1260,7 @@ Tags: #sets
 C \setminus (A \cup B) = (C \setminus A) \cap (C \setminus B)
 
 Title: Problem: Difference with difference is union of intersection and difference
-[False, ['Set'], [], ['=', '\\cap', '\\cup', '\\setminus']]
+[True, ['Set'], ['\\setminus'], ['\\cap', '\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1268,7 +1268,7 @@ Tags: #sets
 C \setminus (B \setminus A) = C \cap A \cup (C \setminus B)
 
 Title: Problem : Difference with difference from same set is intersection
-[False, ['Set'], [], ['=', '\\cap', '\\setminus']]
+[True, ['Set'], ['\\setminus'], ['\\cap']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1276,7 +1276,7 @@ Tags: #sets
 C \setminus (C \setminus A) = C \cap A
 
 Title: Problem: Intersection with difference is difference with intersection
-[False, ['Set'], [], ['=', '\\cap', '\\setminus']]
+[True, ['Set'], ['\\cap', '\\setminus'], ['\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1284,7 +1284,7 @@ Tags: #sets
 (B \setminus A) \cap C = B \cap C \setminus A
 
 Title: Problem : Intersection with difference is intersection with other difference
-[False, ['Set'], [], ['=', '\\cap', '\\setminus']]
+[True, ['Set'], ['\\cap', '\\setminus'], ['\\cap', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1292,7 +1292,7 @@ Tags: #sets
 (B \setminus A) \cap C = B \cap (C \setminus A)
 
 Title: Problem : Union with difference is difference of union and difference
-[False, ['Set'], [], ['=', '\\cup', '\\setminus']]
+[True, ['Set'], ['\\cup', '\\setminus'], ['\\cup', '\\setminus']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1300,7 +1300,7 @@ Tags: #sets
 (B \setminus A) \cup C = B \cup C \setminus (A \setminus C)
 
 Title: Difference of a set with itself is empty
-[False, ['Set'], [], ['=', '\\emptyset', '\\setminus']]
+[True, ['Set'], ['\\setminus'], ['\\emptyset']]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1308,7 +1308,7 @@ Tags: #sets
 A \setminus A = \emptyset(universe(A))
 
 Title: Difference of any set with empty set is empty
-[False, ['Set'], [], ['=', '\\emptyset', '\\setminus']]
+[True, ['Set'], ['\\emptyset', '\\setminus'], ['\\emptyset']]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1316,7 +1316,7 @@ Tags: #sets
 \emptyset \setminus A = \emptyset(universe(A))
 
 Title: Difference of empty set with any set is that set
-[False, ['Set'], [], ['=', '\\emptyset', '\\setminus']]
+[True, ['Set'], ['\\emptyset', '\\setminus'], []]
 Tags: #sets
 \forall A : Set
 ------------------------------
@@ -1324,7 +1324,7 @@ Tags: #sets
 A \setminus \emptyset(universe(A)) = A
 
 Title: Difference of a set and its universe is the empty set
-[False, ['Set'], [], ['=', '\\emptyset', '\\setminus', 'complement']]
+[True, ['Set'], ['\\emptyset', '\\setminus', 'complement'], ['\\emptyset']]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -1358,7 +1358,7 @@ Tags: #sets #definition
 (x \in {y \in S | P(y)}) \iff P(x) \wedge x \in S
 
 Title: Intersection in terms of set builder
-[False, ['Set'], [], ['=', '\\cap', '\\in', '{|}']]
+[True, ['Set'], ['\\in', '{|}'], ['\\cap']]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------

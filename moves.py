@@ -1530,7 +1530,8 @@ def convert(screen, tl):
         filepos = library.tell()
         logic.library_load(screen, tl, library, filepos)
         c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
-        if len(tl.tlist1.data) == 0 and isinstance(tl.tlist2.data[0], IffNode):
+        if len(tl.tlist1.data) == 0 and len(tl.tlist2.data) == 1 and \
+           (isinstance(tl.tlist2.data[0], IffNode) or isinstance(tl.tlist2.data[0], EqNode)):
             is_iff = True
             c1 = get_constants(screen, tl, tl.tlist2.data[0].left)
             c2 = get_constants(screen, tl, tl.tlist2.data[0].right)
