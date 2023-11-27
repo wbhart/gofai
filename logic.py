@@ -1,10 +1,10 @@
 from utility import unquantify, relabel, append_tree, add_descendant, \
      target_compatible, complement_tree, process_constraints, \
-     relabel_constraints
+     relabel_constraints, get_constants, merge_lists
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
-     TupleNode, FnApplNode
+     ExistsNode, TupleNode, FnApplNode
 from parser import to_ast
 
 def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
@@ -365,3 +365,51 @@ def library_import(screen, tl, library, filepos):
         relabel_constraints(screen, tl, stmt)
         append_tree(tlist1, stmt, None)
     return ok
+
+def library_export(screen, tl, library, title, tags):
+    """
+    Given a library file (library) open for appending, a title string and a
+    string which is a comma separated list of tags, write the current tableau
+    to the library as a theorem/definition.
+    """
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    c0 = get_constants(screen, tl, tlist0[0]) 
+    c1 = merge_lists([get_constants(screen, tl, v) for v in tlist1])
+    c2 = merge_lists([get_constants(screen, tl, v) for v in tlist2])
+    consts = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]"        
+    library.write(title+"\n")
+    library.write(consts+"\n")
+    library.write(tags+"\n")
+    qz_written = False
+    if tlist0:
+        library.write(repr(tlist0[0]))
+        qz_written = True
+    for hyp in tlist1:
+        while isinstance(hyp, ExistsNode):
+            if qz_written:
+                library.write(" ")
+            library.write(repr(ExistsNode(hyp.var, None)))
+            hyp = hyp.left
+            qz_written = True
+    for tar in tlist2:
+        while isinstance(tar, ForallNode):
+            if qz_written:
+                library.write(" ")
+            library.write(repr(ForallNode(tar.var, None)))
+            tar = tar.left
+            qz_written = True
+    if qz_written:
+        library.write("\n")
+    library.write("------------------------------\n")
+    for hyp in tlist1:
+        while isinstance(hyp, ExistsNode):
+            hyp = hyp.left
+        library.write(repr(hyp)+"\n")
+    library.write("------------------------------\n")
+    for tar in tlist2:
+        while isinstance(tar, ForallNode):
+            tar = tar.left
+        library.write(repr(tar)+"\n")
+    library.write("\n")

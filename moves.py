@@ -1221,48 +1221,8 @@ def library_export(screen, tl):
     if tags == None:
         return
     tags = canonicalise_tags(tags) # deal with constraint shorthands
-    c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
-    c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
-    c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
-    consts = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]"        
     library = open("library.dat", "a")
-    library.write(title+"\n")
-    library.write(consts+"\n")
-    library.write(tags+"\n")
-    tlist0 = tl.tlist0.data
-    tlist1 = tl.tlist1.data
-    tlist2 = tl.tlist2.data
-    qz_written = False
-    if tlist0:
-        library.write(repr(tlist0[0]))
-        qz_written = True
-    for hyp in tlist1:
-        while isinstance(hyp, ExistsNode):
-            if qz_written:
-                library.write(" ")
-            library.write(repr(ExistsNode(hyp.var, None)))
-            hyp = hyp.left
-            qz_written = True
-    for tar in tlist2:
-        while isinstance(tar, ForallNode):
-            if qz_written:
-                library.write(" ")
-            library.write(repr(ForallNode(tar.var, None)))
-            tar = tar.left
-            qz_written = True
-    if qz_written:
-        library.write("\n")
-    library.write("------------------------------\n")
-    for hyp in tlist1:
-        while isinstance(hyp, ExistsNode):
-            hyp = hyp.left
-        library.write(repr(hyp)+"\n")
-    library.write("------------------------------\n")
-    for tar in tlist2:
-        while isinstance(tar, ForallNode):
-            tar = tar.left
-        library.write(repr(tar)+"\n")
-    library.write("\n")
+    logic.library_export(screen, tl, library, title, tags)
     library.close()
     screen.focus.refresh()
 
