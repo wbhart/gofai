@@ -7,7 +7,7 @@ from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality_substitution, targets_proved, \
      library_load, fill_macros, type_vars, process_sorts, \
-     update_constraints
+     update_constraints, convert
 from utility import TargetNode, initialise_sorts
 
 def main(stdscr):
@@ -44,11 +44,13 @@ def main(stdscr):
             fill_macros(screen, tl)
             type_vars(screen, tl)
             initialise_sorts(screen, tl)
-            ok = process_sorts(screen, tl)
+            ok, error = process_sorts(screen, tl)
             if ok:
                started = True
                skip = False
                ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+            else:
+               screen.dialog(error)
         elif c == 'p': # modus ponens
             if started:
                 modus_ponens(screen, tl, ttree)
@@ -79,6 +81,8 @@ def main(stdscr):
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
+        #elif c == 'z': # rewrite library
+        #    convert(screen, tl)
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus

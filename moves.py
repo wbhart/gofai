@@ -1515,28 +1515,40 @@ def cleanup(screen, tl, ttree):
     screen.focus.refresh()
     return
 
-#def convert(screen, tl):
-#    library = open("library.dat", "r")
-#    library2 = open("library2.dat", "a")
-#    title = library.readline() # read title
-#    while title: # check for EOF
-#        tags = library.readline() # read tags
-#        filepos = library.tell()
-#        logic.library_load(screen, tl, library, filepos)
-#        c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
-#        c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
-#        c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
-#        const_str = "["+str(c0)+", "+str(c1)+", "+str(c2)+"]\n"
-#        library2.write(title)
-#        library2.write(const_str)
-#        library2.write(tags)
-#        library.seek(filepos)
-#        fstr = library.readline()
-#        while fstr != '\n':
-#            library2.write(fstr)
-#            fstr = library.readline()
-#        library2.write('\n')
-#        logic.clear_tableau(screen, tl)
-#        title = library.readline()
-#    library.close()
-#    library2.close()
+def convert(screen, tl):
+    """
+    Reads every theorem/definition in the library and writes them back out
+    to library2.dat. This is used to update the constant headers and to check
+    that the library is in order.
+    """
+    library = open("library.dat", "r")
+    library2 = open("library2.dat", "a")
+    title = library.readline() # read title
+    while title: # check for EOF
+        consts = library.readline() # read constants
+        tags = library.readline() # read tags
+        filepos = library.tell()
+        logic.library_load(screen, tl, library, filepos)
+        c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
+        if len(tl.tlist1.data) == 0 and isinstance(tl.tlist2.data[0], IffNode):
+            is_iff = True
+            c1 = get_constants(screen, tl, tl.tlist2.data[0].left)
+            c2 = get_constants(screen, tl, tl.tlist2.data[0].right)
+        else:
+            is_iff = False
+            c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
+            c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
+        const_str = "["+str(is_iff)+", "+str(c0)+", "+str(c1)+", "+str(c2)+"]\n"
+        library2.write(title)
+        library2.write(const_str)
+        library2.write(tags)
+        library.seek(filepos)
+        fstr = library.readline()
+        while fstr != '\n':
+            library2.write(fstr)
+            fstr = library.readline()
+        library2.write('\n')
+        logic.clear_tableau(screen, tl)
+        title = library.readline()
+    library.close()
+    library2.close()

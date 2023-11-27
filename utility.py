@@ -886,7 +886,6 @@ constant_dict = {
         CartesianConstraint : '\\times',
         FunctionConstraint : '->',
         SetSort : 'Set',
-        Universum : '\\mathcal{U}',
         PredSort : 'Pred'   
     }
 
@@ -913,7 +912,8 @@ def get_constants(screen, tl, tree):
             append_unique(constants, tree.name())
         elif isinstance(tree, VarNode) or isinstance(tree, SetOfNode) \
           or isinstance(tree, DeadNode) or isinstance(tree, LambdaNode) \
-          or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+          or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
+          or isinstance(tree, Universum):
             pass
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):
