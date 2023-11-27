@@ -17,13 +17,13 @@ from unification import unify, subst, trees_unify, is_predicate, sort_type_class
      is_function_type, sorts_compatible, coerce_sorts, sorts_equal, \
      check_macros, substitute
 from utility import unquantify, relabel, relabel_constraints, append_tree, \
-     replace_tree, add_sibling, add_descendant, skolemize_quantifiers, \
-     skolemize_statement, insert_sort, target_compatible, target_depends, \
-     deps_defunct, deps_intersect, deps_compatible, complement_tree, tags_to_list, \
-     canonicalise_tags, filter_titles, trim_spaces, find_all, find_start_index, \
-     metavars_used, target_metavars, domain, codomain, universe, \
-     system_unary_functions, system_binary_functions, system_predicates, list_merge, \
-     get_constraint
+     append_tree2, replace_tree, replace_tree2, add_sibling, add_descendant, \
+     skolemize_quantifiers, skolemize_statement, insert_sort, target_compatible, \
+     target_depends, deps_defunct, deps_intersect, deps_compatible, \
+     complement_tree, tags_to_list, canonicalise_tags, filter_titles, \
+     trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
+     domain, codomain, universe, system_unary_functions, \
+     system_binary_functions, system_predicates, list_merge, get_constraint
 import logic
 
 from editor import edit
@@ -1134,21 +1134,17 @@ def clear_tableau(screen, tl):
     tlist0 = tl.tlist0
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
+    n1 = len(tlist1.data)
+    n2 = len(tlist2.data)
+    logic.clear_tableau(screen, tl)
     pad0 = screen.pad0
     pad1 = screen.pad1
     pad2 = screen.pad2
-    tlist0.data = []
     pad0.pad[0] = ''
-    n = len(tlist1.data)
-    for i in range(0, n):
-        del tlist1.data[n - i - 1]
+    for i in range(0, n1):
         pad1.pad[i] = ''
-    tlist1.line = 0
-    n = len(tlist2.data)
-    for i in range(0, n):
-        del tlist2.data[n - i - 1]
+    for i in range(0, n2):
         pad2.pad[i] = ''
-    tlist2.line = 0
     pad0.scoll_line = 0
     pad0.cursor_line = 0
     pad0.scroll_char = 0
@@ -1161,16 +1157,10 @@ def clear_tableau(screen, tl):
     pad2.cursor_line = 0
     pad2.scroll_char = 0
     pad2.cursor_char = 0
-    tl.vars = dict()
-    tl.tars = dict()
-    tl.constraints_processed = (0, 0, 0)
-    tl.sorts_processed = (0, 0, 0)
-    tl.tlist1.dep = dict()
     pad2.refresh()
     pad1.refresh()
     pad0.refresh()
     screen.focus = screen.pad0
-    tl.focus = tl.tlist0
 
 def library_import(screen, tl):
     """
@@ -1270,12 +1260,12 @@ def library_import(screen, tl):
             for i in tars[1:]:
                 tree = AndNode(tree, i)
         tlist1 = tl.tlist1.data
-        pad1 = screen.pad1.pad
+        pad1 = screen.pad1
         stmt = relabel(screen, tl, [], tree)
         ok = process_constraints(screen, stmt, tl.constraints)
         if ok:
             relabel_constraints(screen, tl, stmt)
-            append_tree(pad1, tlist1, stmt)
+            append_tree2(pad1, tlist1, stmt)
             screen.pad1.refresh()
             screen.focus.refresh()
     library.close()
@@ -1336,40 +1326,15 @@ def library_load(screen, tl):
                 screen.focus.refresh()
                 return
         filepos = filtered_titles2[i][0]
-        library.seek(filepos)
-        tlist0 = tl.tlist0.data
-        pad0 = screen.pad0.pad
-        tlist1 = tl.tlist1.data
-        pad1 = screen.pad1.pad
-        tlist2 = tl.tlist2.data
-        pad2 = screen.pad2.pad
-        fstr = library.readline()
-        if fstr != '------------------------------\n':
-            stmt = to_ast(screen, fstr[0:-1])
-            append_tree(pad0, tlist0, stmt)
-            screen.pad0.refresh()
-            library.readline()
-            fstr = library.readline()
-            while fstr != '------------------------------\n':
-                stmt = to_ast(screen, fstr[0:-1])
-                append_tree(pad1, tlist1, stmt)
-                screen.pad1.refresh()
-                fstr = library.readline()
-            fstr = library.readline()
-            while fstr != '\n':
-                stmt = to_ast(screen, fstr[0:-1])
-                append_tree(pad2, tlist2, stmt)
-                screen.pad2.refresh()
-                fstr = library.readline()
-        else:
-            library.readline()
-            library.readline()
-            fstr = library.readline()
-            while fstr != '\n':
-                stmt = to_ast(screen, fstr[0:-1])
-                append_tree(pad2, tlist2, stmt)
-                screen.pad2.refresh()
-                fstr = library.readline()
+        dirty1, dirty2 = logic.library_load(screen, tl, library, filepos)
+        screen.pad0.pad[0] = str(tl.tlist0.data[0])
+        screen.pad0.refresh()
+        for i in dirty1:
+            screen.pad1.pad[i] = str(tl.tlist1.data[i])
+        screen.pad1.refresh()
+        for i in dirty2:
+            screen.pad2.pad[i] = str(tl.tlist2.data[i])
+        screen.pad2.refresh()
         screen.focus.refresh()
     library.close()
 
@@ -1490,7 +1455,7 @@ def negate_target(screen, tl):
         screen.focus.refresh()
         return
     tree = tlist2.data[line]
-    append_tree(screen.pad1, tlist1.data, complement_tree(tree))
+    append_tree2(screen.pad1, tlist1.data, complement_tree(tree))
     tlist1.dep[len(tlist1.data) - 1] = line
     # update windows
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
@@ -1571,12 +1536,17 @@ def modus_ponens(screen, tl, ttree):
             screen.focus.refresh()
             return
     # run modus ponens
-    if not logic.modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
+    success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward)
+    if not success:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection
     # update windows
+    for i in dirty1:
+        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+    for i in dirty2:
+        screen.pad2.pad[i] = str(tl.tlist2.data[i])
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
@@ -1655,12 +1625,17 @@ def modus_tollens(screen, tl, ttree):
             screen.focus.refresh()
             return
     # run modus tollens
-    if not logic.modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
+    success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward)
+    if not success:
         screen.dialog("Predicate does not match implication. Press Enter to continue.")
         screen.restore_state()
         screen.focus.refresh()
         return # does not unify, bogus selection
     # update windows
+    for i in dirty1:
+        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+    for i in dirty2:
+        screen.pad2.pad[i] = str(tl.tlist2.data[i])
     tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
@@ -1782,35 +1757,35 @@ def cleanup(screen, tl, ttree):
                     unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
-                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                        replace_tree2(screen.pad1, tl1, i, tl1[i].left)
                     else:
                         stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
                         if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
                             temp = stmt.left.left
                             stmt.left = stmt.right.left
                             stmt.right = temp
-                        replace_tree(screen.pad1, tl1, i, stmt)
+                        replace_tree2(screen.pad1, tl1, i, stmt)
                 if isinstance(tl1[i], IffNode):
                     tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
                     impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
-                    append_tree(screen.pad1, tl1, impl)
+                    append_tree2(screen.pad1, tl1, impl)
                     tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                     stmt = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False)
-                    replace_tree(screen.pad1, tl1, i, stmt)
+                    replace_tree2(screen.pad1, tl1, i, stmt)
                     rollback()
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
-                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                        replace_tree2(screen.pad1, tl1, i, tl1[i].left)
                     else:
-                        append_tree(screen.pad1, tl1, tl1[i].right)
-                        replace_tree(screen.pad1, tl1, i, tl1[i].left)
+                        append_tree2(screen.pad1, tl1, tl1[i].right)
+                        replace_tree2(screen.pad1, tl1, i, tl1[i].left)
                         tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
-                    append_tree(screen.pad1, tl1, complement_tree(tl1[i].left.right))
-                    replace_tree(screen.pad1, tl1, i, tl1[i].left.left)
+                    append_tree2(screen.pad1, tl1, complement_tree(tl1[i].left.right))
+                    replace_tree2(screen.pad1, tl1, i, tl1[i].left.left)
                     tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
@@ -1821,14 +1796,14 @@ def cleanup(screen, tl, ttree):
                         P = tl1[i].left.left
                         Q = tl1[i].left.right
                         R = tl1[i].right
-                        append_tree(screen.pad1, tl1, ImpliesNode(Q, R))
-                        replace_tree(screen.pad1, tl1, i, ImpliesNode(P, R))
+                        append_tree2(screen.pad1, tl1, ImpliesNode(Q, R))
+                        replace_tree2(screen.pad1, tl1, i, ImpliesNode(P, R))
                         tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     stmt = ImpliesNode(deepcopy(tl1[i].left), tl1[i].right.left)
-                    append_tree(screen.pad1, tl1, stmt)
+                    append_tree2(screen.pad1, tl1, stmt)
                     stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
-                    replace_tree(screen.pad1, tl1, i, stmt)
+                    replace_tree2(screen.pad1, tl1, i, stmt)
                     tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
                 screen.pad1[i] = str(tl1[i])
                 i += 1
@@ -1840,34 +1815,34 @@ def cleanup(screen, tl, ttree):
                 tl2[j] = skolemize_statement(screen, tl2[j], deps, depmin, sk, qz, mv, True)
                 rollback()
                 if isinstance(tl2[j], OrNode):
-                    append_tree(screen.pad1, tl1, complement_tree(tl2[j].left))
+                    append_tree2(screen.pad1, tl1, complement_tree(tl2[j].left))
                     hyps_done = False
-                    replace_tree(screen.pad2, tl2, j, tl2[j].right)
+                    replace_tree2(screen.pad2, tl2, j, tl2[j].right)
                     tl.tlist1.dep[len(tl1) - 1] = [j]
                 if isinstance(tl2[j], ImpliesNode):
                     # can't relabel or metavar dependencies between existing targets broken
                     # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
                     left = tl2[j].left
-                    append_tree(screen.pad1, tl1, left)
+                    append_tree2(screen.pad1, tl1, left)
                     hyps_done = False
                     # can't relabel or metavar dependencies between existing targets broken
                     # right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
                     right = tl2[j].right
-                    replace_tree(screen.pad2, tl2, j, right)
+                    replace_tree2(screen.pad2, tl2, j, right)
                     tl.tlist1.dep[len(tl1) - 1] = [j]
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies and not assign:
-                        replace_tree(screen.pad1, tl2, j, tl2[j].left)
+                        replace_tree2(screen.pad1, tl2, j, tl2[j].left)
                     else:
-                        append_tree(screen.pad2, tl2, tl2[j].right)
-                        replace_tree(screen.pad2, tl2, j, tl2[j].left)
+                        append_tree2(screen.pad2, tl2, tl2[j].right)
+                        replace_tree2(screen.pad2, tl2, j, tl2[j].left)
                         add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
-                    append_tree(screen.pad2, tl2, complement_tree(tl2[j].left.right))
-                    replace_tree(screen.pad2, tl2, j, tl2[j].left.left)
+                    append_tree2(screen.pad2, tl2, complement_tree(tl2[j].left.right))
+                    replace_tree2(screen.pad2, tl2, j, tl2[j].left.left)
                     add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 screen.pad2[j] = str(tl2[j])
                 if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
@@ -1900,3 +1875,19 @@ def cleanup(screen, tl, ttree):
     screen.pad2.refresh()
     screen.focus.refresh()
     return
+
+def convert(screen, tl):
+    library = open("library.dat", "r")
+    titles = []
+    title = library.readline() # read title
+    while title: # check for EOF
+        library.readline()[0:-1] # read tags
+        titles.append((library.tell(), title[7:-1]))
+        while title != '\n':
+            title = library.readline()
+        title = library.readline()
+    for i in range(len(titles)):
+        filepos = titles[i][0]
+        logic.library_load(screen, tl, library, filepos)
+        logic.clear_tableau(screen, tl)
+    library.close()

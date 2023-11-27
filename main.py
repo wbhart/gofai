@@ -7,7 +7,7 @@ from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality_substitution, targets_proved, \
      library_load, fill_macros, type_vars, process_sorts, \
-     update_constraints
+     update_constraints, convert
 from utility import TargetNode, initialise_sorts
 
 def main(stdscr):
@@ -79,6 +79,9 @@ def main(stdscr):
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
+        elif c == 'z': # convert library to new format
+            convert(screen, tl)
+            skip = True
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus

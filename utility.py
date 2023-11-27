@@ -340,22 +340,44 @@ def relabel_constraints(screen, tl, tree):
     process(tree)
     return tree
 
-def append_tree(pad, tlist, stmt):
+def append_tree(tlist, stmt, dirty):
     """
-    Append the given statement to the given tree list and update the given
-    pad. This is used to add a hypothesis or target.
+    Append the given statement to the given tree list. This is used to add a
+    hypothesis or target. The function is supplied with a list, dirty, of all
+    the line numbers of the tableau that must be updated. We append the
+    relevant line number to this list.
     """
     n = len(tlist)
     tlist.append(stmt)
-    pad[n] = str(tlist[n])
+    if dirty != None:
+        dirty.append(n)
 
-def replace_tree(pad, tlist, i, stmt):
+def replace_tree(tlist, i, stmt, dirty):
     """
-    Replace the i-th element of the given tree list with the given statement
-    and update the given pad. This is used when replacing a hypothesis or
-    target with one derived from it.
+    Replace the i-th element of the given tree list with the given statement.
+    This is used when replacing a hypothesis or target with one derived from
+    it. The function is supplied with a list, dirty, of all the line numbers
+    of the tableau that must be updated. We append the relevant line number to
+    this list.
     """
     tlist[i] = stmt
+    if dirty != None:
+        dirty.append(i)
+
+def append_tree2(pad, tlist, stmt):
+    """
+    As per append_tree, but the relevant line of the given pad is also updated.
+    """
+    n = len(tlist)
+    append_tree(tlist, stmt, None)
+    pad[n] = str(tlist[n])
+
+def replace_tree2(pad, tlist, i, stmt):
+    """
+    As per replace_tree, but the relevant line of the given pad is also
+    updated.
+    """
+    replace_tree(tlist, i, stmt, None)
     pad[i] = str(tlist[i])
 
 def metavars_used(tree):

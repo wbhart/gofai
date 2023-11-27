@@ -4,6 +4,7 @@ from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
      TupleNode, FnApplNode
+from parser import to_ast
 
 def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
@@ -38,6 +39,9 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
 
+    dirty1 = [] # list of hyps that need updating in the interface
+    dirty2 = [] # list of tars that need updating in the interface
+
     tree1 = tlist1.data[line1]
     tree1, univs = unquantify(screen, tree1, False) # remove quantifiers by taking temporary metavars
     
@@ -71,22 +75,22 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
-        return False # fail: predicate does not match implication
+        return False, dirty1, dirty2 # fail: predicate does not match implication
     stmt = substitute(deepcopy(conseq), assign)
     if forward:
         stmt = relabel(screen, tl, univs, stmt, True)
-        append_tree(screen.pad1, tlist1.data, stmt)
+        append_tree(tlist1.data, stmt, dirty1)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            append_tree(screen.pad2, tlist2.data, stmt)
+            append_tree(tlist2.data, stmt, dirty2)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
-    return True
+    return True, dirty1, dirty2
 
 def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
@@ -121,6 +125,9 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
     tlist1 = tl.tlist1
     tlist2 = tl.tlist2
+
+    dirty1 = [] # list of hyps that need updating in the interface
+    dirty2 = [] # list of tars that need updating in the interface
 
     tree1 = tlist1.data[line1]
     tree1, univs = unquantify(screen, tree1, False) # remove quantifiers by taking temporary metavars
@@ -157,22 +164,22 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
-        return False # fail: predicate does not match implication
+        return False, dirty1, dirty2 # fail: predicate does not match implication
     stmt = complement_tree(substitute(deepcopy(conseq), assign))
     if forward:
         stmt = relabel(screen, tl, univs, stmt, True)
-        append_tree(screen.pad1, tlist1.data, stmt)
+        append_tree(tlist1.data, stmt, dirty1)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
-            append_tree(screen.pad1, tlist1.data, stmt) # add negation to hypotheses
+            append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
             tlist1.dep[len(tlist1.data) - 1] = dep
         else:
-            append_tree(screen.pad2, tlist2.data, stmt)
+            append_tree(tlist2.data, stmt, dirty2)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
             tl.tars[line2] = True
-    return True
+    return True, dirty1, dirty2
 
 def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
     """
@@ -239,3 +246,66 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
         else:
             tl.tlist2.data[line2] = tree
     return found
+
+def clear_tableau(screen, tl):
+    """
+    Clear the tableau and reset it ready to prove another theorem.
+    """
+    tlist0 = tl.tlist0
+    tlist1 = tl.tlist1
+    tlist2 = tl.tlist2
+    tlist0.data = []
+    n = len(tlist1.data)
+    for i in range(0, n):
+        del tlist1.data[n - i - 1]
+    tlist1.line = 0
+    n = len(tlist2.data)
+    for i in range(0, n):
+        del tlist2.data[n - i - 1]
+    tlist2.line = 0
+    tl.vars = dict()
+    tl.tars = dict()
+    tl.constraints_processed = (0, 0, 0)
+    tl.sorts_processed = (0, 0, 0)
+    tl.tlist1.dep = dict()
+    tl.focus = tl.tlist0
+
+def library_load(screen, tl, library, filepos):
+    """
+    Given an open library file (library) and a fileposition (filepos), load the
+    theorem/definition at the given position into the tableau. The function
+    returns a pair, (dirty1, dirty2) which are lines of the tableau that were
+    affected in the hypothesis and target panes respectively. The caller is
+    responsible for updating these in the interface, along with the quantifier
+    zone, which is assumed to always be updated.
+    """
+    dirty1 = []
+    dirty2 = []
+    library.seek(filepos)
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    fstr = library.readline()
+    if fstr != '------------------------------\n':
+        stmt = to_ast(screen, fstr[0:-1])
+        append_tree(tlist0, stmt, None)
+        library.readline()
+        fstr = library.readline()
+        while fstr != '------------------------------\n':
+            stmt = to_ast(screen, fstr[0:-1])
+            append_tree(tlist1, stmt, dirty1)
+            fstr = library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            stmt = to_ast(screen, fstr[0:-1])
+            append_tree(tlist2, stmt, dirty2)
+            fstr = library.readline()
+    else:
+        library.readline()
+        library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            stmt = to_ast(screen, fstr[0:-1])
+            append_tree(tlist2, stmt, dirty2)
+            fstr = library.readline()
+    return dirty1, dirty2
