@@ -7,7 +7,7 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
-from utility import sorts_equal, find_sort
+from utility import sorts_equal, find_sort, sorts_compatible, coerce_sorts
 from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum, \
                   CartesianConstraint
 
@@ -369,67 +369,3 @@ def sort_type_class(sort):
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
                    len(sort.sort.sorts) == 2
-
-def coerce_sorts(screen, tl, s1, s2, assign=None):
-    # special case, used only by sorts_compatible for function domains
-    if s1 == None and s2 == None:
-        return True
-    if isinstance(s1, VarNode) and s1.is_metavar:
-        if assign != None:
-            assign.append((s1, s2))
-        return s2
-    if isinstance(s2, VarNode) and s2.is_metavar:
-        if assign != None:
-            assign.append((s2, s1))
-        return s1
-    # if s2 can be coerced to s1, return s1, else None
-    if sorts_equal(s1, s2):
-        return s1
-    b = find_sort(screen, tl, tl.stree, s1)
-    if b:
-        r = find_sort(screen, tl, b, s2)
-        if r:
-            return s1
-    return None # not coercible
-    
-def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
-    if isinstance(s1, Universum) and isinstance(s2, Universum):
-        return True
-    if isinstance(s1, VarNode) and s1.is_metavar:
-        if assign != None:
-            assign.append((s1, s2))
-        return True
-    if isinstance(s2, VarNode) and s2.is_metavar:
-        if assign != None:
-            assign.append((s2, s1))
-        return True
-    t1 = isinstance(s1, TupleSort)
-    t2 = isinstance(s2, TupleSort)
-    if (t1 and not t2) or (t2 and not t1):
-        return False
-    if t1:
-        if len(s1.sorts) != len(s2.sorts):
-            return False 
-        compatible = True
-        for i in range(len(s1.sorts)):
-            if not coerce_sorts(screen, tl, s1.sorts[i], s2.sorts[i]):
-                compatible = False
-                break
-        if not compatible:
-            compatible = True
-            for i in range(len(s1.sorts)):
-                if not coerce_sorts(screen, tl, s2.sorts[i], s1.sorts[i]):
-                    compatible = False
-                    break
-        return compatible
-    c1 = isinstance(s1, SetSort)
-    c2 = isinstance(s2, SetSort)
-    if (c1 and not c2) or (c2 and not c1):
-         return False 
-    if c1:
-         return sorts_compatible(screen, tl, s1.sort, s2.sort, assign, both_dirs)
-    if coerce_sorts(screen, tl, s1, s2):
-        return True
-    if coerce_sorts(screen, tl, s2, s1):
-        return True
-    return False

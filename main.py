@@ -6,13 +6,14 @@ from editor import get_text, edit
 from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality_substitution, targets_proved, \
-     library_load, fill_macros, type_vars, process_sorts, \
-     update_constraints, convert
-from utility import TargetNode, initialise_sorts
+     library_load, fill_macros, convert
+from utility import TargetNode, initialise_sorts, type_vars, process_sorts, \
+     update_constraints
+from automation import automate
 
 def main(stdscr):
     screen = Screen() # object representing console/windows
-    tl = TreeList() # object representing lists of parsed statements
+    tl = TreeList() # object representing tableau
     started = False # whether automated cleanup is started
     ttree = None # track which targets have been proved
     skip = False # whether to skip checking completion
@@ -51,6 +52,10 @@ def main(stdscr):
                ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
             else:
                screen.dialog(error)
+        elif c == 'a': # automation
+            if started:
+                automate(screen, tl, ttree)
+                skip = True
         elif c == 'p': # modus ponens
             if started:
                 modus_ponens(screen, tl, ttree)
@@ -81,8 +86,8 @@ def main(stdscr):
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
-        #elif c == 'z': # rewrite library
-        #    convert(screen, tl)
+        elif c == 'z': # rewrite library
+            convert(screen, tl)
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus

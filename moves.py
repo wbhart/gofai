@@ -14,8 +14,7 @@ from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate, sort_type_class, \
-     is_function_type, sorts_compatible, coerce_sorts, sorts_equal, \
-     check_macros, substitute
+     is_function_type, check_macros, substitute
 from utility import unquantify, relabel, relabel_constraints, append_tree, \
      append_tree2, replace_tree, replace_tree2, add_sibling, add_descendant, \
      skolemize_quantifiers, skolemize_statement, insert_sort, target_compatible, \
@@ -24,7 +23,8 @@ from utility import unquantify, relabel, relabel_constraints, append_tree, \
      trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
      domain, codomain, universe, system_unary_functions, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
-     get_constants, merge_lists, process_constraints
+     get_constants, merge_lists, process_constraints, get_terms, get_init_vars, \
+     sorts_compatible, coerce_sorts, sorts_equal
 import logic
 
 from editor import edit
@@ -433,471 +433,19 @@ def targets_proved(screen, tl, ttree):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-    return all(t.proved for t in ttree.andlist), plist
+    return all(t.proved for t in ttree.andlist) or ttree.proved, plist
 
-def element_universe(screen, x):
-    """
-    Function constraints specify a codomain rather than a universe. This
-    function can be called to compute the appropriate universe for an element
-    of the codomain (or indeed the domain, if required). One must be careful
-    because the domain or codomain of a function may itself be expressed using
-    some other constraint, e.g. a variable, function constraint, cartesian
-    constraint, etc., and each case requires special handling.
-    """
-    if isinstance(x, VarNode):
-        return x.sort.sort
-    elif isinstance(x, FunctionConstraint):
-        return x.sort # the type of a function constraint must be the type of a function
-    elif isinstance(x, CartesianConstraint):
-        return x.sort # ?? may need to take universes of components ??
-    elif isinstance(x, SetOfNode):
-        if isinstance(x.left, FunctionConstraint) or isinstance(x.left, CartesianConstraint):
-            return x.left.sort
-        else:
-            return x.left
-    else: # Universum, NumberSort, TupleSort are their own sorts
-        return x
-
-def propagate_sorts(screen, tl, tree0):
-    """
-    Given a parse tree where all variables have been annotated with their
-    constraints, compute all the types for every node of the tree. The code
-    to propagate types up the the tree from components of the current node
-    comes first, followed by code to compute the types for the current node.
-    """
-    stree = tl.stree
-
-    def propagate(tree):
-        if tree == None:
-            return True, None
-        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
-            ok, error = propagate(tree.var.constraint)
-            if not ok:
-                return False, error
-            ok, error = propagate(tree.var)
-            if not ok:
-                return False, error
-        if isinstance(tree, FnApplNode) or isinstance(tree, TupleNode):
-            for v in tree.args:
-                ok, error = propagate(v)
-                if not ok:
-                    return False, error
-        if isinstance(tree, FnApplNode):
-            ok, error = propagate(tree.var)
-            if not ok:
-                return False, error
-        if isinstance(tree, FunctionConstraint):
-            ok, error = propagate(tree.domain)
-            if not ok:
-                return False, error
-            ok, error = propagate(tree.codomain)
-            if not ok:
-                return False, error
-            if tree.domain:
-                tree.sort = SetSort(TupleSort([element_universe(screen, tree.domain), element_universe(screen, tree.codomain)]))
-            else:
-                tree.sort = SetSort(TupleSort([None, element_universe(screen, tree.codomain)]))
-        if isinstance(tree, CartesianConstraint):
-            for v in tree.sorts:
-                ok, error = propagate(v)
-                if not ok:
-                    return False, error
-            tree.sort = TupleSort([s.sort for s in tree.sorts])
-        if isinstance(tree, LRNode):
-            ok, error = propagate(tree.left)
-            if not ok:
-                return False, error
-            ok, error = propagate(tree.right)
-            if not ok:
-                return False, error
-        if isinstance(tree, SetOfNode):
-            tree.sort = SetSort(tree.left)
-        if isinstance(tree, SymbolNode):
-            ok, error = propagate(tree.constraint)
-            if not ok:
-                return False, error
-            if tree.name() == "\\emptyset":
-                 if isinstance(tree.constraint, VarNode):
-                     tree.sort = SetSort(tree.constraint)
-                 elif isinstance(tree.constraint, SetOfNode):
-                     tree.sort = tree.constraint.sort
-                 else:
-                     tree.sort = SetSort(tree.constraint.sort)
-        elif isinstance(tree, VarNode):
-            if isinstance(tree.constraint, SetSort): # this variable is a set
-                insert_sort(screen, tl, tree.constraint.sort, tree) # this set is a sort
-                tree.sort = tree.constraint
-            elif isinstance(tree.constraint, PredSort): # this variable is a pred
-                tree.sort = tree.constraint
-            elif isinstance(tree.constraint, FnApplNode): # check it is a universe of metavar
-                if tree.constraint.name() != "universe":
-                    # leave sort as None
-                    return False, f"Variable {tree.name()} has invalid constraint"
-            elif isinstance(tree.constraint, VarNode): # check it is in a set
-                if not isinstance(tree.constraint.constraint, SetSort):
-                    return False, f"Variable {tree.name()} has invalid constraint"
-                tree.sort = tree.constraint
-            elif isinstance(tree.constraint, Universum): # variable is in universum
-                tree.sort = tree.constraint
-            elif isinstance(tree.constraint, CartesianConstraint):
-                ok, error = propagate(tree.constraint)
-                if not ok:
-                    return False, error
-                tree.sort = tree.constraint.sort
-            elif isinstance(tree.constraint, FunctionConstraint):
-                tree.sort = tree.constraint.sort
-            elif isinstance(tree.constraint, NumberSort):
-                tree.sort = tree.constraint
-        elif isinstance(tree, TupleComponentNode):
-            lsort = tree.left.sort
-            if not isinstance(lsort, TupleSort):
-                return False, "Invalid tuple in component operation"
-            idx = tree.right.value
-            if idx < 0 or idx >= len(lsort.sorts):
-                return False, "Invalid tuple index"
-            tree.sort = lsort.sorts[idx].sort
-        elif isinstance(tree, CartesianNode):
-            if not isinstance(tree.left.sort, SetSort) or \
-               not isinstance(tree.right.sort, SetSort):
-                return False, "Cartesian product requires sets"
-            tree.sort = SetSort(TupleSort([tree.left.sort.sort, tree.right.sort.sort]))
-        elif isinstance(tree, NaturalNode):
-            pass # dealt with by constructor
-        elif isinstance(tree, ExpNode):
-            if isinstance(tree.left.sort, Sort) and not isinstance(tree.left.sort, NumberSort):
-                return False, "Cannot raise {str(tree.left)} to power"
-            elif not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                    return False, "Cannot raise {str(tree.left)} to power"
-            if not isinstance(tree.right.sort, NumberSort) or tree.right.sort.name() != "Natural":
-                    return False, "Powering operation not supported"
-            tree.sort = tree.left.sort
-        elif isinstance(tree, CircNode):
-            lsort = tree.left.sort
-            rsort = tree.right.sort
-            if not is_function_type(lsort) or \
-               not is_function_type(rsort):    
-                return False, "Not a function in composition"
-            if not sorts_equal(lsort.sort.sorts[0], rsort.sort.sorts[1]):
-                return False, "Type mismatch in function composition"
-            tree.sort = SetSort(TupleSort([rsort.sort.sorts[0], lsort.sort.sorts[1]]))
-        elif isinstance(tree, FnApplNode):
-            if tree.name() in system_unary_functions or tree.name() in system_binary_functions:
-                tree.sort = tree.args[0].sort
-            elif tree.name() in system_predicates:
-                tree.sort = PredSort()
-            elif len(tree.args) == 0: # constant function
-                fn_sort = tree.var.sort
-                if fn_sort.sort.sort.sorts[0] != None:
-                     return False, f"Wrong number of arguments to function {tree.name()}"
-                tree.sort = fn_sort.sort.sort.sorts[1]
-            else:
-                fn_sort = tree.var.sort
-                if isinstance(fn_sort, PredSort):
-                    if len(tree.args) != 1:
-                        return False, f"Wrong number of arguments in predicate {tree.name()}"
-                    tree.sort = PredSort()
-                else:
-                    domain_sort = fn_sort.sort.sort.sorts[0]
-                    codomain_sort = fn_sort.sort.sort.sorts[1]
-                    if domain_sort == None:
-                        return False, f"Wrong number of arguments to function {tree.name()}"
-                    if len(tree.args) == 1:
-                        if not coerce_sorts(screen, tl, domain_sort, tree.args[0].sort):
-                            return False, f"Type mismatch for argument {0} of {tree.name()}"
-                    else:
-                        if len(tree.args) != len(domain_sort.sorts):
-                            return False, f"Wrong number of arguments to function {tree.name()}"
-                        for i in range(len(tree.args)):
-                            if not coerce_sorts(screen, tl, domain_sort.sorts[i], tree.args[i].sort):
-                                return False, f"Type mismatch for argument {i} of {tree.name()}"
-                    tree.sort = codomain_sort
-        elif isinstance(tree, LambdaNode):
-            # can only be created by the system
-            tree.sort = SetSort(TupleSort([tree.left.sort, tree.right.sort]))
-        elif isinstance(tree, TupleNode):
-            # will be used for all sorts of things, so no point checking anything
-            tree.sort = TupleSort([v.sort for v in tree.args])
-        elif isinstance(tree, PowerSetNode):
-            if not isinstance(tree.left.sort, SetSort):
-                return False, "Argument to power set not a set"
-            tree.sort = SetSort(tree.left.sort)
-        elif isinstance(tree, AddNode):
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                return False, "Type mismatch in addition"
-            if not isinstance(sort_type_class(tree.left.sort), MonoidClass):
-                return False, "Invalid type for addition"
-            if not isinstance(sort_type_class(tree.right.sort), MonoidClass):
-                return False, "Invalid type for addition"
-            tree.sort = tree.left.sort
-        elif isinstance(tree, MulNode) or isinstance(tree, SubNode) or \
-             isinstance(tree, DivNode):
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                return False, "Type mismatch in arithmetic operation"
-            if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                return False, "Invalid type for arithmetic operation"
-            if not isinstance(sort_type_class(tree.right.sort), SemiringClass):
-                return False, "Invalid type for arithmetic operation"
-            tree.sort = tree.left.sort
-        elif isinstance(tree, LtNode) or isinstance(tree, GtNode) or \
-             isinstance(tree, LeqNode) or isinstance(tree, GeqNode):
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                return False, "Type mismatch in order relation"
-            if not isinstance(sort_type_class(tree.left.sort), PosetClass):
-                return False, "Invalid types for order relation"
-            tree.sort = PredSort()
-        elif isinstance(tree, EqNode) or isinstance(tree, NeqNode):
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort):
-                return False, "Type mismatch in equality relation"
-            # many things can be assigned/compared equal, so can't restrict types
-            tree.sort = PredSort()
-        elif isinstance(tree, ImpliesNode) or isinstance(tree, IffNode) or \
-             isinstance(tree, AndNode) or isinstance(tree, OrNode):
-            if not isinstance(tree.left.sort, PredSort) or \
-               not isinstance(tree.right.sort, PredSort):
-                return False, "Logical operator requires predicates"
-            tree.sort = PredSort()
-        elif isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) or \
-             isinstance(tree, DiffNode):
-            lsort = tree.left.sort
-            rsort = tree.right.sort
-            if not isinstance(lsort, SetSort) or \
-               not isinstance(rsort, SetSort):
-                return False, "Arguments to set operation are not sets"
-            if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
-                return False, "Incompatible sets in set operation"
-            tree.sort = lsort
-        elif isinstance(tree, SubsetneqNode) or isinstance(tree, SubseteqNode) or \
-             isinstance(tree, SupsetneqNode) or isinstance(tree, SupseteqNode):
-            lsort = tree.left.sort
-            rsort = tree.right.sort
-            if not isinstance(lsort, SetSort) or \
-               not isinstance(rsort, SetSort):
-                return False, "Arguments to set relation are not sets"
-            if not sorts_compatible(screen, tl, lsort.sort, rsort.sort):
-                return False, "Incompatible sets in set relation"
-            tree.sort = PredSort()
-        elif isinstance(tree, SetBuilderNode):
-            if not isinstance(tree.left.right.sort, SetSort):
-                return False, "Set comprehension must range over set"
-            tree.sort = tree.left.right.sort
-        elif isinstance(tree, AbsNode):
-            if isinstance(tree.left.sort, SetSort):
-                return False, "Cannot take absolute value of set"
-            if not isinstance(sort_type_class(tree.left.sort), ValuedFieldClass):
-                return False, "Incompatible argument type in absolute value"
-            tree.sort = tree.left.sort
-        elif isinstance(tree, NegNode):
-            if isinstance(tree.left.sort, SetSort):
-                return False, "Cannot negate a set"
-            if isinstance(tree.left.sort, PredSort):
-                return False, "Cannot negate a predicate"
-            if not isinstance(sort_type_class(tree.left.sort), SemiringClass):
-                return False, "Invalid type for arithmetic operation"
-            tree.sort = tree.left.sort
-        elif isinstance(tree, NotNode):
-            if not isinstance(tree.left.sort, PredSort):
-                return False, "Logical negation requires predicate"
-            tree.sort = PredSort()
-        elif isinstance(tree, BoolNode):
-            tree.sort = PredSort()
-        elif isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
-            tree.sort = PredSort()
-        elif isinstance(tree, ElemNode):
-            if not isinstance(tree.right.sort, SetSort):
-                return False, "Not a set in element relation"
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
-                return False, "Type mismatch in element relation"
-            tree.sort = PredSort()
-        elif isinstance(tree, SetSort):
-            if tree.sort != tree:
-                ok, error = propagate(tree.sort)
-                if not ok:
-                    return False, error
-        elif isinstance(tree, TupleSort):
-            for i in range(len(tree.sorts)):
-                ok, error = propagate(tree.sorts[i])
-                if not ok:
-                    return False, error
-        return True, None
-    return propagate(tree0)
-
-def process_sorts(screen, tl):
-    """
-    Every move, this function is called to recompute the types of nodes in any
-    quantifier zone, hypothesis or target that hasn't previously been processed
-    or which has been modified since last move. A record of the last binder in
-    the quantifier zone, the last hypothesis and the last target already
-    processed are stored in the tableau structure and these are reset if an
-    already processed line is changed.
-    """
-    n0, n1, n2 = tl.sorts_processed
-    i = 0
-    if tl.tlist0.data:
-        data = tl.tlist0.data[0]
-        while i < n0:
-            data = data.left # skip quantifiers we already typed
-            i += 1
-        if data:
-            ok, error = propagate_sorts(screen, tl, data)
-            if not ok:
-                return False, error
-            while data != None:
-                data = data.left
-                i += 1
-    for j in range(n1, len(tl.tlist1.data)):
-        ok, error = propagate_sorts(screen, tl, tl.tlist1.data[j])
-        if not ok:
-            return False, error
-    for k in range(n2, len(tl.tlist2.data)):
-        ok, error = propagate_sorts(screen, tl, tl.tlist2.data[k])
-        if not ok:
-            return False, error
-    tl.sorts_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
-    return True, None
-
-def type_vars(screen, tl):
-    """
-    When beginning to prove a theorem, the initial tableau needs each variable
-    annotated with its constraints as defined by its corresponding binder. This
-    function is called once manual or automated mode is started to do this
-    annotation.
-    """
-    constraints = dict() # all constraints of all vars
-    vars = [] # vars currently in scope
-
-    if len(tl.tlist0.data) > 0:
-        qz = tl.tlist0.data[0]
-    else:
-        qz = None
-
-    i = 0
-    while qz != None:
-        vars.append(qz.var.name())
-        constraints[qz.var.name()] = qz.var.constraint
-        ok, error = process_constraints(screen, qz.var.constraint, constraints, vars)
-        if not ok:
-            screen.dialog(error)
-            return
-        qz = qz.left
-        i += 1
-
-    hyps = tl.tlist1.data
-    for tree in hyps:
-        ok, error = process_constraints(screen, tree, constraints, vars)
-        if not ok:
-            screen.dialog(error)
-            return
-    tars = tl.tlist2.data
-    for tree in tars:
-        ok, error = process_constraints(screen, tree, constraints, vars)
-        if not ok:
-            screen.dialog(error)
-            return
-    tl.constraints = constraints
-    tl.constraints_processed = (i, len(tl.tlist1.data), len(tl.tlist2.data))
-
-def update_constraints(screen, tl):
-    """
-    After every move, additional variables could have been added to the
-    quantifier zone, or additional hypotheses or targets could have been
-    added to the tableau. In such cases, this function can be called to
-    annotate all variables that appear in them with their constraints.
-    A count of the number of already processed binders in the quantifier
-    zone, hypotheses and targets is stored in the tableau structure. This
-    can be reset if a change is made to one of the already processed
-    lines of the tableau.
-    """
-    n0, n1, n2 = tl.constraints_processed
-    constraints = tl.constraints
-
-    if len(tl.tlist0.data) > 0:
-        qz = tl.tlist0.data[0]
-    else:
-        qz = None
-
-    i = 0
-    while i < n0: # skip already processed quantifiers
-        qz = qz.left
-        i += 1
-
-    while qz != None:
-        constraints[qz.var.name()] = qz.var.constraint
-        ok, error = process_constraints(screen, qz.var.constraint, constraints)
-        if not ok:
-            return False, error
-        qz = qz.left
-        i += 1
-
-    hyps = tl.tlist1.data
-    for j in range(n1, len(hyps)):
-        ok, error = process_constraints(screen, hyps[j], constraints)
-        if not ok:
-            return False, error
-    tars = tl.tlist2.data
-    for k in range(n2, len(tars)):
-        ok, error = process_constraints(screen, tars[k], constraints)
-        if not ok:
-            return False, error
-    tl.constraints_processed = (i, len(hyps), len(tars))
-    return True, None
-        
 def fill_macros(screen, tl):
     """
-    When the tableau is initiall loaded, before any processing whatsoever,
-    there may be macros in the tableau (universe, domain, codomain, etc.)
-    which need to be computed. This function also needs to be called every
-    move as it is possible that some inference filled in a metavariable,
-    at which point a macro with that variable as parameter may now be
-    computed. Generally, this function must be called before any processing
-    of constraints or sorts. The only macros that can't be filled in are
-    those whose parameter is a metavariable about which the required
-    information is not known. This happens for example when theorems are
-    loaded from the library, before they are instantiated.
+    Process macros. See corresponding function in logic module for details
     """
-    def fill(tree, data):
-        if tree == None:
-            return None
-        if isinstance(tree, FnApplNode):
-            if tree.name() == 'universe':
-                return SetOfNode(universe(tree.args[0], data))
-            if tree.name() == 'domain':
-                return domain(tree.args[0], data)
-            if tree.name() == 'codomain':
-                return codomain(tree.args[0], data)
-            for i in range(0, len(tree.args)):
-                tree.args[i] = fill(tree.args[i], data)
-            return tree
-        elif isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-            tree.var.constraint = fill(tree.var.constraint, data)
-            new_data = deepcopy(tree)
-            new_data.left = data
-            tree.left = fill(tree.left, new_data)
-            return tree
-        elif isinstance(tree, TupleNode):
-            for i in range(0, len(tree.args)):
-                tree.args[i] = fill(tree.args[i], data)
-            return tree
-        elif isinstance(tree, LRNode):
-            tree.left = fill(tree.left, data)
-            tree.right = fill(tree.right, data)
-            return tree
-        elif isinstance(tree, SymbolNode):
-            tree.constraint = fill(tree.constraint, data)
-            return tree
-        elif isinstance(tree, LeafNode):
-            return tree
-        else:
-            return tree
+    logic.fill_macros(screen, tl)
 
-    data = tl.tlist0.data[0] if tl.tlist0.data else []
-    if len(tl.tlist0.data) > 0:
-        tl.tlist0.data[0] = fill(tl.tlist0.data[0], data)
+    if len(tl.tlist0.data) > 0:  
         screen.pad0.pad[0] = str(tl.tlist0.data[0])
     for i in range(0, len(tl.tlist1.data)):
-        tl.tlist1.data[i] = fill(tl.tlist1.data[i], data)
         screen.pad1.pad[i] = str(tl.tlist1.data[i])
     for i in range(0, len(tl.tlist2.data)):
-        tl.tlist2.data[i] = fill(tl.tlist2.data[i], data)
         screen.pad2.pad[i] = str(tl.tlist2.data[i])
     screen.pad0.refresh()
     screen.pad1.refresh()
@@ -1109,6 +657,7 @@ def library_import(screen, tl):
     title = library.readline()
     while title: # check for EOF
         library.readline() # skip constants for now
+        library.readline() # skip terms for now
         libtaglist = tags_to_list(library.readline()[0:-1])
         if all(elem in libtaglist for elem in taglist):
             filtered_titles.append((library.tell(), title[7:-1]))
@@ -1175,6 +724,7 @@ def library_load(screen, tl):
     title = library.readline()
     while title: # check for EOF
         library.readline() # skip constants for now
+        library.readline() # skip terms for now
         libtaglist = tags_to_list(library.readline()[0:-1])
         if all(elem in libtaglist for elem in taglist):
             filtered_titles.append((library.tell(), title[7:-1]))
@@ -1526,22 +1076,33 @@ def convert(screen, tl):
     title = library.readline() # read title
     while title: # check for EOF
         consts = library.readline() # read constants
+        terms = library.readline() # read terms
         tags = library.readline() # read tags
         filepos = library.tell()
-        logic.library_load(screen, tl, library, filepos)
-        c0 = get_constants(screen, tl, tl.tlist0.data[0]) 
-        if len(tl.tlist1.data) == 0 and len(tl.tlist2.data) == 1 and \
-           (isinstance(tl.tlist2.data[0], IffNode) or isinstance(tl.tlist2.data[0], EqNode)):
-            is_iff = True
-            c1 = get_constants(screen, tl, tl.tlist2.data[0].left)
-            c2 = get_constants(screen, tl, tl.tlist2.data[0].right)
-        else:
-            is_iff = False
-            c1 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist1.data])
-            c2 = merge_lists([get_constants(screen, tl, v) for v in tl.tlist2.data])
-        const_str = "["+str(is_iff)+", "+str(c0)+", "+str(c1)+", "+str(c2)+"]\n"
+        qz, tpred, impls = logic.fake_import(screen, tl, library, filepos)
+        c0 = get_constants(screen, tl, qz) 
+        c1 = get_constants(screen, tl, tpred)
+        c2 = []
+        for v in impls:
+            if isinstance(v, ImpliesNode):
+                c2.append((get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+            elif isinstance(v, EqNode):
+                c2.append(("=", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+            else:
+                c2.append(get_constants(screen, tl, v))
+        var = get_init_vars(screen, tl, qz) 
+        d1 = get_terms(screen, tl, tpred, var)
+        d2 = []
+        for v in impls:
+            if isinstance(v, ImpliesNode):
+                d2.append((get_terms(screen, tl, v.left, var), get_terms(screen, tl, v.right, var)))
+            else:
+                d2.append(get_terms(screen, tl, v, var))
+        const_str = "["+str(c0)+", "+str(c1)+", "+", ".join(str(v) for v in c2)+"]\n"
+        terms_str = "["+str(d1)+", "+", ".join(str(v) for v in d2)+"]\n"
         library2.write(title)
         library2.write(const_str)
+        library2.write(terms_str)
         library2.write(tags)
         library.seek(filepos)
         fstr = library.readline()

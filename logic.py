@@ -1,13 +1,71 @@
 from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      relabel_constraints, get_constants, merge_lists, skolemize_quantifiers, \
-     skolemize_statement, add_sibling
+     skolemize_statement, add_sibling, vars_used, domain, codomain, universe, \
+     metavars_used
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
-     ExistsNode, TupleNode, FnApplNode, NotNode, IffNode, SetOfNode
+     ExistsNode, TupleNode, FnApplNode, NotNode, IffNode, SetOfNode, EqNode, \
+     SymbolNode
 from parser import to_ast
 from sorts import FunctionConstraint, DomainTuple
+
+def fill_macros(screen, tl):
+    """
+    When the tableau is initially loaded, before any processing whatsoever,
+    there may be macros in the tableau (universe, domain, codomain, etc.)
+    which need to be computed. This function also needs to be called every
+    move as it is possible that some inference filled in a metavariable,
+    at which point a macro with that variable as parameter may now be
+    computed. Generally, this function must be called before any processing
+    of constraints or sorts. The only macros that can't be filled in are
+    those whose parameter is a metavariable about which the required
+    information is not known. This happens for example when theorems are
+    loaded from the library, before they are instantiated.
+    """
+    def fill(tree, data):
+        if tree == None:
+            return None
+        if isinstance(tree, FnApplNode):
+            if tree.name() == 'universe':
+                return SetOfNode(universe(tree.args[0], data))
+            if tree.name() == 'domain':
+                return domain(tree.args[0], data)
+            if tree.name() == 'codomain':
+                return codomain(tree.args[0], data)
+            for i in range(0, len(tree.args)):
+                tree.args[i] = fill(tree.args[i], data)
+            return tree
+        elif isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            tree.var.constraint = fill(tree.var.constraint, data)
+            new_data = deepcopy(tree)
+            new_data.left = data
+            tree.left = fill(tree.left, new_data)
+            return tree
+        elif isinstance(tree, TupleNode):
+            for i in range(0, len(tree.args)):
+                tree.args[i] = fill(tree.args[i], data)
+            return tree
+        elif isinstance(tree, LRNode):
+            tree.left = fill(tree.left, data)
+            tree.right = fill(tree.right, data)
+            return tree
+        elif isinstance(tree, SymbolNode):
+            tree.constraint = fill(tree.constraint, data)
+            return tree
+        elif isinstance(tree, LeafNode):
+            return tree
+        else:
+            return tree
+
+    data = tl.tlist0.data[0] if tl.tlist0.data else []
+    if len(tl.tlist0.data) > 0:
+        tl.tlist0.data[0] = fill(tl.tlist0.data[0], data)  
+    for i in range(0, len(tl.tlist1.data)):
+        tl.tlist1.data[i] = fill(tl.tlist1.data[i], data)
+    for i in range(0, len(tl.tlist2.data)):
+        tl.tlist2.data[i] = fill(tl.tlist2.data[i], data)
 
 def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     """
@@ -88,7 +146,7 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
+            tlist1.dep[len(tlist1.data) - 1] = [line2]
         else:
             append_tree(tlist2.data, stmt, dirty2)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
@@ -177,7 +235,7 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = dep
+            tlist1.dep[len(tlist1.data) - 1] = [line2]
         else:
             append_tree(tlist2.data, stmt, dirty2)
             add_descendant(ttree, line2, len(tlist2.data) - 1)
@@ -268,6 +326,7 @@ def clear_tableau(screen, tl):
     tlist2.line = 0
     tl.vars = dict()
     tl.tars = dict()
+    tl.constraints = dict()
     tl.constraints_processed = (0, 0, 0)
     tl.sorts_processed = (0, 0, 0)
     tl.tlist1.dep = dict()
@@ -361,13 +420,109 @@ def library_import(screen, tl, library, filepos):
         for i in tars[1:]:
             tree = AndNode(tree, i)
     tlist1 = tl.tlist1.data
-    pad1 = screen.pad1
     stmt = relabel(screen, tl, [], tree)
     ok = process_constraints(screen, stmt, tl.constraints)
     if ok:
         relabel_constraints(screen, tl, stmt)
         append_tree(tlist1, stmt, None)
     return ok
+
+def fake_import(screen, tl, library, filepos):
+    """
+    Fakes the import of a library result. Nothing is added to the tableau but
+    instead the function returns the lines of the tableau that would result as
+    a list. However, no renaming is done, no skolemization and no creation of
+    metavariables. However, the function does split apart iff statements and
+    all the usual splitting of implications is done just as would result from
+    cleanup moves from a real import. The first two returned values are any
+    binders for the quantifier zone and any predicates P from theorems of the
+    form P => (Q iff R), the remaining iff being split as normal in the list
+    of theorems that results. Equalities are stated in both directions.
+    """
+    library.seek(filepos)
+    fstr = library.readline()
+    hyps = []
+    tars = []
+    if fstr != '------------------------------\n':
+        tree = to_ast(screen, fstr[0:-1])
+        t = tree
+        while t.left:
+            t = t.left
+        library.readline()
+        fstr = library.readline()
+        while fstr != '------------------------------\n':
+            hyps.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            tars.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        if hyps:
+            jhyps = hyps[0]
+            for node in hyps[1:]:
+                jhyps = AndNode(jhyps, node)
+        jtars = tars[0]
+        for i in tars[1:]:
+            jtars = AndNode(jtars, i)
+        if hyps:
+            t.left = ImpliesNode(jhyps, jtars)
+        else:
+            t.left = jtars
+    else:
+        library.readline()
+        library.readline()
+        fstr = library.readline()
+        while fstr != '\n':
+            tars.append(to_ast(screen, fstr[0:-1]))
+            fstr = library.readline()
+        tree = tars[0]
+        for i in tars[1:]:
+            tree = AndNode(tree, i)
+    # peel any binders
+    if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+        qz = tree
+        while isinstance(tree.left, ForallNode) or isinstance(tree.left, ExistsNode):
+            tree = tree.left
+        t = tree.left
+        tree.left = None
+        tree = t
+    else:
+        qz = None
+    tpred = None
+    impls = []
+    # split iff statement or P => (Q iff R)
+    if isinstance(tree, IffNode):
+        impls.append(ImpliesNode(tree.left, tree.right))
+        impls.append(ImpliesNode(tree.right, tree.left))
+    elif isinstance(tree, ImpliesNode) and isinstance(tree.right, IffNode):
+        tpred = tree.left
+        impls.append(ImpliesNode(tree.right.left, tree.right.right))
+        impls.append(ImpliesNode(tree.right.right, tree.right.left))
+    # equalities in both directions
+    elif isinstance(tree, EqNode):
+        impls.append(tree)
+    elif isinstance(tree, ImpliesNode) and isinstance(tree.right, EqNode):
+        tpred = tree.left
+        impls.append(tree.right)
+    else:
+        impls.append(tree)
+    i = 0
+    while i < len(impls):
+        if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].left, OrNode):
+            var1 = vars_used(impls[i].left.left)
+            var2 = vars_used(impls[i].left.right)
+            var = vars_used(impls[i].right)
+            if set(var).issubset(var1) and set(var).issubset(var2):
+                P = impls[i].left.left
+                Q = impls[i].left.right
+                R = impls[i].right
+                impls[i] = ImpliesNode(P, R)
+                impls.append(ImpliesNode(Q, R))
+        if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].right, AndNode):
+            impls.append(ImpliesNode(impls[i].left, impls[i].right.left))
+            impls[i] = ImpliesNode(impls[i].left, impls[i].right.right)
+        i += 1
+    return qz, tpred, impls
 
 def library_export(screen, tl, library, title, tags):
     """
@@ -521,7 +676,10 @@ def cleanup(screen, tl, ttree):
         if not hyps_done:
             hyps_done = True
             while i < len(tl1):
+                oldtli = str(tl1[i])
                 tl1[i] = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False, False)
+                if str(tl1[i]) != oldtli and i not in dirty1:
+                    dirty1.append(i)
                 rollback()
                 t = tl1[i]
                 if isinstance(t, ExistsNode) or isinstance(t, ForallNode):
@@ -588,14 +746,16 @@ def cleanup(screen, tl, ttree):
                     stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
                     replace_tree(tl1, i, stmt, dirty1)
                     tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
-                dirty1.append(i)
                 i += 1
                 while len(mv) > m:
                     mv.pop()
         if not tars_done:
             tars_done = True
             while j < len(tl2):
+                oldtlj = str(tl2[j])
                 tl2[j] = skolemize_statement(screen, tl2[j], deps, depmin, sk, qz, mv, True)
+                if str(tl2[j]) != oldtlj and j not in dirty2:
+                    dirty2.append(j)
                 rollback()
                 if isinstance(tl2[j], OrNode):
                     append_tree(tl1, complement_tree(tl2[j].left), dirty1)
@@ -627,7 +787,6 @@ def cleanup(screen, tl, ttree):
                     append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
                     replace_tree(tl2, j, tl2[j].left.left, dirty2)
                     add_sibling(screen, tl, ttree, j, len(tl2) - 1)
-                dirty2.append(j)
                 if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
                    and not isinstance(tl2[j], ImpliesNode):
                     j += 1

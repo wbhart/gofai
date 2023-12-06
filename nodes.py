@@ -575,3 +575,25 @@ def mark_binder_vars(tree, var):
     elif isinstance(tree, TupleNode):
         for i in range(0, len(tree.args)):
             mark_binder_vars(tree.args[i], var)
+
+#####################################################################
+# Nodes for automation
+
+class AutoImplNode:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __str__(self):
+        return "("+str(self.left)+", "+str(self.right)+")"
+
+    def __repr__(self):
+        return "("+repr(self.left)+", "+repr(self.right)+")"
+
+class AutoEqNode:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return "('=', "+repr(self.left)+", "+repr(self.right)+")"
