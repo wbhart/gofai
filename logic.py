@@ -479,9 +479,11 @@ def fake_import(screen, tl, library, filepos):
         for i in tars[1:]:
             tree = AndNode(tree, i)
     # peel any binders
-    if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+    if (isinstance(tree, ForallNode) and not isinstance(tree.left, ImpliesNode)) or \
+        isinstance(tree, ExistsNode):
         qz = tree
-        while isinstance(tree.left, ForallNode) or isinstance(tree.left, ExistsNode):
+        while (isinstance(tree.left, ForallNode) and not isinstance(tree.left.left, ImpliesNode)) or \
+               isinstance(tree.left, ExistsNode):
             tree = tree.left
         t = tree.left
         tree.left = None
@@ -490,15 +492,16 @@ def fake_import(screen, tl, library, filepos):
         qz = None
     tpred = None
     impls = []
-    # split iff statement or P => (Q iff R)
-    if isinstance(tree, IffNode):
+    if isinstance(tree, ForallNode):
+        impls.append(tree)
+    elif isinstance(tree, IffNode):
+        # split iff statement or P => (Q iff R)
         impls.append(ImpliesNode(tree.left, tree.right))
         impls.append(ImpliesNode(tree.right, tree.left))
     elif isinstance(tree, ImpliesNode) and isinstance(tree.right, IffNode):
         tpred = tree.left
         impls.append(ImpliesNode(tree.right.left, tree.right.right))
         impls.append(ImpliesNode(tree.right.right, tree.right.left))
-    # equalities in both directions
     elif isinstance(tree, EqNode):
         impls.append(tree)
     elif isinstance(tree, ImpliesNode) and isinstance(tree.right, EqNode):
@@ -508,19 +511,22 @@ def fake_import(screen, tl, library, filepos):
         impls.append(tree)
     i = 0
     while i < len(impls):
-        if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].left, OrNode):
-            var1 = vars_used(impls[i].left.left)
-            var2 = vars_used(impls[i].left.right)
-            var = vars_used(impls[i].right)
-            if set(var).issubset(var1) and set(var).issubset(var2):
-                P = impls[i].left.left
-                Q = impls[i].left.right
-                R = impls[i].right
-                impls[i] = ImpliesNode(P, R)
-                impls.append(ImpliesNode(Q, R))
-        if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].right, AndNode):
-            impls.append(ImpliesNode(impls[i].left, impls[i].right.left))
-            impls[i] = ImpliesNode(impls[i].left, impls[i].right.right)
+        if isinstance(impls[i], ForallNode):
+            impls[i] = impls[i].left
+        else:
+            if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].left, OrNode):
+                var1 = vars_used(impls[i].left.left)
+                var2 = vars_used(impls[i].left.right)
+                var = vars_used(impls[i].right)
+                if set(var).issubset(var1) and set(var).issubset(var2):
+                    P = impls[i].left.left
+                    Q = impls[i].left.right
+                    R = impls[i].right
+                    impls[i] = ImpliesNode(P, R)
+                    impls.append(ImpliesNode(Q, R))
+            if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].right, AndNode):
+                impls.append(ImpliesNode(impls[i].left, impls[i].right.left))
+                impls[i] = ImpliesNode(impls[i].left, impls[i].right.right)
         i += 1
     return qz, tpred, impls
 

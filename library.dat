@@ -1,6 +1,6 @@
 Title: Addition on both sides of an equality
-[['Real'], ['='], ('=', ['+'], ['+'])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a + c', 'b + c'], ['a + c', 'b + c'])]
+[['Real'], [], (['='], ['+', '='])]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -9,8 +9,8 @@ a = b
 a + c = b + c
 
 Title: Subtraction on both sides of an equality
-[['Real'], ['='], ('=', ['-'], ['-'])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a - c', 'b - c'], ['a - c', 'b - c'])]
+[['Real'], [], (['='], ['-', '='])]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -19,8 +19,8 @@ a = b
 a - c = b - c
 
 Title: Multiplication on both sides of an equality
-[['Real'], ['='], ('=', ['*'], ['*'])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a * c', 'b * c'], ['a * c', 'b * c'])]
+[['Real'], [], (['='], ['*', '='])]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -29,8 +29,8 @@ a = b
 a*c = b*c
 
 Title: Division on both sides of an equality
-[['Real'], ['0', '=', '\\neq'], ('=', ['/'], ['/'])]
-[(['a', 'b', 'c', '0'], ['a', 'b', 'c', '0'], [], ['a', 'b', 'c', '0']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a / c', 'b / c'], ['a / c', 'b / c'])]
+[['Real'], [], (['0', '=', '\\neq'], ['/', '='])]
+[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], [], ['a', 'b', '0']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -40,8 +40,8 @@ c \neq 0
 a/c = b/c
 
 Title: Commutativity of equality
-[['Real'], ['='], ('=', [], [])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['b', 'a'], ['b', 'a'], [], ['b', 'a'])]
+[['Real'], [], (['='], ['='])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -86,8 +86,8 @@ Tags: #algebra #\mathbb{R}
 a + b = b + a
 
 Title: Reciprocal of positive value less than 1
-[['Real'], [], (['0', '1', '<', '>'], ['/', '1', '>'])]
-[([], [], [], []), ((['a', '0', '1'], ['a', '0', '1'], [], ['a', '0', 'a', '1']), (['1', 'a'], ['1', 'a'], ['1 / a'], ['1 / a', '1']))]
+[[], [], (['0', '1', '<', '>'], ['/', '1', '>'])]
+[([], [], [], []), ((['0', '1'], ['0', '1'], [], ['0', '1']), (['1'], ['1'], [], ['1', '1']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -96,8 +96,8 @@ a > 0 \wedge a < 1
 1/a > 1
 
 Title: Reciprocal of value greater than 1
-[['Real'], [], (['1', '>'], ['/', '1', '<']), (['1', '>'], ['/', '0', '1', '>'])]
-[([], [], [], []), ((['a', '1'], ['a', '1'], [], ['a', '1']), (['1', 'a'], ['1', 'a'], ['1 / a'], ['1 / a', '1'])), ((['a', '1'], ['a', '1'], [], ['a', '1']), (['1', 'a', '0'], ['1', 'a', '0'], ['1 / a'], ['1 / a', '0']))]
+[[], [], (['1', '>'], ['/', '0', '1', '<', '>'])]
+[([], [], [], []), ((['1'], ['1'], [], ['1']), (['1', '0'], ['1', '0'], [], ['1', '0', '1', '1']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -126,7 +126,7 @@ a*(b + c) = a*b + a*c
 
 Title: Less than equivalent to equality with addition of positive constant
 [['Real'], [], (['<'], ['+', '0', '=', '>', 'Real'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['0', 'b', 'a'], ['0', 'b', 'a'], [], ['0', 'b', 'a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['0', 'a'], ['0', 'a'], [], ['0', 'a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -136,7 +136,7 @@ a < b
 
 Title: Less than or equal split into cases
 [['Real'], [], (['\\leq'], ['<', '='])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b', 'a', 'b']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -146,7 +146,7 @@ a < b \vee a = b
 
 Title: Not less than is greater than or equal
 [['Real'], [], (['<', '\\neg'], ['\\geq'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -156,7 +156,7 @@ a \geq b
 
 Title: Not less than or equal is greater than
 [['Real'], [], (['\\leq', '\\neg'], ['>'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -166,7 +166,7 @@ a > b
 
 Title: Value is less than itself plus a positive value
 [['Real'], [], (['0', '>'], ['+', '<'])]
-[([], [], [], []), ((['\\epsilon', '0'], ['\\epsilon', '0'], [], ['\\epsilon', '0']), (['a', '\\epsilon'], ['a', '\\epsilon'], ['a + \\epsilon'], ['a', 'a + \\epsilon']))]
+[([], [], [], []), ((['0'], ['0'], [], ['0']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall \epsilon \in \mathbb{R}
 ------------------------------
@@ -176,7 +176,7 @@ a < a + \epsilon
 
 Title: Addition of value to both sides of a less than
 [['Real'], [], (['<'], ['+', '<'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a + c', 'b + c'], ['a + c', 'b + c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -186,7 +186,7 @@ a + c < b + c
 
 Title: Subtraction of a value from both sides of a less than
 [['Real'], [], (['<'], ['-', '<'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a - c', 'b - c'], ['a - c', 'b - c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -196,7 +196,7 @@ a - c < b - c
 
 Title: Multiplication of both sides of a less than by a positive value
 [['Real'], [], (['0', '<', '>'], ['*', '<'])]
-[([], [], [], []), ((['a', 'b', 'c', '0'], ['a', 'b', 'c', '0'], [], ['a', 'b', 'c', '0']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a * c', 'b * c'], ['a * c', 'b * c']))]
+[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], [], ['a', 'b', '0']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -207,7 +207,7 @@ a*c < b*c
 
 Title: Multiplication of both sides of a less than by a negative value
 [['Real'], [], (['0', '<'], ['*', '>'])]
-[([], [], [], []), ((['a', 'b', 'c', '0'], ['a', 'b', 'c', '0'], [], ['a', 'b', 'c', '0']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a * c', 'b * c'], ['a * c', 'b * c']))]
+[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], [], ['a', 'b', '0']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -218,7 +218,7 @@ a*c > b*c
 
 Title: Division of both sides of a less than by a positive value
 [['Real'], [], (['0', '<', '>'], ['/', '<'])]
-[([], [], [], []), ((['a', 'b', 'c', '0'], ['a', 'b', 'c', '0'], [], ['a', 'b', 'c', '0']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a / c', 'b / c'], ['a / c', 'b / c']))]
+[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], [], ['a', 'b', '0']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -229,7 +229,7 @@ a/c < b/c
 
 Title: Dividing both sides of a less than by a negative value
 [['Real'], [], (['0', '<'], ['/', '>'])]
-[([], [], [], []), ((['a', 'b', 'c', '0'], ['a', 'b', 'c', '0'], [], ['a', 'b', 'c', '0']), (['a', 'c', 'b'], ['a', 'c', 'b'], ['a / c', 'b / c'], ['a / c', 'b / c']))]
+[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], [], ['a', 'b', '0']), (['a', 'b'], ['a', 'b'], [], ['a', 'b']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -240,7 +240,7 @@ a/c > b/c
 
 Title: Less than reversed is greater than
 [['Real'], [], (['<'], ['>'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['b', 'a'], ['b', 'a'], [], ['b', 'a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -250,7 +250,7 @@ b > a
 
 Title: Less than or equal reversed is greater than or equal
 [['Real'], [], (['\\leq'], ['\\geq'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['b', 'a'], ['b', 'a'], [], ['b', 'a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -260,7 +260,7 @@ b \geq a
 
 Title: Transitivity of less than
 [['Real'], [], (['<'], ['<'])]
-[([], [], [], []), ((['a', 'b', 'c'], ['a', 'b', 'c'], [], ['a', 'b', 'b', 'c']), (['a', 'c'], ['a', 'c'], [], ['a', 'c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b', 'b']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -271,7 +271,7 @@ a < c
 
 Title: Relaxed transitivity of less than on first inequality
 [['Real'], [], (['<', '\\leq'], ['<'])]
-[([], [], [], []), ((['a', 'b', 'c'], ['a', 'b', 'c'], [], ['a', 'b', 'b', 'c']), (['a', 'c'], ['a', 'c'], [], ['a', 'c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b', 'b']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -282,7 +282,7 @@ a < c
 
 Title: Relaxed transitivity of less than on second inequality
 [['Real'], [], (['<', '\\leq'], ['<'])]
-[([], [], [], []), ((['a', 'b', 'c'], ['a', 'b', 'c'], [], ['a', 'b', 'b', 'c']), (['a', 'c'], ['a', 'c'], [], ['a', 'c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b', 'b']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -293,7 +293,7 @@ a < c
 
 Title: Transitivity of less than or equal
 [['Real'], [], (['\\leq'], ['\\leq'])]
-[([], [], [], []), ((['a', 'b', 'c'], ['a', 'b', 'c'], [], ['a', 'b', 'b', 'c']), (['a', 'c'], ['a', 'c'], [], ['a', 'c']))]
+[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b', 'b']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R} \forall c \in \mathbb{R}
 ------------------------------
@@ -303,8 +303,8 @@ b \leq c
 a \leq c
 
 Title: Antisymmetry of less than or equal
-[['Real'], ['\\leq'], ('=', [], [])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b', 'b', 'a']), (['a', 'b'], ['a', 'b'], [], ['a', 'b'])]
+[['Real'], [], (['\\leq'], ['='])]
+[([], [], [], []), ((['a'], ['a'], [], ['a', 'a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -333,8 +333,8 @@ Tags: #inequalities #\mathbb{R}
 \neg(a < b \wedge a > b)
 
 Title: Value squared is zero iff value is zero
-[['Real'], ['0', '2', '=', '^'], ('=', [], ['0'])]
-[(['a', '2', '0'], ['a', '2', '0'], ['a ^ 2'], ['a ^ 2', '0']), (['a', '0'], ['a', '0'], [], ['a', '0'])]
+[[], [], (['0', '2', '=', '^'], ['0', '='])]
+[([], [], [], []), ((['2', '0'], ['2', '0'], [], ['2', '0']), (['0'], ['0'], [], ['0']))]
 Tags: #inequalities #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -343,8 +343,8 @@ a^2 = 0
 a = 0
 
 Title: Value squared is positive iff value is nonzero
-[['Real'], [], (['0', '2', '>', '^'], ['0', '\\neq'])]
-[([], [], [], []), ((['a', '2', '0'], ['a', '2', '0'], ['a ^ 2'], ['a ^ 2', '0']), (['a', '0'], ['a', '0'], [], ['a', '0']))]
+[[], [], (['0', '2', '>', '^'], ['0', '\\neq'])]
+[([], [], [], []), ((['2', '0'], ['2', '0'], [], ['2', '0']), (['0'], ['0'], [], ['0']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -353,8 +353,8 @@ a^2 > 0
 a \neq 0
 
 Title: Product is positive iff values have same sign
-[['Real'], [], (['*', '0', '>'], ['0', '<']), (['*', '0', '>'], ['0', '<', '>'])]
-[([], [], [], []), ((['a', 'b', '0'], ['a', 'b', '0'], ['a * b'], ['a * b', '0']), (['b', '0'], ['b', '0'], [], ['b', '0'])), ((['a', 'b', '0'], ['a', 'b', '0'], ['a * b'], ['a * b', '0']), (['a', '0', 'b'], ['a', '0', 'b'], [], ['a', '0', 'b', '0', 'a', '0']))]
+[['Real'], [], (['*', '0', '>'], ['0', '<', '>'])]
+[([], [], [], []), ((['a', '0'], ['a', '0'], [], ['a', '0']), (['a', '0'], ['a', '0'], [], ['a', '0', '0', 'a', '0', '0']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -383,8 +383,8 @@ Tags: #inequalities #iff #\mathbb{R}
 a \leq 0
 
 Title: Average of values is between values
-[['Real'], [], (['\\leq'], ['+', '/', '2', '\\leq']), (['\\leq'], ['+', '/', '2', '\\leq'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['2', 'b'], ['2', 'b'], [], ['a + b / 2', 'b'])), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', '2'], ['a', '2'], [], ['a', 'a + b / 2']))]
+[['Real'], [], (['\\leq'], ['+', '/', '2', '\\leq'])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a', '2'], ['a', '2'], [], ['a', 'a', '2', 'a', '2']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -394,8 +394,8 @@ a \leq (a + b)/2
 (a + b)/2 \leq b
 
 Title: Average of two values is strictly between values if they are not equal
-[['Real'], [], (['<'], ['+', '/', '2', '<']), (['<'], ['+', '/', '2', '<'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['2', 'b'], ['2', 'b'], [], ['a + b / 2', 'b'])), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', '2'], ['a', '2'], [], ['a', 'a + b / 2']))]
+[['Real'], [], (['<'], ['+', '/', '2', '<'])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a', '2'], ['a', '2'], [], ['a', 'a', '2', 'a', '2']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -414,8 +414,8 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a| \geq 0
 
 Title: Absolute value is zero iff value is zero
-[['Real'], ['0', '=', '||'], ('=', [], ['0'])]
-[(['a', '0'], ['a', '0'], [], ['a', '0']), (['a', '0'], ['a', '0'], [], ['a', '0'])]
+[[], [], (['0', '=', '||'], ['0', '='])]
+[([], [], [], []), ((['0'], ['0'], [], ['0']), (['0'], ['0'], [], ['0']))]
 Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -451,8 +451,8 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 |-a| = |a|
 
 Title: Absolute value less than or equal inequality split into two inequalities
-[['Real'], [], (['\\leq', '||'], ['\\leq']), (['\\leq', '||'], ['-', '\\leq'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b'])), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['b', 'a'], ['b', 'a'], [], ['b', 'a']))]
+[['Real'], [], (['\\leq', '||'], ['-', '\\leq'])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -472,8 +472,8 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 a \leq |a|
 
 Title: Absolute value less than inequality split into two inequalities
-[['Real'], [], (['<', '||'], ['<']), (['<', '||'], ['-', '<'])]
-[([], [], [], []), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b'])), ((['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['b', 'a'], ['b', 'a'], [], ['b', 'a']))]
+[['Real'], [], (['<', '||'], ['-', '<'])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -483,8 +483,8 @@ Tags: #inequalities #iff #absolutevalue #\mathbb{R}
 a < b
 
 Title: Negation of both sides of an equality
-[['Real'], ['='], ('=', ['-'], ['-'])]
-[(['a', 'b'], ['a', 'b'], [], ['a', 'b']), (['a', 'b'], ['a', 'b'], [], ['a', 'b'])]
+[['Real'], [], (['='], ['-', '='])]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -613,7 +613,7 @@ min(a, b) = a \vee min(a, b) = b
 
 Title: Definition of upper bound
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_upper_bound'], ['\\implies', '\\in', '\\leq'])]
-[([], [], [], []), ((['S', 'u'], ['S', 'u'], [], ['S', 'S', 'u']), (['x', 'S', 'u'], ['x', 'S', 'u'], [], ['x', 'S', 'x', 'u']))]
+[([], [], [], []), ((['S', 'u'], ['S', 'u'], [], ['S', 'S', 'u']), (['S', 'u'], ['S', 'u'], [], ['S', 'u']))]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -624,7 +624,7 @@ x \in S \implies x \leq u
 
 Title: Definition of lower bound
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_lower_bound'], ['\\geq', '\\implies', '\\in'])]
-[([], [], [], []), ((['S', 'l'], ['S', 'l'], [], ['S', 'S', 'l']), (['x', 'S', 'l'], ['x', 'S', 'l'], [], ['x', 'S', 'x', 'l']))]
+[([], [], [], []), ((['S', 'l'], ['S', 'l'], [], ['S', 'S', 'l']), (['S', 'l'], ['S', 'l'], [], ['S', 'l']))]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -635,7 +635,7 @@ x \in S \implies x \geq l
 
 Title: Definition of bounded
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_bounded'], ['\\geq', '\\implies', '\\in', '\\leq'])]
-[([], [], [], []), ((['S', 'l', 'u'], ['S', 'l', 'u'], [], ['S', 'S', 'l', 'u']), (['x', 'S', 'u', 'l'], ['x', 'S', 'u', 'l'], [], ['x', 'S', 'x', 'u', 'x', 'l']))]
+[([], [], [], []), ((['S', 'l', 'u'], ['S', 'l', 'u'], [], ['S', 'S', 'l', 'u']), (['S', 'u', 'l'], ['S', 'u', 'l'], [], ['S', 'u', 'l']))]
 Tags: #inequalities #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall u \in \mathbb{R} \forall x \in \mathbb{R}
 ------------------------------
@@ -645,8 +645,8 @@ is_bounded(S, l, u)
 x \in S \implies x \leq u \wedge x \geq l
 
 Title: Definition of supremum
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_supremum'], ['Real', '\\implies', '\\leq', 'is_upper_bound']), (['Real', '\\subseteq', 'is_supremum'], ['Real', 'is_upper_bound'])]
-[([], [], [], []), ((['U', 'u'], ['U', 'u'], [], ['U', 'U', 'u']), (['U', 'u'], ['U', 'u'], [], ['U', 'u'])), ((['U', 'u'], ['U', 'u'], [], ['U', 'U', 'u']), (['U'], ['U'], [], ['U']))]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_supremum'], ['Real', '\\implies', '\\leq', 'is_upper_bound'])]
+[([], [], [], []), ((['U'], ['U'], [], ['U', 'U']), (['U'], ['U'], [], ['U', 'U']))]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall u \in \mathbb{R}
 ------------------------------
@@ -657,8 +657,8 @@ is_supremum(U, u)
 \forall w \in \mathbb{R} is_upper_bound(U, w) \implies u \leq w
 
 Title: Definition of infimum
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_infimum'], ['Real', '\\geq', '\\implies', 'is_lower_bound']), (['Real', '\\subseteq', 'is_infimum'], ['Real', 'is_lower_bound'])]
-[([], [], [], []), ((['U', 'l'], ['U', 'l'], [], ['U', 'U', 'l']), (['U', 'l'], ['U', 'l'], [], ['U', 'l'])), ((['U', 'l'], ['U', 'l'], [], ['U', 'U', 'l']), (['U'], ['U'], [], ['U']))]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_infimum'], ['Real', '\\geq', '\\implies', 'is_lower_bound'])]
+[([], [], [], []), ((['U'], ['U'], [], ['U', 'U']), (['U'], ['U'], [], ['U', 'U']))]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall l \in \mathbb{R}
 ------------------------------
@@ -670,7 +670,7 @@ is_infimum(U, l)
 
 Title: Every subset of the reals with an upper bound has a supremum
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_upper_bound'], ['Real', 'is_supremum'])]
-[([], [], [], []), ((['U', 'u'], ['U', 'u'], [], ['U', 'U', 'u']), (['U'], ['U'], [], ['U']))]
+[([], [], [], []), ((['U'], ['U'], [], ['U', 'U']), (['U'], ['U'], [], ['U']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall u \in \mathbb{R}
 ------------------------------
@@ -681,7 +681,7 @@ is_upper_bound(U, u)
 
 Title: Every subset of the reals with a lower bound has an infimum
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_lower_bound'], ['Real', 'is_infimum'])]
-[([], [], [], []), ((['U', 'l'], ['U', 'l'], [], ['U', 'U', 'l']), (['U'], ['U'], [], ['U']))]
+[([], [], [], []), ((['U'], ['U'], [], ['U', 'U']), (['U'], ['U'], [], ['U']))]
 Tags: #inequalities #iff \mathbb{R}
 \forall U : Set(\mathbb{R}) \forall l \in \mathbb{R}
 ------------------------------
@@ -728,7 +728,7 @@ A \subsetneq B \iff A \subseteq B \wedge A \neq B
 
 Title: Transitivity of set inclusion
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
-[([], [], [], []), ((['A', 'B', 'C'], ['A', 'B', 'C'], [], ['A', 'B', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B']), (['A'], ['A'], [], ['A']))]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -739,7 +739,7 @@ A \subseteq C
 
 Title: Mixed transitivity of set inclusion (right strict)
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
-[([], [], [], []), ((['A', 'B', 'C'], ['A', 'B', 'C'], [], ['A', 'B', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B']), (['A'], ['A'], [], ['A']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -750,7 +750,7 @@ A \subsetneq C
 
 Title: Mixed transitivity of set inclusion (left strict)
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
-[([], [], [], []), ((['A', 'B', 'C'], ['A', 'B', 'C'], [], ['A', 'B', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B']), (['A'], ['A'], [], ['A']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -761,7 +761,7 @@ A \subsetneq C
 
 Title: Transitivity of strict set inclusion
 [['Set'], [], (['\\subsetneq'], ['\\subsetneq'])]
-[([], [], [], []), ((['A', 'B', 'C'], ['A', 'B', 'C'], [], ['A', 'B', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B']), (['A'], ['A'], [], ['A']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -772,7 +772,7 @@ A \subsetneq C
 
 Title: Element of a set is an element of a superset
 [['Set'], [], (['\\in', '\\subseteq'], ['\\in'])]
-[([], [], [], []), ((['A', 'B', 'x'], ['A', 'B', 'x'], [], ['A', 'B', 'x', 'A']), (['x', 'B'], ['x', 'B'], [], ['x', 'B']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'A']), (['B'], ['B'], [], ['B']))]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -783,7 +783,7 @@ x \in B
 
 Title: Element of a set is an element of a strict superset
 [['Set'], [], (['\\in', '\\subsetneq'], ['\\in'])]
-[([], [], [], []), ((['A', 'B', 'x'], ['A', 'B', 'x'], [], ['A', 'B', 'x', 'A']), (['x', 'B'], ['x', 'B'], [], ['x', 'B']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'A']), (['B'], ['B'], [], ['B']))]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -793,8 +793,8 @@ x \in A
 x \in B
 
 Title: Cycle of set inclusions implies equality of those sets
-[['Set'], ['\\subseteq'], ('=', [], [])]
-[(['A', 'B', 'C'], ['A', 'B', 'C'], [], ['A', 'B', 'B', 'C', 'C', 'A']), (['A', 'B'], ['A', 'B'], [], ['A', 'B'])]
+[['Set'], [], (['\\subseteq'], ['='])]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B', 'A']), (['A', 'B'], ['A', 'B'], [], ['A', 'B']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -832,8 +832,8 @@ Tags: #sets #definition
 x \in S \cup T \iff x \in S \vee x \in T
 
 Title: Subset of the empty set is empty
-[['Set'], ['\\emptyset', '\\subseteq'], ('=', [], ['\\emptyset'])]
-[(['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])]
+[[], [], (['\\emptyset', '\\subseteq'], ['=', '\\emptyset'])]
+[([], [], [], []), ((['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']), (['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']))]
 Tags: #sets
 \forall S : Set
 ------------------------------
@@ -843,7 +843,7 @@ S = \emptyset(universe(S))
 
 Title: Empty set strictly included in set implies set has an element
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
-[([], [], [], []), ((['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', 'S']), (['S'], ['S'], [], ['S']))]
+[([], [], [], []), ((['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']), ([], [], [], []))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -853,7 +853,7 @@ Tags: #sets
 
 Title: Problem : A set containing an element strictly includes the empty set
 [['Set'], [], (['\\in'], ['\\emptyset', '\\subsetneq'])]
-[([], [], [], []), ((['s', 'S'], ['s', 'S'], [], ['s', 'S']), (['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', 'S']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', 'S']))]
 Tags: #sets #tests
 \forall X : Set, \forall S : Set(X), \forall s \in X
 ------------------------------
@@ -881,7 +881,7 @@ S \subseteq S \cup T
 
 Title: Union equal to one of the sets implies the other is included in it
 [['Set'], [], (['=', '\\cup'], ['\\subseteq'])]
-[([], [], [], []), ((['S', 'T'], ['S', 'T'], ['S \\cup T'], ['S \\cup T', 'S']), (['T', 'S'], ['T', 'S'], [], ['T', 'S']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S', 'S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -891,7 +891,7 @@ T \subseteq S
 
 Title: Subset of one of two sets is subset of their union
 [['Set'], [], (['\\subseteq'], ['\\cup', '\\subseteq'])]
-[([], [], [], []), ((['C', 'S', 'T'], ['C', 'S', 'T'], [], ['C', 'S', 'C', 'T']), (['C', 'S', 'T'], ['C', 'S', 'T'], ['S \\cup T'], ['C', 'S \\cup T']))]
+[([], [], [], []), ((['C', 'S'], ['C', 'S'], [], ['C', 'S', 'C']), (['C', 'S'], ['C', 'S'], [], ['C', 'S']))]
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -901,7 +901,7 @@ C \subseteq S \cup T
 
 Title: Elements of set contained in two sets implies set is subset of their union
 [['Set'], [], (['\\implies', '\\in'], ['\\cup', '\\subseteq'])]
-[([], [], [], []), ((['C', 'S', 'T'], ['C', 'S', 'T'], [], ['C', 'S', 'T']), (['C', 'S', 'T'], ['C', 'S', 'T'], ['S \\cup T'], ['C', 'S \\cup T']))]
+[([], [], [], []), ((['C', 'S'], ['C', 'S'], [], ['C', 'S']), (['C', 'S'], ['C', 'S'], [], ['C', 'S']))]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -929,7 +929,7 @@ S \cup S = S
 
 Title: Union is nonempty implies one of the sets has an element
 [['Set'], [], (['\\cup', '\\emptyset', '\\neq'], ['\\in'])]
-[([], [], [], []), ((['S', 'T', '\\emptyset'], ['S', 'T', '\\emptyset'], ['S \\cup T'], ['S \\cup T', '\\emptyset']), (['S', 'T'], ['S', 'T'], [], ['S', 'T']))]
+[([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -938,8 +938,8 @@ S \cup T \neq \emptyset(X)
 \exists x \in X x \in S \vee x \in T
 
 Title: Union is empty implies the sets are empty
-[['Set'], [], (['=', '\\cup', '\\emptyset'], ['=', '\\emptyset']), (['=', '\\cup', '\\emptyset'], ['=', '\\emptyset'])]
-[([], [], [], []), ((['S', 'T', '\\emptyset'], ['S', 'T', '\\emptyset'], ['S \\cup T'], ['S \\cup T', '\\emptyset']), (['T', '\\emptyset'], ['T', '\\emptyset'], [], ['T', '\\emptyset'])), ((['S', 'T', '\\emptyset'], ['S', 'T', '\\emptyset'], ['S \\cup T'], ['S \\cup T', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']))]
+[['Set'], [], (['=', '\\cup', '\\emptyset'], ['=', '\\emptyset'])]
+[([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset', '\\emptyset']))]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -985,7 +985,7 @@ S \cap \emptyset(universe(S)) = \emptyset(universe(S))
 
 Title: Problem : An element in one set of an empty intersection is not in the other
 [['Set'], [], (['=', '\\cap', '\\emptyset', '\\in'], ['\\in', '\\neg'])]
-[([], [], [], []), ((['S', 'T', '\\emptyset', 's'], ['S', 'T', '\\emptyset', 's'], ['S \\cap T'], ['S \\cap T', '\\emptyset', 's', 'S']), (['s', 'T'], ['s', 'T'], [], ['s', 'T']))]
+[([], [], [], []), ((['S', 'T', '\\emptyset'], ['S', 'T', '\\emptyset'], ['S \\cap T'], ['S \\cap T', '\\emptyset', 'S']), (['T'], ['T'], [], ['T']))]
 Tags: #sets #tests 
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall s \in X
 ------------------------------
@@ -1005,7 +1005,7 @@ S \cap S = S
 
 Title: Subset of intersection is subset of the second set
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
-[([], [], [], []), ((['S', 'T'], ['S', 'T'], ['S \\cap T'], ['S', 'S \\cap T']), (['S', 'T'], ['S', 'T'], [], ['S', 'T']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S', 'S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1015,7 +1015,7 @@ S \subseteq T
 
 Title: Set included in two others is included in their intersection
 [['Set'], [], (['\\implies', '\\in'], ['\\cap', '\\subseteq'])]
-[([], [], [], []), ((['C', 'S', 'T'], ['C', 'S', 'T'], [], ['C', 'S', 'T']), (['C', 'S', 'T'], ['C', 'S', 'T'], ['S \\cap T'], ['C', 'S \\cap T']))]
+[([], [], [], []), ((['S', 'T'], ['S', 'T'], [], ['S', 'T']), (['S', 'T'], ['S', 'T'], ['S \\cap T'], ['S \\cap T']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1024,8 +1024,8 @@ Tags: #sets
 C \subseteq S \cap T
 
 Title: Set contained in intersection is contained in sets
-[['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq']), (['\\cap', '\\subseteq'], ['\\subseteq'])]
-[([], [], [], []), ((['C', 'S', 'T'], ['C', 'S', 'T'], ['S \\cap T'], ['C', 'S \\cap T']), (['C', 'T'], ['C', 'T'], [], ['C', 'T'])), ((['C', 'S', 'T'], ['C', 'S', 'T'], ['S \\cap T'], ['C', 'S \\cap T']), (['C', 'S'], ['C', 'S'], [], ['C', 'S']))]
+[['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
+[([], [], [], []), ((['C', 'S'], ['C', 'S'], [], ['C', 'S']), (['C', 'S'], ['C', 'S'], [], ['C', 'S', 'C']))]
 Tags: #sets
 \forall C : Set, \forall S : Set, \forall T : Set
 ------------------------------
@@ -1053,8 +1053,8 @@ Tags: #sets
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
 Title: Components of pair
-[['Set', '\\times'], [], (['=', 'Tuple(2)'], ['1', '=', '[]']), (['=', 'Tuple(2)'], ['0', '=', '[]'])]
-[([], [], [], []), ((['x', 'c', 'd'], ['x', 'c', 'd'], ['(c, d)'], ['x', 'c', 'd']), (['x', '1', 'd'], ['x', '1', 'd'], [], ['x', '1', 'd'])), ((['x', 'c', 'd'], ['x', 'c', 'd'], ['(c, d)'], ['x', 'c', 'd']), (['x', '0', 'c'], ['x', '0', 'c'], [], ['x', '0', 'c']))]
+[['Set'], [], (['=', 'Tuple(2)'], ['0', '1', '=', '[]'])]
+[([], [], [], []), ((['c', 'd'], ['c', 'd'], ['(c, d)'], ['c', 'd']), (['0', 'c', '1', 'd'], ['0', 'c', '1', 'd'], [], ['0', 'c', '1', 'd']))]
 Tags: #sets
 \forall S : Set, \forall T : Set, \forall c \in S, \forall d \in T, \forall x \in S \times T
 ------------------------------
@@ -1089,8 +1089,8 @@ Tags: #sets #definition
 is_pair(x, S, T) \iff x \in S \times T
 
 Title: Element of cartesian product has components in the sets
-[['Set', '\\times'], [], (['\\in', '\\times'], ['1', '[]', '\\in']), (['\\in', '\\times'], ['0', '[]', '\\in'])]
-[([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\times T'], ['x', 'S \\times T']), (['x', '1', 'T'], ['x', '1', 'T'], [], ['x', '1', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\times T'], ['x', 'S \\times T']), (['x', '0', 'S'], ['x', '0', 'S'], [], ['x', '0', 'S']))]
+[['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
+[([], [], [], []), ((['S', 'T'], ['S', 'T'], ['S \\times T'], ['S \\times T']), (['0', 'S', '1', 'T'], ['0', 'S', '1', 'T'], [], ['0', 'S', '1', 'T']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -1126,7 +1126,7 @@ Tags: #sets
 
 Title: Cartesian product on the right preserves subset relation
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
-[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'C', 'B'], ['A', 'C', 'B'], ['A \\times C', 'B \\times C'], ['A \\times C', 'B \\times C']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -1136,7 +1136,7 @@ A \times C \subseteq B \times C
 
 Title: Cartesian product on the left preserves subset relation
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
-[([], [], [], []), ((['B', 'C'], ['B', 'C'], [], ['B', 'C']), (['A', 'B', 'C'], ['A', 'B', 'C'], ['A \\times B', 'A \\times C'], ['A \\times B', 'A \\times C']))]
+[([], [], [], []), ((['B'], ['B'], [], ['B']), (['A', 'B'], ['A', 'B'], ['A \\times B'], ['A \\times B', 'A']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set
 ------------------------------
@@ -1146,7 +1146,7 @@ A \times B \subseteq A \times C
 
 Title: Problem : Subset on left and right of cartesian product gives subset
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
-[([], [], [], []), ((['A', 'C', 'B', 'D'], ['A', 'C', 'B', 'D'], [], ['A', 'C', 'B', 'D']), (['A', 'B', 'C', 'D'], ['A', 'B', 'C', 'D'], ['A \\times B', 'C \\times D'], ['A \\times B', 'C \\times D']))]
+[([], [], [], []), ((['A', 'C', 'B'], ['A', 'C', 'B'], [], ['A', 'C', 'B']), (['A', 'B', 'C'], ['A', 'B', 'C'], ['A \\times B'], ['A \\times B', 'C']))]
 Tags: #sets #tests
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -1157,7 +1157,7 @@ A \times B \subseteq C \times D
 
 Title: Cartesian product is empty implies one of the sets is empty
 [['Set'], [], (['=', '\\emptyset', '\\times'], ['=', '\\emptyset'])]
-[([], [], [], []), ((['A', 'B', '\\emptyset'], ['A', 'B', '\\emptyset'], ['A \\times B', '\\emptyset \\times \\emptyset'], ['A \\times B', '\\emptyset \\times \\emptyset']), (['A', '\\emptyset', 'B'], ['A', '\\emptyset', 'B'], [], ['A', '\\emptyset', 'B', '\\emptyset']))]
+[([], [], [], []), ((['A', '\\emptyset'], ['A', '\\emptyset'], ['\\emptyset \\times \\emptyset'], ['A', '\\emptyset \\times \\emptyset']), (['A', '\\emptyset'], ['A', '\\emptyset'], [], ['A', '\\emptyset', '\\emptyset']))]
 Tags: #sets
 \forall A : Set, \forall B : Set
 ------------------------------
@@ -1166,8 +1166,8 @@ A \times B = \emptyset(universe(A)) \times \emptyset(universe(B))
 A = \emptyset(universe(A)) \vee B = \emptyset(universe(B))
 
 Title: Cartesian products are contained implies the sets are contained
-[['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq']), (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
-[([], [], [], []), ((['A', 'B', 'C', 'D', '\\emptyset'], ['A', 'B', 'C', 'D', '\\emptyset'], ['A \\times B', 'C \\times D'], ['A \\times B', 'C \\times D', 'A', '\\emptyset', 'B', '\\emptyset']), (['B', 'D'], ['B', 'D'], [], ['B', 'D'])), ((['A', 'B', 'C', 'D', '\\emptyset'], ['A', 'B', 'C', 'D', '\\emptyset'], ['A \\times B', 'C \\times D'], ['A \\times B', 'C \\times D', 'A', '\\emptyset', 'B', '\\emptyset']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
+[([], [], [], []), ((['A', 'B', 'C', '\\emptyset'], ['A', 'B', 'C', '\\emptyset'], ['A \\times B'], ['A \\times B', 'C', 'A', '\\emptyset', 'B', '\\emptyset']), (['A', 'C', 'B'], ['A', 'C', 'B'], [], ['A', 'C', 'B']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -1180,7 +1180,7 @@ B \subseteq D
 
 Title: Cartesian products are contained implies the sets are contained (left)
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
-[([], [], [], []), ((['A', 'B', 'C', 'D', '\\emptyset'], ['A', 'B', 'C', 'D', '\\emptyset'], ['A \\times B', 'C \\times D'], ['A \\times B', 'C \\times D', 'B', '\\emptyset']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
+[([], [], [], []), ((['A', 'B', 'C', '\\emptyset'], ['A', 'B', 'C', '\\emptyset'], ['A \\times B'], ['A \\times B', 'C', 'B', '\\emptyset']), (['A', 'C'], ['A', 'C'], [], ['A', 'C']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -1191,7 +1191,7 @@ A \subseteq C
 
 Title: Strict containment of cartesian product of sets implies containment of sets
 [['Set'], [], (['\\emptyset', '\\neq', '\\subsetneq', '\\times'], ['\\subsetneq'])]
-[([], [], [], []), ((['A', 'B', 'C', 'D', '\\emptyset'], ['A', 'B', 'C', 'D', '\\emptyset'], ['A \\times B', 'C \\times D'], ['A \\times B', 'C \\times D', 'A', '\\emptyset', 'B', '\\emptyset']), (['A', 'C', 'B', 'D'], ['A', 'C', 'B', 'D'], [], ['A', 'C', 'B', 'D']))]
+[([], [], [], []), ((['A', 'B', 'C', '\\emptyset'], ['A', 'B', 'C', '\\emptyset'], ['A \\times B'], ['A \\times B', 'C', 'A', '\\emptyset', 'B', '\\emptyset']), (['A', 'C', 'B'], ['A', 'C', 'B'], [], ['A', 'C', 'B']))]
 Tags: #sets
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set
 ------------------------------
@@ -1239,7 +1239,7 @@ S \in \mathcal{P}(\emptyset(universe(S))) \iff S = \emptyset(universe(S))
 
 Title: Power sets are contained if the sets are contained
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
-[([], [], [], []), ((['S', 'T'], ['S', 'T'], [], ['S', 'T']), (['S', 'T'], ['S', 'T'], [], ['S', 'T']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall S : Set, \forall T : Set
 ------------------------------
@@ -1285,7 +1285,7 @@ x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 
 Title: Definition of set universe
 [['Set'], [], (['\\in'], ['\\in', 'universe'])]
-[([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
@@ -1329,8 +1329,8 @@ Tags: #sets
 S \cap complement(S) = \emptyset(X)
 
 Title: Complement of a set equal to its universe is the empty set
-[['Set'], ['=', '\\emptyset', 'complement'], ('=', ['complement'], ['\\emptyset'])]
-[(['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])]
+[['Set'], [], (['=', '\\emptyset', 'complement'], ['=', '\\emptyset', 'complement'])]
+[([], [], [], []), ((['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']), (['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1340,7 +1340,7 @@ complement(S) = \emptyset(X)
 
 Title: Complement reverses order of inclusion
 [['Set'], [], (['\\subseteq'], ['\\subseteq', 'complement'])]
-[([], [], [], []), ((['S', 'T'], ['S', 'T'], [], ['S', 'T']), (['T', 'S'], ['T', 'S'], [], ['T', 'S']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1485,7 +1485,7 @@ A \setminus complement(\emptyset(X)) = \emptyset(X)
 
 Title: Containment of sets is reversed upon taking differences with another set
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
-[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['C', 'B', 'A'], ['C', 'B', 'A'], [], ['C', 'B', 'C', 'A']))]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['B', 'A'], ['B', 'A'], [], ['B', 'A']))]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1495,7 +1495,7 @@ C \setminus B \subseteq C \setminus A
 
 Title: Problem : Difference is contained if different difference is contained
 [['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
-[([], [], [], []), ((['B', 'C', 'A'], ['B', 'C', 'A'], [], ['B', 'C', 'A']), (['B', 'A', 'C'], ['B', 'A', 'C'], [], ['B', 'A', 'C']))]
+[([], [], [], []), ((['B', 'A'], ['B', 'A'], [], ['B', 'A']), (['B', 'A'], ['B', 'A'], [], ['B', 'A']))]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -1531,8 +1531,8 @@ Tags: #sets #functions
 is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in X a \in A \implies (\exists b \in X b \in B \wedge (a, b) \in f)) \wedge (\forall a \in X a \in A \implies (\forall b \in X, \forall c \in X (a, b) \in f \wedge (a, c) \in f \implies b = c))
 
 Title: Definition of function value
-[['->', 'Set'], ['is_function'], (['='], ['Tuple(2)', '\\in']), (['Tuple(2)', '\\in'], ['='])]
-[(['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), ((['c', 'd'], ['c', 'd'], [], ['f(c)', 'd']), (['c', 'd', 'f'], ['c', 'd', 'f'], ['(c, d)'], ['c', 'd', 'f'])), ((['c', 'd', 'f'], ['c', 'd', 'f'], ['(c, d)'], ['c', 'd', 'f']), (['c', 'd'], ['c', 'd'], [], ['f(c)', 'd']))]
+[['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\iff', '\\in'])]
+[([], [], [], []), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), (['c', 'f'], ['c', 'f'], [], ['f(c)', 'c', 'f']))]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall c \in X, \forall d \in X
 ------------------------------
@@ -1541,7 +1541,7 @@ is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 
 Title: Function value in codomain
 [['->', 'Set'], [], (['\\in', 'is_function'], ['\\in'])]
-[([], [], [], []), ((['f', 'A', 'B', 'a'], ['f', 'A', 'B', 'a'], [], ['f', 'A', 'B', 'a', 'A']), (['a', 'B'], ['a', 'B'], [], ['f(a)', 'B']))]
+[([], [], [], []), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B', 'A']), (['B'], ['B'], [], ['f', True, 'B']))]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall a \in X
 ------------------------------
@@ -1551,7 +1551,7 @@ f(a) \in B
 
 Title: Pair with function value in function
 [['->', 'Set'], [], (['\\in', 'is_function'], ['Tuple(2)', '\\in'])]
-[([], [], [], []), ((['f', 'A', 'B', 'a'], ['f', 'A', 'B', 'a'], [], ['f', 'A', 'B', 'a', 'A']), (['a', 'f'], ['a', 'f'], [], ['a', 'f(a)', 'f']))]
+[([], [], [], []), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B', 'A']), (['f'], ['f'], [], ['f', True, 'f']))]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
 ------------------------------
@@ -1560,8 +1560,8 @@ is_function(f, A, B) \wedge a \in A
 (a, f(a)) \in f
 
 Title: Definition of function composition
-[['->', 'Set', '\\times'], ['is_function'], (['\\circ', '\\in'], ['=', 'Tuple(2)', '\\in']), (['=', 'Tuple(2)', '\\in'], ['\\circ', '\\in'])]
-[(['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C']), ((['x', 'g', 'f'], ['x', 'g', 'f'], ['g \\circ f'], ['x', 'g \\circ f']), (['x', 'A'], ['x', 'A'], [], ['x', 'A', 'f', True, 'g', True])), ((['x', 'A'], ['x', 'A'], [], ['x', 'A', 'f', True, 'g', True]), (['x', 'g', 'f'], ['x', 'g', 'f'], ['g \\circ f'], ['x', 'g \\circ f']))]
+[['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\circ', '\\iff', '\\in'])]
+[([], [], [], []), ((['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C']), (['g', 'f', 'A'], ['g', 'f', 'A'], ['g \\circ f'], ['g \\circ f', 'A', 'f', True, 'g', True]))]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall x \in A \times C
 ------------------------------
@@ -1572,7 +1572,7 @@ x \in g \circ f \iff (\exists a \in X, \exists c \in X x = (a, c) \wedge a \in A
 
 Title: Composition is function
 [['->', 'Set'], [], (['is_function'], ['\\circ', 'is_function'])]
-[([], [], [], []), ((['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['g \\circ f', 'A', 'C']))]
+[([], [], [], []), ((['f', 'A', 'B', 'C'], ['f', 'A', 'B', 'C'], [], ['f', 'A', 'B', 'B', 'C']), (['A', 'C'], ['A', 'C'], [], ['f', 'A', 'C']))]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -1583,7 +1583,7 @@ is_function(g \circ f, A, C)
 
 Title: Function values of composition
 [['->', 'Set'], [], (['is_function'], ['=', '\\circ', '\\implies', '\\in'])]
-[([], [], [], []), ((['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C']), (['a', 'A', 'g', 'f'], ['a', 'A', 'g', 'f'], ['g \\circ f'], ['a', 'A', 'gοf(a)', 'g(f(a))']))]
+[([], [], [], []), ((['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C']), (['A', 'g', 'f'], ['A', 'g', 'f'], ['g \\circ f'], ['A', 'g \\circ f', True, 'f', True, 'g', True]))]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall a \in X
 ------------------------------
@@ -1593,8 +1593,8 @@ is_function(g, B, C)
 a \in A \implies (g \circ f)(a) = g(f(a))
 
 Title: Functions restrict to subsets
-[['->', 'Set'], [], (['\\subseteq', 'is_function'], ['->', '=', '\\implies', '\\in', 'is_function'])]
-[([], [], [], []), ((['f', 'B', 'C', 'A'], ['f', 'B', 'C', 'A'], [], ['f', 'B', 'C', 'A', 'B']), (['A', 'C'], ['A', 'C'], [], ['A', 'C', 'A', 'f', True]))]
+[['Set'], [], (['\\subseteq', 'is_function'], ['->', '=', '\\implies', '\\in', 'is_function'])]
+[([], [], [], []), ((['B', 'C', 'A'], ['B', 'C', 'A'], [], ['B', 'C', 'A', 'B']), (['A', 'C'], ['A', 'C'], [], ['A', 'C', 'A']))]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : B \to C
 ------------------------------
@@ -1604,8 +1604,8 @@ A \subseteq B
 \exists g : A \to C is_function(g, A, C) \wedge (\forall a \in X a \in A \implies f(a) = g(a))
 
 Title: Composition of functions is associative
-[['->', 'Set'], ['is_function'], ('=', ['\\circ'], ['\\circ'])]
-[(['f', 'C', 'D', 'g', 'B', 'h', 'A'], ['f', 'C', 'D', 'g', 'B', 'h', 'A'], [], ['f', 'C', 'D', 'g', 'B', 'C', 'h', 'A', 'B']), (['h', 'f'], ['h', 'f'], [], ['f \\circ g \\circ h', 'f \\circ g \\circ h'])]
+[['->', 'Set'], [], (['is_function'], ['=', '\\circ'])]
+[([], [], [], []), ((['f', 'C', 'D', 'g', 'B', 'A'], ['f', 'C', 'D', 'g', 'B', 'A'], [], ['f', 'C', 'D', 'g', 'B', 'C', 'A', 'B']), (['f'], ['f'], [], ['f \\circ g', 'g', 'f']))]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set, \forall f : C \to D, \forall g : B \to C, \forall h : A \to B
 ------------------------------
@@ -1616,8 +1616,8 @@ is_function(h, A, B)
 (f \circ g) \circ h = f \circ (g \circ h)
 
 Title: Definition of injective
-[['->', 'Set'], ['is_function'], (['is_injective'], ['=', '\\implies', '\\in']), (['=', '\\implies', '\\in'], ['is_injective'])]
-[(['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), ((['f'], ['f'], [], ['f']), (['A'], ['A'], [], ['A', 'A', 'f', True, 'f', True])), ((['A'], ['A'], [], ['A', 'A', 'f', True, 'f', True]), (['f'], ['f'], [], ['f']))]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_injective'])]
+[([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A'], ['A'], [], ['A', 'A']))]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -1626,7 +1626,7 @@ is_function(f, A, B) \implies (is_injective(f) \iff (\forall a \in X, \forall b 
 
 Title: Composition of injective functions is injective
 [['->', 'Set'], [], (['is_function', 'is_injective'], ['\\circ', 'is_injective'])]
-[([], [], [], []), ((['f', 'A', 'B', 'g', 'C'], ['f', 'A', 'B', 'g', 'C'], [], ['f', 'A', 'B', 'g', 'B', 'C', 'f', 'g']), ([], [], [], ['g \\circ f']))]
+[([], [], [], []), ((['f', 'A', 'B', 'C'], ['f', 'A', 'B', 'C'], [], ['f', 'A', 'B', 'B', 'C', 'f']), ([], [], [], ['f']))]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -1638,8 +1638,8 @@ is_injective(g)
 is_injective(g \circ f)
 
 Title: Definition of surjective
-[['->', 'Set'], ['is_function'], (['is_surjective'], ['=', '\\implies', '\\in']), (['=', '\\implies', '\\in'], ['is_surjective'])]
-[(['f', 'D', 'C'], ['f', 'D', 'C'], [], ['f', 'D', 'C']), ((['f'], ['f'], [], ['f']), (['C', 'D'], ['C', 'D'], [], ['C', 'D', 'f', True])), ((['C', 'D'], ['C', 'D'], [], ['C', 'D', 'f', True]), (['f'], ['f'], [], ['f']))]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_surjective'])]
+[([], [], [], []), ((['D', 'C'], ['D', 'C'], [], ['D', 'C']), (['C', 'D'], ['C', 'D'], [], ['C', 'D']))]
 Tags: #functions
 \forall X : Set, \forall D : Set(X), \forall C : Set(X), \forall f : D \to C
 ------------------------------
@@ -1648,7 +1648,7 @@ is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c \in X c \in C \i
 
 Title: Composition of surjective functions is surjective
 [['->', 'Set'], [], (['is_function', 'is_surjective'], ['\\circ', 'is_surjective'])]
-[([], [], [], []), ((['f', 'S', 'T', 'g', 'U'], ['f', 'S', 'T', 'g', 'U'], [], ['f', 'S', 'T', 'g', 'T', 'U', 'f', 'g']), ([], [], [], ['g \\circ f']))]
+[([], [], [], []), ((['f', 'S', 'T', 'U'], ['f', 'S', 'T', 'U'], [], ['f', 'S', 'T', 'T', 'U', 'f']), ([], [], [], ['f']))]
 Tags: #functions
 \forall S : Set, \forall T : Set, \forall U : Set, \forall f : S \to T, \forall g : T \to U
 ------------------------------

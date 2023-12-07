@@ -396,6 +396,9 @@ def automate(screen, tl, ttree):
                                 logic.library_import(screen, fake_tl, library, filepos)
                                 library.close()
                                 autocleanup(screen, fake_tl, fake_ttree)
+                                if line >= len(fake_tl.tlist1.data):
+                                    for i in range(len(fake_tl.tlist1.data)):
+                                        screen.dialog(str(i)+" : "+str(fake_tl.tlist1.data[i]))
                                 thm = fake_tl.tlist1.data[line]
                                 thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
                                 # check theorem has only one precedent

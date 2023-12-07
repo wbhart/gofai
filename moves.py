@@ -13,7 +13,7 @@ from sorts import FunctionConstraint, CartesianConstraint, DomainTuple, SetSort,
 from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      OrderedSemiringClass, CompleteOrderedFieldClass, CompleteValuedFieldClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
-from unification import unify, subst, trees_unify, is_predicate, sort_type_class, \
+from unification import unify, subst, trees_unify, is_predicate, \
      is_function_type, check_macros, substitute
 from utility import unquantify, relabel, relabel_constraints, append_tree, \
      append_tree2, replace_tree, replace_tree2, add_sibling, add_descendant, \

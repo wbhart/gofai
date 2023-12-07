@@ -8,7 +8,8 @@ from nodes import ForallNode, ExistsNode, FnApplNode, VarNode, SetBuilderNode, \
 from sorts import SetSort, TupleSort, FunctionConstraint, DomainTuple, \
      CartesianConstraint, Universum, NumberSort, PredSort
 from typeclass import CompleteValuedFieldClass, CompleteOrderedValuedFieldClass, \
-     FieldClass, OrderedRingClass, OrderedSemiringClass
+     FieldClass, OrderedRingClass, OrderedSemiringClass, PosetClass, MonoidClass, \
+     SemiringClass
 from copy import deepcopy, copy
 from heapq import merge  
 
@@ -155,13 +156,25 @@ def qz_copy_var(screen, tl, extras, name, new_name):
     ignores variables it has already copied under the new name supplied.
     """
     node_to_copy = None
-    qz = tl.tlist0.data[0]
+    qz = tl.tlist0.data[0] if tl.tlist0.data else None
     tree = qz
 
     for v in extras: # extra variables to rename, from unquantify
        if isinstance(v, ExistsNode) or isinstance(v, ForallNode):
           if v.var.name() == name: # found the relevant variable
               node_to_copy = v
+
+    if tree == None:
+       if node_to_copy != None:
+          new_node = copy(node_to_copy)
+          new_node.var = deepcopy(new_node.var)
+          if isinstance(new_node.var, VarNode):
+              new_node.var._name = new_name # rename
+          elif isinstance(new_node.var, FnApplNode): # TODO : not sure if this is used any more
+              new_node.var.var._name = new_name # rename
+          new_node.left = None
+          tl.tlist0.data.append(new_node)
+          return
 
     while tree != None:
        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
@@ -834,6 +847,17 @@ def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
     if coerce_sorts(screen, tl, s2, s1):
         return True
     return False
+
+def sort_type_class(sort):
+    """
+    Return the typeclass that a given sort belongs to.
+    """
+    if isinstance(sort, VarNode):
+        return sort.constraint.typeclass
+    elif isinstance(sort, NumberSort) or isinstance(sort, Universum):
+        return sort.typeclass
+    else:
+        raise Exception("Not a valid sort")
 
 # abbreviations for number types
 canonical_numconstraints = { "\\N" : "\\mathbb{N}",

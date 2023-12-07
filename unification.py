@@ -357,14 +357,6 @@ def substitute(tree, assign):
    for (var, val) in assign:
        tree = subst(tree, var, val)
    return tree
-
-def sort_type_class(sort):
-    if isinstance(sort, VarNode):
-        return sort.constraint.typeclass
-    elif isinstance(sort, NumberSort) or isinstance(sort, Universum):
-        return sort.typeclass
-    else:
-        raise Exception("Not a valid sort")
     
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
