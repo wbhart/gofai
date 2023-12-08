@@ -148,25 +148,27 @@ def get_autonode(screen, alist, line):
             return alist[k]
     return None
 
-def filter_theorems1(screen, index, consts):
+def filter_theorems1(screen, index, type_consts, consts):
     """
     Given a library index, filter out theorems all of whose precedents
-    contain only constants in the given list.
+    contain only constants in the given list and whose type constants
+    are all contained in the given list.
     """
     thms = []
     for (title, c, filepos) in index:
         thmlist = c[2]
+        tconst = c[0]
         for i in range(len(thmlist)):
             thm = thmlist[i]
             if isinstance(thm, AutoImplNode):
                 tc = thm.left
-                if set(tc).issubset(consts):
+                if set(tconst).issubset(type_consts) and set(tc).issubset(consts):
                     thms.append((title, c, filepos, i))
     return thms
 
 def filter_theorems2(screen, index, consts):
     """
-    Given a library index, filter out theorems all of whose conclusions
+    Given a library index, filter out theorems all of whose consequents
     contain only constants in the given list.
     """
     thms = []
@@ -232,7 +234,7 @@ def check_duplicates(screen, tl, ttree, n1, n2):
             nodup = True
             for j in range(n1):
                 if is_duplicate_upto_metavars(tlist1[i], tlist1[j]):
-                    tlist1[i] = DeadNode()
+                    tlist1[i] = DeadNode(tlist1[i])
                     nodup = False
             if nodup:
                 nodup_found = True
@@ -248,8 +250,8 @@ def check_duplicates(screen, tl, ttree, n1, n2):
         for i in range(n2, len(tlist2)):
             for j in range(n2, len(tlist1)):
                 if deps_defunct(screen, tl, ttree, i, j):
-                    tlist1[j] = DeadNode()
-                tlist2[i] = DeadNode()
+                    tlist1[j] = DeadNode(tlist1[j])
+            tlist2[i] = DeadNode(tlist2[i])
     else:
         nodup_found = True
     return nodup_found
@@ -286,6 +288,7 @@ def automate(screen, tl, ttree):
                     progress = False
                     line2 = hyp.line
                     hc = hyp.const1
+                    ht = get_constants(screen, tl, tl.tlist0.data[0]) if tl.tlist0.data else []
                     # first check if any hyp_impls can be applied to head
                     for imp in atab.hyp_impls:
                         if set(imp.const1).issubset(hc):
@@ -322,7 +325,7 @@ def automate(screen, tl, ttree):
                                             return
                     # if no progress, look for library result that can be applied to head
                     if not progress:
-                        libthms = filter_theorems1(screen, index, hc)
+                        libthms = filter_theorems1(screen, index, ht, hc)
                         for (title, c, filepos, line) in libthms:
                             # check to see if thm already loaded
                             unifies = False
@@ -448,9 +451,6 @@ def automate(screen, tl, ttree):
                                 logic.library_import(screen, fake_tl, library, filepos)
                                 library.close()
                                 autocleanup(screen, fake_tl, fake_ttree)
-                                if line >= len(fake_tl.tlist1.data):
-                                    for i in range(len(fake_tl.tlist1.data)):
-                                        screen.dialog(str(i)+" : "+str(fake_tl.tlist1.data[i]))
                                 thm = fake_tl.tlist1.data[line]
                                 thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
                                 # check theorem has only one precedent

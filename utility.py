@@ -503,9 +503,11 @@ def is_duplicate_upto_metavars(tree1, tree2):
                 return False
             if tree1.name() in mv_dict:
                 return tree2.name() == mv_dict[tree1.name()]
-            else:
+            elif tree1.is_metavar:
                 mv_dict[tree1.name()] = tree2.name()
                 return True
+            else:
+                return tree1.name() == tree2.name()
         elif isinstance(tree1, FnApplNode):
             if not process(tree1.var, tree2.var, mv_dict):
                 return False
@@ -530,6 +532,21 @@ def is_duplicate_upto_metavars(tree1, tree2):
             return tree1.name() == tree2.name()
         elif isinstance(tree1, NaturalNode) or isinstance(tree1, BoolNode):
             return tree1.value == tree2.value
+        elif isinstance(tree1, Universum):
+            return isinstance(tree2, Universum)
+        elif isinstance(tree1, SetSort):
+            return process(tree1.sort, tree2.sort, mv_dict)
+        elif isinstance(tree1, NumberSort):
+            return tree1.name() == tree2.name()
+        elif isinstance(tree1, TupleSort):
+            if len(tree1.sorts) != len(tree2.sorts):
+                return False
+            for i in range(len(tree1.sorts)):
+                if not process(tree1.sorts[i], tree2.sorts[i], mv_dict):
+                    return False
+            return True
+        else:
+            raise Exception("Type "+str(type(tree1))+" unknown")
 
     return process(tree1, tree2, mv_dict)
 

@@ -251,19 +251,23 @@ def unify(screen, tl, tree1, tree2, assigned=[]):
         return False, [], []
     i = 0
     while i < len(assign):
-        for j in range(0, i):
-            assign[j] = make_substitution(assign[j], assign[i])
-        j = i + 1
-        while j < len(assign):
-            if assign[i][0].name() == assign[j][0].name():
-                unified, assign, macros = trees_unify(screen, tl, assign[i][1], assign[j][1], assign, macros)
-                if not unified:
-                    return False, [], []
-                del assign[j]
-            else:
+        if isinstance(assign[i][1], VarNode) and assign[i][1].is_metavar and \
+           assign[i][0].name() == assign[i][1].name():
+            del assign[i]
+        else:
+            for j in range(0, i):
                 assign[j] = make_substitution(assign[j], assign[i])
-                j += 1
-        i += 1
+            j = i + 1
+            while j < len(assign):
+                if assign[i][0].name() == assign[j][0].name():
+                    unified, assign, macros = trees_unify(screen, tl, assign[i][1], assign[j][1], assign, macros)
+                    if not unified:
+                        return False, [], []
+                    del assign[j]
+                else:
+                    assign[j] = make_substitution(assign[j], assign[i])
+                    j += 1
+            i += 1
     return True, assign, macros
 
 def check_macros(screen, tl, macros, assign, qz):

@@ -61,11 +61,17 @@ class LRNode:
 # AST Nodes
 
 class DeadNode(LeafNode):
+    def __init__(self, expr):
+        if isinstance(expr, DeadNode):
+            self.expr = expr.expr
+        else:
+            self.expr = expr
+        
     def __str__(self):
-        return "----"
+        return "---- "+str(self.expr)
 
     def __repr__(self):
-        return "----"
+        return "---- "+repr(self.expr)
 
 class SymbolNode(LeafNode):
     def __init__(self, name, constraint):

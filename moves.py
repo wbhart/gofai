@@ -327,12 +327,12 @@ def mark_proved(screen, tl, ttree, n):
                     plist.append(ttree.num)
                 for i in range(0, len(tl.tlist1.data)):
                     if deps_defunct(screen, tl, ttree, n, i):
-                        tl.tlist1.data[i] = DeadNode()
+                        tl.tlist1.data[i] = DeadNode(tl.tlist1.data[i])
                         dirty1.append(i)
                 screen.pad1.refresh()
                 for i in range(0, len(tl.tlist2.data)):
                     if target_depends(screen, tl, ttree, i, n): 
-                        tl.tlist2.data[i] = DeadNode()
+                        tl.tlist2.data[i] = DeadNode(tl.tlist2.data[i])
                         dirty2.append(i)
             return True
         for P in ttree.andlist:
@@ -343,11 +343,11 @@ def mark_proved(screen, tl, ttree, n):
                         plist.append(ttree.num)
                     for i in range(0, len(tl.tlist2.data)):
                         if deps_defunct(screen, tl, ttree, ttree.num, i):
-                            tl.tlist1.data[i] = DeadNode()
+                            tl.tlist1.data[i] = DeadNode(tl.tlist1.data[i])
                             dirty1.append(i)
                     for i in range(0, len(tl.tlist2.data)):
                         if target_depends(screen, tl, ttree, i, ttree.num): 
-                            tl.tlist2.data[i] = DeadNode()
+                            tl.tlist2.data[i] = DeadNode(tl.tlist2.data[i])
                             dirty2.append(i)
                 return True
         return False
