@@ -1,6 +1,6 @@
 from utility import is_implication, get_constants, get_init_vars, list_merge, deps_compatible, \
      TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
-     append_quantifiers, relabel
+     append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars
 from autoparse import parse_consts
 from moves import targets_proved
 from unification import unify
@@ -202,11 +202,57 @@ def update_screen(screen, tl):
         pad1[i] = str(tlist1[i])
     for i in range(len(tlist2)):
         pad2[i] = str(tlist2[i])
+    while tl.tlist1.line != tl.tlist1.len():
+        screen.pad1.cursor_down()
+        screen.pad1.refresh()
+        tl.tlist1.line += 1
     tl.tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
     tl.tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
+
+def check_duplicates(screen, tl, ttree, n1, n2):
+    """
+    If n2 is equal to the number of targets in the tableau, check hypotheses
+    starting at index n1 for duplicates with prior hypotheses (up to) possibly
+    different metavariable indices. If any duplicates are found, they are
+    replaced with DeadNode.
+    If n2 is not equal to the number of targets and if targets are *all*
+    duplicate from the given index, they and any hypotheses that can only
+    be used to prove those targets are also replaced with DeadNode.
+    The function returns True if there were *any* hypotheses or targets
+    checked starting at the given indices which were not duplicate.
+    """
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    nodup_found = False
+    if n2 == len(tlist2): # only check if not checking targets
+        for i in range(n1, len(tlist1)):
+            nodup = True
+            for j in range(n1):
+                if is_duplicate_upto_metavars(tlist1[i], tlist1[j]):
+                    tlist1[i] = DeadNode()
+                    nodup = False
+            if nodup:
+                nodup_found = True
+    dup2 = True
+    for i in range(n2, len(tlist2)):
+        dup = False
+        for j in range(n2):
+            if is_duplicate_upto_metavars(tlist2[i], tlist2[j]):
+                dup = True
+        if not dup:
+            dup2 = False
+    if dup2:
+        for i in range(n2, len(tlist2)):
+            for j in range(n2, len(tlist1)):
+                if deps_defunct(screen, tl, ttree, i, j):
+                    tlist1[j] = DeadNode()
+                tlist2[i] = DeadNode()
+    else:
+        nodup_found = True
+    return nodup_found
 
 def automate(screen, tl, ttree):
     libthms_loaded = dict() # keep track of which library theorems we loaded, and where
@@ -259,14 +305,17 @@ def automate(screen, tl, ttree):
                                 dep = tl.tlist1.dependency(line1)
                                 dep = target_compatible(screen, tl, ttree, dep, line2, True)
                                 if dep:
+                                    n1 = len(tl.tlist1.data)
                                     success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], True)
                                     if success:
-                                        hprogress = True
-                                        progress = True
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         done, plist = targets_proved(screen, tl, ttree)
+                                        if check_duplicates(screen, tl, ttree, n1, len(tl.tlist2.data)):
+                                            hprogress = True
+                                            progress = True
+                                            update_screen(screen, tl)
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)
@@ -328,13 +377,16 @@ def automate(screen, tl, ttree):
                                 dep = tl.tlist1.dependency(line1)
                                 dep = target_compatible(screen, tl, ttree, dep, line2, True)
                                 if dep:
+                                    n1 = len(tl.tlist1.data)
                                     success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], True)
                                     if success:
-                                        hprogress = True
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         done, plist = targets_proved(screen, tl, ttree)
+                                        if check_duplicates(screen, tl, ttree, n1, len(tl.tlist2.data)):
+                                            hprogress = True
+                                            update_screen(screen, tl)
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)
@@ -431,13 +483,17 @@ def automate(screen, tl, ttree):
                                 dep = tl.tlist1.dependency(line1)
                                 dep = target_compatible(screen, tl, ttree, dep, line2, False)
                                 if dep:
+                                    n1 = len(tl.tlist1.data)
+                                    n2 = len(tl.tlist2.data)
                                     success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
                                     if success:
-                                        tprogress = True
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2)
                                         done, plist = targets_proved(screen, tl, ttree)
+                                        if check_duplicates(screen, tl, ttree, n1, n2):
+                                            tprogress = True
+                                            update_screen(screen, tl)
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)

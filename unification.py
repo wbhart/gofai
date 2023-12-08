@@ -200,6 +200,11 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[]):
     else: # we didn't hit a variable, or a pair of functions or a type variable
         if type(tree1) != type(tree2):
             return False, [], []
+        elif isinstance(tree1, NaturalNode) or isinstance(tree1, BoolNode):
+            if tree1.value == tree2.value:
+                return True, assign, macros
+            else:
+                return False, [], []
         elif isinstance(tree1, SymbolNode):
             if tree1.name() != tree2.name():
                 return False, [], []

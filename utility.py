@@ -482,6 +482,57 @@ def vars_used(tree):
     search(tree)
     return used
 
+def is_duplicate_upto_metavars(tree1, tree2):
+    """
+    Return True if the two parse trees are the same with the possible exception
+    of metavariables with different names.
+    """
+    mv_dict = dict() # corresponding name in tree2 of metavars found in tree1
+
+    def process(tree1, tree2, mv_dict):
+        if tree1 == None:
+            return tree2 == None
+        if tree2 == None:
+            return False
+        if type(tree1) != type(tree2):
+            return False
+        if isinstance(tree1, DeadNode):
+            return True
+        if isinstance(tree1, VarNode):
+            if tree1.is_metavar != tree2.is_metavar:
+                return False
+            if tree1.name() in mv_dict:
+                return tree2.name() == mv_dict[tree1.name()]
+            else:
+                mv_dict[tree1.name()] = tree2.name()
+                return True
+        elif isinstance(tree1, FnApplNode):
+            if not process(tree1.var, tree2.var, mv_dict):
+                return False
+            if len(tree1.args) != len(tree2.args):
+                return False
+            for i in range(len(tree1.args)):
+                if not process(tree1.args[i], tree2.args[i], mv_dict):
+                    return False
+            return True
+        elif isinstance(tree1, TupleNode):
+            if len(tree1.args) != len(tree2.args):
+                return False
+            for i in range(len(tree1.args)):
+                if not process(tree1.args[i], tree2.args[i], mv_dict):
+                    return False
+            return True
+        elif isinstance(tree1, LRNode):
+            if not process(tree1.left, tree2.left, mv_dict):
+                return False
+            return process(tree1.right, tree2.right, mv_dict)
+        elif isinstance(tree1, SymbolNode):
+            return tree1.name() == tree2.name()
+        elif isinstance(tree1, NaturalNode) or isinstance(tree1, BoolNode):
+            return tree1.value == tree2.value
+
+    return process(tree1, tree2, mv_dict)
+
 class TargetNode:
     """
     Used for building a tree of targets so we can keep track of which targets
@@ -796,6 +847,13 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
         if assign != None:
             assign.append((s2, s1))
         return s1
+    if isinstance(s1, TupleSort) and isinstance(s2, TupleSort):
+       if len(s1.sorts) != len(s2.sorts):
+           return None
+       sorts = [coerce_sorts(screen, tl, s1.sorts[i], s2.sorts[i], assign) for i in range(len(s1.sorts))]
+       if None in sorts:
+           return None
+       return TupleSort(sorts)
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2):
         return s1
@@ -826,13 +884,15 @@ def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
             return False 
         compatible = True
         for i in range(len(s1.sorts)):
-            if not coerce_sorts(screen, tl, s1.sorts[i], s2.sorts[i]):
+            # TODO : check assignments are compatible
+            if not coerce_sorts(screen, tl, s1.sorts[i], s2.sorts[i], assign):
                 compatible = False
                 break
         if not compatible:
             compatible = True
             for i in range(len(s1.sorts)):
-                if not coerce_sorts(screen, tl, s2.sorts[i], s1.sorts[i]):
+                # TODO : check assignments are compatible
+                if not coerce_sorts(screen, tl, s2.sorts[i], s1.sorts[i], assign):
                     compatible = False
                     break
         return compatible
@@ -1405,7 +1465,7 @@ def propagate_sorts(screen, tl, tree0):
                 ok, error = propagate(v)
                 if not ok:
                     return False, error
-            tree.sort = TupleSort([s.sort for s in tree.sorts])
+            tree.sort = TupleSort(tree.sorts) ##########
         if isinstance(tree, LRNode):
             ok, error = propagate(tree.left)
             if not ok:
@@ -1458,7 +1518,7 @@ def propagate_sorts(screen, tl, tree0):
             idx = tree.right.value
             if idx < 0 or idx >= len(lsort.sorts):
                 return False, "Invalid tuple index"
-            tree.sort = lsort.sorts[idx].sort
+            tree.sort = lsort.sorts[idx] #######
         elif isinstance(tree, CartesianNode):
             if not isinstance(tree.left.sort, SetSort) or \
                not isinstance(tree.right.sort, SetSort):
@@ -1608,7 +1668,7 @@ def propagate_sorts(screen, tl, tree0):
         elif isinstance(tree, ElemNode):
             if not isinstance(tree.right.sort, SetSort):
                 return False, "Not a set in element relation"
-            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, None, False):
+            if not sorts_compatible(screen, tl, tree.left.sort, tree.right.sort.sort, [], False):
                 return False, "Type mismatch in element relation"
             tree.sort = PredSort()
         elif isinstance(tree, SetSort):
