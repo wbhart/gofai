@@ -7,37 +7,10 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
-from utility import sorts_equal, find_sort, sorts_compatible, coerce_sorts
+from utility import sorts_equal, find_sort, sorts_compatible, coerce_sorts, subst, \
+                  make_substitution, substitute, is_predicate, is_expression
 from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum, \
                   CartesianConstraint
-
-def is_expression(tree):
-    if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
-       or isinstance(tree, FnApplNode) or isinstance(tree, ExpNode) \
-       or isinstance(tree, AddNode) or isinstance(tree, SubNode) \
-       or isinstance(tree, MulNode) or isinstance(tree, DivNode) \
-       or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
-       or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
-       or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode) \
-       or isinstance(tree, TupleComponentNode) or isinstance(tree, Sort):
-        return True
-    else:
-        return True
-
-def is_predicate(tree):
-    if isinstance(tree, AndNode) or isinstance(tree, OrNode) \
-       or isinstance(tree, ElemNode) or isinstance(tree, EqNode) \
-       or isinstance(tree, NeqNode) or isinstance(tree, LtNode) \
-       or isinstance(tree, GtNode) or isinstance(tree, GeqNode) \
-       or isinstance(tree, LeqNode) or isinstance(tree, SubseteqNode) \
-       or isinstance(tree, SubsetneqNode) or isinstance(tree, SupseteqNode) \
-       or isinstance(tree, SupsetneqNode) or isinstance(tree, ImpliesNode) \
-       or isinstance(tree, IffNode) or isinstance(tree, NotNode) \
-       or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
-       or isinstance(tree, BoolNode):
-        return True
-    else:
-        return False
 
 def node_constraint(tree):
     if isinstance(tree, VarNode):
@@ -288,84 +261,6 @@ def check_macros(screen, tl, macros, assign, qz):
         if not unified:
             return False
     return True
-
-def subst(tree1, var, tree2):
-    if tree1 == None:
-        return tree1
-    if isinstance(tree1, ForallNode) or isinstance(tree1, ExistsNode):
-        tree1.var.constraint = subst(tree1.var.constraint, var, tree2)
-        if isinstance(tree1.var.constraint, TupleSort):
-            tree1.var.constraint = CartesianConstraint(tree1.var.constraint.sorts)
-        tree1.left = subst(tree1.left, var, tree2)
-        return tree1
-    if isinstance(tree1, VarNode):
-        tree1.constraint = subst(tree1.constraint, var, tree2)
-        if tree1.name() == var.name():
-            return deepcopy(tree2)
-        else:
-            return tree1
-    elif isinstance(tree1, TupleComponentNode):
-        # special hack to expand (a, b)[0] as function application
-        if isinstance(tree1.left, VarNode) and tree1.left.name() == var.name() \
-             and isinstance(tree2, TupleNode):
-            n = tree1.right.value
-            if n >= len(tree2.args):
-                raise Exception("Invalid indexing in tuple")
-            return tree2.args[n]
-        p = deepcopy(tree1)
-        p.left = subst(p.left, var, tree2)
-        return p
-    elif isinstance(tree1, FnApplNode):
-        if tree1.name() == var.name() and is_predicate(tree2):
-            p = deepcopy(tree2)
-            for i in range(0, len(tree1.args)):
-                p = subst(p, var.args[i], tree1.args[i])
-            return p
-        p = deepcopy(tree1)
-        p.var = subst(p.var, var, tree2)
-        if not isinstance(p.var, VarNode) and not isinstance(p.var, FnApplNode):
-            p.is_metavar = False
-        elif tree1.name() == var.name(): # we did substitution
-            p.is_metavar = tree2.is_metavar
-        for i in range(0, len(p.args)):
-            p.args[i] = subst(p.args[i], var, tree2)
-        return p
-    elif isinstance(tree1, TupleNode):
-        args = [subst(t, var, tree2) for t in tree1.args]
-        return TupleNode(args)
-    elif isinstance(tree1, LRNode):
-        tree1.left = subst(tree1.left, var, tree2)
-        tree1.right = subst(tree1.right, var, tree2)
-        return tree1
-    elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
-        tree1.constraint = subst(tree1.constraint, var, tree2)
-        return tree1
-    elif isinstance(tree1, SetSort):
-        if tree1.sort != tree1:
-            tree1.sort = subst(tree1.sort, var, tree2)
-        return tree1
-    elif isinstance(tree1, TupleSort):
-        for i in range(len(tree1.sorts)):
-            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
-        return tree1
-    elif isinstance(tree1, CartesianConstraint):
-        for i in range(len(tree1.sorts)):
-            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
-        return tree1
-    else:
-        return tree1
-
-def make_substitution(assign1, assign2):
-    (var1, expr1) = assign1
-    (var2, expr2) = assign2
-
-    var1 = subst(deepcopy(var1), var2, expr2) # in case it is a function
-    return (var1, subst(deepcopy(expr1), var2, expr2))
-
-def substitute(tree, assign):
-   for (var, val) in assign:
-       tree = subst(tree, var, val)
-   return tree
     
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \

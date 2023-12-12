@@ -1113,7 +1113,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
-S \times \emptyset(universe(T)) = \emptyset(universe(S \times T))
+S \times \emptyset(X) = \emptyset(X \times X)
 
 Title: Cartesian product with the empty set is empty (left)
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
@@ -1122,7 +1122,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
-\emptyset(universe(S)) \times T = \emptyset(universe(S \times T))
+\emptyset(X) \times T = \emptyset(X \times X)
 
 Title: Cartesian product on the right preserves subset relation
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
@@ -1161,9 +1161,9 @@ Title: Cartesian product is empty implies one of the sets is empty
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
-A \times B = \emptyset(universe(A)) \times \emptyset(universe(B))
+A \times B = \emptyset(X) \times \emptyset(X)
 ------------------------------
-A = \emptyset(universe(A)) \vee B = \emptyset(universe(B))
+A = \emptyset(X) \vee B = \emptyset(X)
 
 Title: Cartesian products are contained implies the sets are contained
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
@@ -1172,8 +1172,8 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
 A \times B \subseteq C \times D
-A \neq \emptyset(universe(A))
-B \neq \emptyset(universe(B))
+A \neq \emptyset(X)
+B \neq \emptyset(X)
 ------------------------------
 A \subseteq C
 B \subseteq D
@@ -1185,7 +1185,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
 A \times B \subseteq C \times D
-B \neq \emptyset(universe(B))
+B \neq \emptyset(X)
 ------------------------------
 A \subseteq C
 
@@ -1196,8 +1196,8 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
 A \times B \subsetneq C \times D
-A \neq \emptyset(universe(A))
-B \neq \emptyset(universe(B))
+A \neq \emptyset(X)
+B \neq \emptyset(X)
 ------------------------------
 A \subsetneq C \vee B \subsetneq D
 
@@ -1223,7 +1223,7 @@ Title: Definition of powerset
 [['Set'], [], (['\\in', '\\mathcal{P}'], ['\\subseteq']), (['\\subseteq'], ['\\in', '\\mathcal{P}'])]
 [([], [], [], []), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S'])), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S']))]
 Tags: #sets #definition
-\forall S : Set, \forall U : Set
+\forall X : Set, \forall S : Set(X), \forall U : Set(X)
 ------------------------------
 ------------------------------
 U \in \mathcal{P}(S) \iff U \subseteq S
@@ -1232,7 +1232,7 @@ Title: A set is an element of the powerset of the empty set iff it is empty
 [['Set'], [], (['\\emptyset', '\\in', '\\mathcal{P}'], ['=', '\\emptyset']), (['=', '\\emptyset'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
 [([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']))]
 Tags: #sets
-\forall S : Set
+\forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
 S \in \mathcal{P}(\emptyset(universe(S))) \iff S = \emptyset(universe(S))
@@ -1241,7 +1241,7 @@ Title: Power sets are contained if the sets are contained
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
 [([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
-\forall S : Set, \forall T : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 S \subseteq T
 ------------------------------
@@ -1251,7 +1251,7 @@ Title: Empty set is an element of the powerset of every set
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
 [([], [], [], []), (['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', 'S'])]
 Tags: #sets
-\forall S : Set
+\forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
 \emptyset(universe(S)) \in \mathcal{P}(S)
@@ -1260,7 +1260,7 @@ Title: Power set of an intersection is the intersection of the power sets
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
 [([], [], [], []), (['S', 'T'], ['S', 'T', '\\mathcal{P}(S)', '\\mathcal{P}(T)'], ['S \\cap T', '\\mathcal{P}(S) \\cap \\mathcal{P}(T)'], ['S \\cap T', 'S', 'T'])]
 Tags: #sets
-\forall S : Set, \forall T : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
 \mathcal{P}(S \cap T) = \mathcal{P}(S) \cap \mathcal{P}(T)
@@ -1269,7 +1269,7 @@ Title: Union of powersets is contained in powerset of the union
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
 [([], [], [], []), (['S', 'T'], ['\\mathcal{P}(S)', '\\mathcal{P}(T)', 'S', 'T'], ['\\mathcal{P}(S) \\cup \\mathcal{P}(T)', 'S \\cup T'], ['S', 'T', 'S \\cup T'])]
 Tags: #sets
-\forall S : Set, \forall T : Set
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)

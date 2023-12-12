@@ -7,7 +7,7 @@ from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
      ExistsNode, TupleNode, FnApplNode, NotNode, IffNode, SetOfNode, EqNode, \
-     SymbolNode
+     SymbolNode, SubseteqNode, VarNode
 from parser import to_ast
 from sorts import FunctionConstraint, DomainTuple
 
@@ -60,8 +60,8 @@ def fill_macros(screen, tl):
             return tree
 
     data = tl.tlist0.data[0] if tl.tlist0.data else []
-    if len(tl.tlist0.data) > 0:
-        tl.tlist0.data[0] = fill(tl.tlist0.data[0], data)  
+    #if len(tl.tlist0.data) > 0:
+    #    tl.tlist0.data[0] = fill(tl.tlist0.data[0], data)  
     for i in range(0, len(tl.tlist1.data)):
         tl.tlist1.data[i] = fill(tl.tlist1.data[i], data)
     for i in range(0, len(tl.tlist2.data)):
@@ -109,7 +109,8 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if forward:
         qP1, u = unquantify(screen, tree1.left, True)
     else:
-        tree1 = relabel(screen, tl, univs, tree1, True)
+        screen.debug("tree1 = "+str(tree1))
+        tree1, copied = relabel(screen, tl, univs, tree1, True)
         qP1, u = unquantify(screen, tree1.right, False)
     
     line2 = line2_list[0]
@@ -126,23 +127,27 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]))
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True), assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
+    screen.debug("assign = "+str(assign))
     stmt = substitute(deepcopy(conseq), assign)
     if forward:
-        stmt = relabel(screen, tl, univs, stmt, True)
+        stmt, _ = relabel(screen, tl, univs, stmt, True)
         append_tree(tlist1.data, stmt, dirty1)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
+        if copied:
+            screen.debug("copied = "+repr(copied[0]))
+            substitute(copied[0], assign)
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
@@ -196,7 +201,7 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     if forward:
         qP1, u = unquantify(screen, tree1.right, False)
     else:
-        tree1 = relabel(screen, tl, univs, tree1, True)
+        tree1, copied = relabel(screen, tl, univs, tree1, True)
         qP1, u = unquantify(screen, tree1.left, True)
     
     qP1 = complement_tree(qP1) # modus tollens unifies with complement
@@ -215,11 +220,11 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]))
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True), assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
         unifies, assign, macros = unify(screen, tl, qP1, qP2)
@@ -228,10 +233,12 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
         return False, dirty1, dirty2 # fail: predicate does not match implication
     stmt = complement_tree(substitute(deepcopy(conseq), assign))
     if forward:
-        stmt = relabel(screen, tl, univs, stmt, True)
+        stmt, _ = relabel(screen, tl, univs, stmt, True)
         append_tree(tlist1.data, stmt, dirty1)
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
+        if copied:
+            substitute(copied[0], assign)
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
@@ -420,7 +427,7 @@ def library_import(screen, tl, library, filepos):
         for i in tars[1:]:
             tree = AndNode(tree, i)
     tlist1 = tl.tlist1.data
-    stmt = relabel(screen, tl, [], tree)
+    stmt, _ = relabel(screen, tl, [], tree)
     ok = process_constraints(screen, stmt, tl.constraints)
     if ok:
         relabel_constraints(screen, tl, stmt)

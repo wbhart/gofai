@@ -440,21 +440,34 @@ class ExistsNode(LRNode):
         self.right = None
 
     def __str__(self):
-        if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
-                  expr = ", "+str(self.left)
+        str_list = []
+        tree = self
+        while tree.left and isinstance(tree.left, ExistsNode):
+            if isinstance(tree.var.constraint, Universum):
+                str_list.append("\u2203"+str(tree.var)+", ")
+            elif isinstance(tree.var.constraint, SetSort) or \
+                 isinstance(tree.var.constraint, PredSort) or \
+                 isinstance(tree.var.constraint, FunctionConstraint):
+                str_list.append("\u2203"+str(tree.var)+" : "+str(tree.var.constraint)+", ")
             else:
-               expr = " "+str(self.left)
+                str_list.append("\u2203"+str(tree.var)+" \u2208 "+str(tree.var.constraint)+", ")
+            tree = tree.left
+        str0 = ''.join(str_list)
+        if tree.left:
+            if isinstance(tree.left, ForallNode) or isinstance(tree.left, ExistsNode):
+                  expr = ", "+str(tree.left)
+            else:
+               expr = " "+str(tree.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Universum):
-                return "\u2203"+str(self.var)+expr
-        elif isinstance(self.var.constraint, SetSort) or \
-             isinstance(self.var.constraint, PredSort) or \
-             isinstance(self.var.constraint, FunctionConstraint):
-                return "\u2203"+str(self.var)+" : "+str(self.var.constraint)+expr
+        if isinstance(tree.var.constraint, Universum):
+                return str0+"\u2203"+str(tree.var)+expr
+        elif isinstance(tree.var.constraint, SetSort) or \
+             isinstance(tree.var.constraint, PredSort) or \
+             isinstance(tree.var.constraint, FunctionConstraint):
+                return str0+"\u2203"+str(tree.var)+" : "+str(tree.var.constraint)+expr
         else:
-            return "\u2203"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
+            return str0+"\u2203"+str(tree.var)+" \u2208 "+str(tree.var.constraint)+expr
 
     def __repr__(self):
         if self.left:
@@ -480,21 +493,34 @@ class ForallNode(LRNode):
         self.right = None
 
     def __str__(self):
-        if self.left:
-            if isinstance(self.left, ForallNode) or isinstance(self.left, ExistsNode):
-                  expr = ", "+str(self.left)
+        str_list = []
+        tree = self
+        while tree.left and isinstance(tree.left, ForallNode):
+            if isinstance(tree.var.constraint, Universum):
+                str_list.append("\u2200"+str(self.var)+", ")
+            elif isinstance(tree.var.constraint, SetSort) or \
+                 isinstance(tree.var.constraint, PredSort) or \
+                 isinstance(tree.var.constraint, FunctionConstraint):
+                str_list.append("\u2200"+str(tree.var)+" : "+str(tree.var.constraint)+", ")
             else:
-               expr = " "+str(self.left)
+                str_list.append("\u2200"+str(tree.var)+" \u2208 "+str(tree.var.constraint)+", ")
+            tree = tree.left
+        str0 = ''.join(str_list)
+        if tree.left:
+            if isinstance(tree.left, ForallNode) or isinstance(tree.left, ExistsNode):
+                  expr = ", "+str(tree.left)
+            else:
+               expr = " "+str(tree.left)
         else:
             expr = ""
-        if isinstance(self.var.constraint, Universum):
-                return "\u2200"+str(self.var)+expr
-        elif isinstance(self.var.constraint, SetSort) or \
-             isinstance(self.var.constraint, PredSort) or \
-             isinstance(self.var.constraint, FunctionConstraint):
-                return "\u2200"+str(self.var)+" : "+str(self.var.constraint)+expr
+        if isinstance(tree.var.constraint, Universum):
+                return str0+"\u2200"+str(tree.var)+expr
+        elif isinstance(tree.var.constraint, SetSort) or \
+             isinstance(tree.var.constraint, PredSort) or \
+             isinstance(tree.var.constraint, FunctionConstraint):
+                return str0+"\u2200"+str(tree.var)+" : "+str(tree.var.constraint)+expr
         else:
-            return "\u2200"+str(self.var)+" \u2208 "+str(self.var.constraint)+expr
+            return str0+"\u2200"+str(tree.var)+" \u2208 "+str(tree.var.constraint)+expr
 
     def __repr__(self):
         if self.left:

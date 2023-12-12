@@ -6,7 +6,7 @@ from nodes import ForallNode, ExistsNode, FnApplNode, VarNode, SetBuilderNode, \
      DivNode, SubsetneqNode, SubseteqNode, SupsetneqNode, SupseteqNode, \
      AbsNode, NegNode, ElemNode, BoolNode, DeadNode, LambdaNode, LeafNode
 from sorts import SetSort, TupleSort, FunctionConstraint, DomainTuple, \
-     CartesianConstraint, Universum, NumberSort, PredSort
+     CartesianConstraint, Universum, NumberSort, PredSort, Sort
 from typeclass import CompleteValuedFieldClass, CompleteOrderedValuedFieldClass, \
      FieldClass, OrderedRingClass, OrderedSemiringClass, PosetClass, MonoidClass, \
      SemiringClass
@@ -18,6 +18,34 @@ system_binary_functions = ['min', 'max']
 system_predicates = ['is_bounded', 'is_upper_bound', 'is_lower_bound', 'is_supremum', \
                      'is_infimum', 'is_pair', 'is_function', 'is_injective', \
                      'is_surjective', 'is_bijective']
+
+def is_expression(tree):
+    if isinstance(tree, VarNode) or isinstance(tree, NaturalNode) \
+       or isinstance(tree, FnApplNode) or isinstance(tree, ExpNode) \
+       or isinstance(tree, AddNode) or isinstance(tree, SubNode) \
+       or isinstance(tree, MulNode) or isinstance(tree, DivNode) \
+       or isinstance(tree, IntersectNode) or isinstance(tree, UnionNode) \
+       or isinstance(tree, DiffNode) or isinstance(tree, PowerSetNode) \
+       or isinstance(tree, SymbolNode) or isinstance(tree, LambdaNode) \
+       or isinstance(tree, TupleComponentNode) or isinstance(tree, Sort):
+        return True
+    else:
+        return True
+
+def is_predicate(tree):
+    if isinstance(tree, AndNode) or isinstance(tree, OrNode) \
+       or isinstance(tree, ElemNode) or isinstance(tree, EqNode) \
+       or isinstance(tree, NeqNode) or isinstance(tree, LtNode) \
+       or isinstance(tree, GtNode) or isinstance(tree, GeqNode) \
+       or isinstance(tree, LeqNode) or isinstance(tree, SubseteqNode) \
+       or isinstance(tree, SubsetneqNode) or isinstance(tree, SupseteqNode) \
+       or isinstance(tree, SupsetneqNode) or isinstance(tree, ImpliesNode) \
+       or isinstance(tree, IffNode) or isinstance(tree, NotNode) \
+       or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
+       or isinstance(tree, BoolNode):
+        return True
+    else:
+        return False
 
 def universe(tree, qz):
     """
@@ -68,6 +96,84 @@ def codomain(tree, qz):
             return fn_constraint.codomain
     else:
         return None # no codomain
+
+def subst(tree1, var, tree2):
+    if tree1 == None:
+        return tree1
+    if isinstance(tree1, ForallNode) or isinstance(tree1, ExistsNode):
+        tree1.var.constraint = subst(tree1.var.constraint, var, tree2)
+        if isinstance(tree1.var.constraint, TupleSort):
+            tree1.var.constraint = CartesianConstraint(tree1.var.constraint.sorts)
+        tree1.left = subst(tree1.left, var, tree2)
+        return tree1
+    if isinstance(tree1, VarNode):
+        tree1.constraint = subst(tree1.constraint, var, tree2)
+        if tree1.name() == var.name():
+            return deepcopy(tree2)
+        else:
+            return tree1
+    elif isinstance(tree1, TupleComponentNode):
+        # special hack to expand (a, b)[0] as function application
+        if isinstance(tree1.left, VarNode) and tree1.left.name() == var.name() \
+             and isinstance(tree2, TupleNode):
+            n = tree1.right.value
+            if n >= len(tree2.args):
+                raise Exception("Invalid indexing in tuple")
+            return tree2.args[n]
+        p = deepcopy(tree1)
+        p.left = subst(p.left, var, tree2)
+        return p
+    elif isinstance(tree1, FnApplNode):
+        if tree1.name() == var.name() and is_predicate(tree2):
+            p = deepcopy(tree2)
+            for i in range(0, len(tree1.args)):
+                p = subst(p, var.args[i], tree1.args[i])
+            return p
+        p = deepcopy(tree1)
+        p.var = subst(p.var, var, tree2)
+        if not isinstance(p.var, VarNode) and not isinstance(p.var, FnApplNode):
+            p.is_metavar = False
+        elif tree1.name() == var.name(): # we did substitution
+            p.is_metavar = tree2.is_metavar
+        for i in range(0, len(p.args)):
+            p.args[i] = subst(p.args[i], var, tree2)
+        return p
+    elif isinstance(tree1, TupleNode):
+        args = [subst(t, var, tree2) for t in tree1.args]
+        return TupleNode(args)
+    elif isinstance(tree1, LRNode):
+        tree1.left = subst(tree1.left, var, tree2)
+        tree1.right = subst(tree1.right, var, tree2)
+        return tree1
+    elif isinstance(tree1, SymbolNode) and tree1.name() == '\\emptyset':
+        tree1.constraint = subst(tree1.constraint, var, tree2)
+        return tree1
+    elif isinstance(tree1, SetSort):
+        if tree1.sort != tree1:
+            tree1.sort = subst(tree1.sort, var, tree2)
+        return tree1
+    elif isinstance(tree1, TupleSort):
+        for i in range(len(tree1.sorts)):
+            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
+        return tree1
+    elif isinstance(tree1, CartesianConstraint):
+        for i in range(len(tree1.sorts)):
+            tree1.sorts[i] = subst(tree1.sorts[i], var, tree2)
+        return tree1
+    else:
+        return tree1
+
+def make_substitution(assign1, assign2):
+    (var1, expr1) = assign1
+    (var2, expr2) = assign2
+
+    var1 = subst(deepcopy(var1), var2, expr2) # in case it is a function
+    return (var1, subst(deepcopy(expr1), var2, expr2))
+
+def substitute(tree, assign):
+   for (var, val) in assign:
+       tree = subst(tree, var, val)
+   return tree
 
 def complement_tree(tree):
     """
@@ -142,7 +248,7 @@ def relabel_varname(name, var_dict):
     var_dict[name] = subscript
     return name+'_'+str(subscript)
 
-def qz_copy_var(screen, tl, extras, name, new_name):
+def qz_copy_var(screen, tl, extras, name, new_name, copied):
     """
     Make a copy, in the quantifier zone of the tableau, of the variable with
     the given name. The copy will be given the new_name specified, but type
@@ -154,6 +260,9 @@ def qz_copy_var(screen, tl, extras, name, new_name):
 
     The function is safe to call multiple times with the same name, as it
     ignores variables it has already copied under the new name supplied.
+
+    The new variable will use the supplied constraint instead of the existing
+    one.
     """
     node_to_copy = None
     qz = tl.tlist0.data[0] if tl.tlist0.data else None
@@ -174,6 +283,7 @@ def qz_copy_var(screen, tl, extras, name, new_name):
               new_node.var.var._name = new_name # rename
           new_node.left = None
           tl.tlist0.data.append(new_node)
+          copied.append(new_node)
           return
 
     while tree != None:
@@ -190,7 +300,8 @@ def qz_copy_var(screen, tl, extras, name, new_name):
           elif isinstance(new_node.var, FnApplNode): # TODO : not sure if this is used any more
               new_node.var.var._name = new_name # rename
           new_node.left = None
-          tree.left = new_node   
+          tree.left = new_node 
+          copied.append(new_node)  
        tree = tree.left
     screen.pad0.pad[0] = str(qz)
     screen.pad0.refresh()
@@ -212,6 +323,7 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
     """
     tldict = deepcopy(tl.vars) if temp else tl.vars
     vars_dict = dict()
+    copied = []
     
     def process(tree, constraint=False):
         if tree == None:
@@ -229,13 +341,13 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
                 new_name = vars_dict[name]
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied)
             elif not constraint and tree.is_metavar:
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied)
         elif isinstance(tree, SetBuilderNode):
             name = tree.left.left.name()
             new_name = relabel_varname(name, tldict)
@@ -251,13 +363,13 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
                 new_name = vars_dict[name] # TODO : add setter for assignment
                 tree.var._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied)
             elif tree.is_metavar:
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree.var._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied)
             else:
                 process(tree.var, constraint)
             for v in tree.args:
@@ -266,7 +378,7 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
             for v in tree.args:
                 process(v, constraint)
         elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-            process(tree.constraint, constraint)
+            process(tree.constraint, True)
         elif isinstance(tree, SetSort):
             process(tree.sort, constraint)
         elif isinstance(tree, TupleSort):
@@ -293,7 +405,7 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
         t = t.left
 
     process(t)
-    return tree
+    return tree, copied
 
 def relabel_constraints(screen, tl, tree):
     """
@@ -316,8 +428,8 @@ def relabel_constraints(screen, tl, tree):
                     vars_dict[name] = new_name
                     tree._name = new_name
                     s = SortNode(tree) # insert new sort for new metavar universum
-                    s.subsorts.append(tl.stree)
-                    tl.stree = s
+                    s.subsorts.append(tl.stree[0])
+                    tl.stree[0] = s
         if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
             process(tree.var.constraint)
             process(tree.left)
@@ -788,6 +900,7 @@ def target_compatible(screen, tl, ttree, dep_list, j, forward):
 class SortNode:
     def __init__(self, sort):
         self.sort = sort
+        self.follow = True # whether this node really follows from its ancestor (for powersets)
         self.subsorts = []
 
 def initialise_sorts(screen, tl):
@@ -796,8 +909,7 @@ def initialise_sorts(screen, tl):
     \mathcal{U} and we add all the number types to this sort graph with the
     obvious inclusions.
     """
-    stree = SortNode(Universum())
-    tl.stree = stree 
+    tl.stree = [SortNode(Universum())]
     C = NumberSort("\\mathbb{C}", CompleteValuedFieldClass())
     R = NumberSort("\\mathbb{R}", CompleteOrderedValuedFieldClass())
     Q = NumberSort("\\mathbb{Q}", FieldClass())
@@ -809,17 +921,72 @@ def initialise_sorts(screen, tl):
     insert_sort(screen, tl, Q, Z)
     insert_sort(screen, tl, Z, N)   
 
-def find_sort(screen, tl, stree, s):
+def find_sort(screen, tl, s):
     """
     Given the tree of sorts, stree, find the sort s (as a node) in the tree.
-    If it is not found, return False.
+    If it is not found, return False. TupleSorts are added if their components
+    are in the tree and they are not found.
     """
-    if sorts_equal(s, stree.sort):
-        return stree
-    for t in stree.subsorts:
-        r = find_sort(screen, tl, t, s)
-        if r:
-            return r
+    stree = tl.stree
+
+    if isinstance(s, SetSort): # for powersets
+        r = find_sort(screen, tl, s.sort)
+        if not r:
+            return None
+        for t in r.subsorts:
+            if sorts_equal(s, t.sort):
+                return t
+        # not found, so add it with a nofollow
+        t = SortNode(s)
+        t.follow = False # this is a powerset and is not actually a descendent of r
+        r.subsorts.append(t)
+    if isinstance(s, TupleSort):
+        for r in s.sorts:
+            if not find_sort(screen, tl, r):
+                return None
+        n = len(s.sorts)
+        if n > len(stree): # types of correct arity don't exist yet
+            for i in range(len(stree), n):
+                t = TupleSort([Universum() for j in range(i)])
+                stree.append(SortNode(t))
+        else:
+            for t in stree[n - 1].subsorts:
+                if sorts_equal(s, t.sort):
+                    return t
+        t = SortNode(deepcopy(s))
+        stree[n - 1].subsorts.append(t)
+        return t
+    else:
+        def find(st, s):
+            for t in st.subsorts:
+                if sorts_equal(s, t.sort):
+                    return t
+                r = find(t, s)
+                if r:
+                    return r
+            return None
+        
+        for i in range(len(stree)):
+            if sorts_equal(s, stree[0].sort):
+                return stree[0]
+
+            r = find(stree[0], s)
+            if r:
+                return r
+        return None
+
+def sort_descendant(screen, tl, s1, s2):
+    """
+    Given a base node s1 in the stree, find s2 starting at that node.
+    Otherwise return None.
+    """
+    if sorts_equal(s1.sort, s2):
+        return s1
+    for t in s1.subsorts:
+        if t.follow: # check t is actually reachable
+            r = sort_descendant(screen, tl, t, s2)
+            if r:
+                return r
     return None
 
 def insert_sort(screen, tl, s1, s2):
@@ -828,7 +995,7 @@ def insert_sort(screen, tl, s1, s2):
     tree in the appropriate location. It is assumed that the sort s1 already
     exists in the tree.
     """
-    r = find_sort(screen, tl, tl.stree, s1)
+    r = find_sort(screen, tl, s1)
     r.subsorts.append(SortNode(s2))
 
 def sorts_equal(s1, s2):
@@ -874,11 +1041,9 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2):
         return s1
-    b = find_sort(screen, tl, tl.stree, s1)
+    b = find_sort(screen, tl, s1)
     if b:
-        r = find_sort(screen, tl, b, s2)
-        if r:
-            return s1
+        return sort_descendant(screen, tl, b, s2)
     return None # not coercible
     
 def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
@@ -919,9 +1084,9 @@ def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
          return False 
     if c1:
          return sorts_compatible(screen, tl, s1.sort, s2.sort, assign, both_dirs)
-    if coerce_sorts(screen, tl, s1, s2):
+    if coerce_sorts(screen, tl, s1, s2, assign):
         return True
-    if coerce_sorts(screen, tl, s2, s1):
+    if coerce_sorts(screen, tl, s2, s1, assign):
         return True
     return False
 
