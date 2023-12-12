@@ -1662,7 +1662,7 @@ def propagate_sorts(screen, tl, tree0):
             if not ok:
                 return False, error
             if tree.name() == "\\emptyset":
-                 if isinstance(tree.constraint, VarNode):
+                 if isinstance(tree.constraint, VarNode) or isinstance(tree.constraint, SetSort):
                      tree.sort = SetSort(tree.constraint)
                  elif isinstance(tree.constraint, SetOfNode):
                      tree.sort = tree.constraint.sort
