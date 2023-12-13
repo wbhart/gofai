@@ -21,7 +21,7 @@ from utility import unquantify, relabel, append_tree, \
      target_depends, deps_defunct, deps_intersect, deps_compatible, \
      complement_tree, tags_to_list, canonicalise_tags, filter_titles, \
      trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
-     domain, codomain, universe, system_unary_functions, \
+     domain, codomain, system_unary_functions, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
      get_constants, merge_lists, process_constraints, get_terms, get_init_vars, \
      sorts_compatible, coerce_sorts, sorts_equal

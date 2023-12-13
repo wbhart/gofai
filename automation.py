@@ -235,7 +235,6 @@ def filter_theorems3(screen, index, consts):
                     thms.append((title, c, filepos, i))
     return thms
 
-
 def autocleanup(screen, tl, ttree):
     dirty1, dirty2 = logic.cleanup(screen, tl, ttree)
     logic.fill_macros(screen, tl)
@@ -278,7 +277,7 @@ def update_screen(screen, tl):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-
+    
 def check_duplicates(screen, tl, ttree, n1, n2):
     """
     If n2 is equal to the number of targets in the tableau, check hypotheses
@@ -522,13 +521,13 @@ def automate(screen, tl, ttree):
                                 # check if this implication can be applied to this head
                                 pass # not implemented yet
                 # try to find a theorem that applies to the target
-                if not tprogress:
+                if not tprogress: # TODO : remove the second restriction
                     libthms = filter_theorems2(screen, index, tarc)
                     for (title, c, filepos, line) in libthms:
                         implc = c[2][line].left
                         # check to see if constants of libthm are among the hyp constants hypc
-                        if set(implc).issubset(hypc) or not hypc or not atab.hyp_impls or \
-                           not atab.hyp_heads:
+                        if (tar.line not in tl.tars) and (set(implc).issubset(hypc) or not hypc or not atab.hyp_impls or \
+                           not atab.hyp_heads):
                             # check to see if thm already loaded
                             line2 = tar.line
                             unifies = False

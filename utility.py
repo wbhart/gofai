@@ -64,6 +64,8 @@ def universe(tree, qz):
         return universe(tree.args[0], qz)
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
         return tree.constraint
+    elif isinstance(tree, PowerSetNode):
+        return PowerSetNode(universe(tree.left, qz))
     else:
         return None # no universe
 
@@ -96,6 +98,19 @@ def codomain(tree, qz):
             return fn_constraint.codomain
     else:
         return None # no codomain
+
+def sort_to_set(tree, outer=True):
+    """
+    Convert a sort to a set of all elements of the type.
+    """
+    if isinstance(tree, VarNode):
+        return SetOfNode(tree)
+    elif isinstance(tree, SetSort):
+        return PowerSetNode(sort_to_set(tree.sort, False))
+    elif isinstance(tree, TupleSort) and len(tree.sorts) == 2:
+        return CartesianNode(sort_to_set(tree.sorts[0], False), sort_to_set(tree.sorts[0], False))
+    else:
+        raise Exception(str(type(tree)))
 
 def subst(tree1, var, tree2):
     if tree1 == None:
@@ -141,6 +156,13 @@ def subst(tree1, var, tree2):
     elif isinstance(tree1, TupleNode):
         args = [subst(t, var, tree2) for t in tree1.args]
         return TupleNode(args)
+    elif isinstance(tree1, SetOfNode):
+        if isinstance(tree1.left, VarNode) and tree1.left.name() == var.name():
+            tree1.left.constraint = subst(tree1.left.constraint, var, tree2)
+            return sort_to_set(deepcopy(tree2))
+        else:
+            tree1.left = subst(tree1.left, var, tree2)
+            return tree1
     elif isinstance(tree1, LRNode):
         tree1.left = subst(tree1.left, var, tree2)
         tree1.right = subst(tree1.right, var, tree2)
@@ -986,6 +1008,8 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
        if None in sorts:
            return None
        return TupleSort(sorts)
+    if isinstance(s1, SetSort) and isinstance(s2, SetSort):
+       return coerce_sorts(screen, tl, s1.sort, s2.sort, assign)
     # if s2 can be coerced to s1, return s1, else None
     if sorts_equal(s1, s2, assign):
         return s1
@@ -1251,7 +1275,7 @@ def get_constants(screen, tl, tree):
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):
                 name = tree.var.name()
-                if (name in system_unary_functions) or \
+                if (name in system_unary_functions and name != 'universe') or \
                    (name in system_binary_functions) or \
                    (name in system_predicates):
                     append_unique(constants, name)

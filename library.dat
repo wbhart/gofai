@@ -1285,12 +1285,12 @@ x \in complement(S) \iff x \in X \wedge \neg(x \in S)
 
 Title: Definition of set universe
 [['Set'], [], (['\\in'], ['\\in'])]
-[([], [], [], []), ((['S'], ['S'], [], ['S']), (['X'], ['X'], [], ['X']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in S \implies x \in X
+x \in S \implies x \in universe(S)
 
 Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]
