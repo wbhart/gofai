@@ -1296,7 +1296,7 @@ Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]
 [([], [], [], []), (['S'], ['S'], [], ['S', 'S'])]
 Tags: #sets
-\forall S : Set
+\forall X, \forall S : Set(X)
 ------------------------------
 ------------------------------
 complement(complement(S)) = S
@@ -1451,7 +1451,7 @@ Title: Difference of a set with itself is empty
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 [([], [], [], []), (['A', '\\emptyset'], ['A', '\\emptyset'], [], ['A', 'A', '\\emptyset'])]
 Tags: #sets
-\forall A : Set
+\forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
 A \setminus A = \emptyset(universe(A))
@@ -1460,7 +1460,7 @@ Title: Difference of any set with empty set is empty
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
 [([], [], [], []), (['\\emptyset', 'A'], ['\\emptyset', 'A'], [], ['\\emptyset', 'A', '\\emptyset'])]
 Tags: #sets
-\forall A : Set
+\forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
 \emptyset \setminus A = \emptyset(universe(A))
@@ -1469,7 +1469,7 @@ Title: Difference of empty set with any set is that set
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
 [([], [], [], []), (['A', '\\emptyset'], ['A', '\\emptyset'], [], ['A', '\\emptyset', 'A'])]
 Tags: #sets
-\forall A : Set
+\forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
 A \setminus \emptyset(universe(A)) = A
@@ -1507,7 +1507,7 @@ Title: Definition of set builder
 [['Pred', 'Set'], [], (['\\in', '{|}'], ['\\in']), (['\\in'], ['\\in', '{|}']), (['\\in', '{|}'], [])]
 [([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True]), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['P(x)', 'x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True]), (['x'], ['x'], [], ['P(x)']))]
 Tags: #sets #definition
-\forall X : Set, \forall S : Set, \forall x \in X, \forall P : Pred
+\forall X : Set, \forall S : Set(X), \forall x \in X, \forall P : Pred
 ------------------------------
 ------------------------------
 (x \in {y \in S | P(y)}) \iff P(x) \wedge x \in S

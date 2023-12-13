@@ -407,67 +407,6 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
     process(t)
     return tree, copied
 
-def relabel_constraints(screen, tl, tree):
-    """
-    Hopefully this function will go away eventually. It is solely for
-    relabeling universums as a hack instead of type inferring a universe.
-    """
-    vars_dict = dict()
-    tldict = tl.vars # current subscripts
-
-    def process(tree):
-        if tree == None:
-            return
-        if isinstance(tree, Universum):
-            name = tree.name()
-            if name == '\\mathcal{U}':
-                if name in vars_dict:
-                    tree._name = vars_dict[name]
-                else:
-                    new_name = relabel_varname(name, tldict)
-                    vars_dict[name] = new_name
-                    tree._name = new_name
-                    s = SortNode(tree) # insert new sort for new metavar universum
-                    s.subsorts.append(tl.stree[0])
-                    tl.stree[0] = s
-        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
-            process(tree.var.constraint)
-            process(tree.left)
-        elif isinstance(tree, VarNode):
-            process(tree.constraint)
-        elif isinstance(tree, SetBuilderNode):
-            process(tree.left)
-            process(tree.right)
-        elif isinstance(tree, LRNode):
-            process(tree.left)
-            process(tree.right)
-        elif isinstance(tree, FnApplNode):
-            process(tree.var)
-            for v in tree.args:
-                process(v)
-        elif isinstance(tree, TupleNode):
-            for v in tree.args:
-                process(v)
-        elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset' and \
-                      isinstance(tree.sort, VarNode):
-            process(tree.sort)
-        elif isinstance(tree, SetSort):
-            process(tree.sort)
-        elif isinstance(tree, FunctionConstraint):
-            process(tree.domain)
-            process(tree.codomain)
-        elif isinstance(tree, CartesianConstraint):
-            for v in tree.sorts:
-                process(v)
-        elif isinstance(tree, DomainTuple):
-            for v in tree.sets:
-                process(v)
-            for v in tree.sort.sets:
-                process(v)
-
-    process(tree)
-    return tree
-
 def append_quantifiers(tlist0, tree):
     """
     Given a tree of quantifiers that should be moved into the quantifier zone,
@@ -940,6 +879,7 @@ def find_sort(screen, tl, s):
         t = SortNode(s)
         t.follow = False # this is a powerset and is not actually a descendent of r
         r.subsorts.append(t)
+        return t
     if isinstance(s, TupleSort):
         for r in s.sorts:
             if not find_sort(screen, tl, r):
@@ -998,12 +938,20 @@ def insert_sort(screen, tl, s1, s2):
     r = find_sort(screen, tl, s1)
     r.subsorts.append(SortNode(s2))
 
-def sorts_equal(s1, s2):
+def sorts_equal(s1, s2, assign=None):
     """
     Return True if two sorts are equal, else return False.
     """
     if type(s1) != type(s2):
         return False
+    if isinstance(s1, VarNode) and s1.is_metavar:
+        if assign != None:
+            assign.append((s1, s2))
+        return True
+    if isinstance(s2, VarNode) and s2.is_metavar:
+        if assign != None:
+            assign.append((s2, s1))
+        return True
     elif isinstance(s1, VarNode) or isinstance(s1, NumberSort):
         return s1.name() == s2.name()
     elif isinstance(s1, SetSort):
@@ -1039,7 +987,7 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
            return None
        return TupleSort(sorts)
     # if s2 can be coerced to s1, return s1, else None
-    if sorts_equal(s1, s2):
+    if sorts_equal(s1, s2, assign):
         return s1
     b = find_sort(screen, tl, s1)
     if b:

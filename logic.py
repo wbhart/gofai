@@ -1,8 +1,7 @@
 from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
-     relabel_constraints, get_constants, merge_lists, skolemize_quantifiers, \
-     skolemize_statement, add_sibling, vars_used, domain, codomain, universe, \
-     metavars_used
+     get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
+     add_sibling, vars_used, domain, codomain, universe, metavars_used
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -109,7 +108,6 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if forward:
         qP1, u = unquantify(screen, tree1.left, True)
     else:
-        screen.debug("tree1 = "+str(tree1))
         tree1, copied = relabel(screen, tl, univs, tree1, True)
         qP1, u = unquantify(screen, tree1.right, False)
     
@@ -138,7 +136,6 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
-    screen.debug("assign = "+str(assign))
     stmt = substitute(deepcopy(conseq), assign)
     if forward:
         stmt, _ = relabel(screen, tl, univs, stmt, True)
@@ -146,7 +143,6 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         tlist1.dep[len(tlist1.data) - 1] = dep
     else:
         if copied:
-            screen.debug("copied = "+repr(copied[0]))
             substitute(copied[0], assign)
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
@@ -430,7 +426,6 @@ def library_import(screen, tl, library, filepos):
     stmt, _ = relabel(screen, tl, [], tree)
     ok = process_constraints(screen, stmt, tl.constraints)
     if ok:
-        relabel_constraints(screen, tl, stmt)
         append_tree(tlist1, stmt, None)
     return ok
 

@@ -24,8 +24,15 @@ sig_str = {"Natural" : "\u2115",
               "Complex" : "\u2102"}
 
 def univar(name):
-    if len(name) > 3 and name[-3] == '_' and name[-2:-1].isdigit():
-        suffix = chr(8336+int(name[-1]))
+    if len(name) > 4 and name[-4] == '_' and name[-3:].isdigit():
+        suffix = "_"+name[-3:]
+        name = name[0:-4]
+    elif len(name) > 3 and name[-3] == '_' and name[-2:].isdigit():
+        n = int(name[-2:])-10
+        if n < 13:
+            suffix = chr(8336+n)
+        else:
+            suffix = "_"+name[-2:]
         name = name[0:-3]
     elif len(name) > 2 and name[-2] == '_' and name[-1].isdigit():
         suffix = chr(8320+int(name[-1]))

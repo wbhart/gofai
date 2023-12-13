@@ -191,6 +191,22 @@ def filter_theorems2(screen, index, consts):
                     thms.append((title, c, filepos, i))
     return thms
 
+def filter_theorems3(screen, index, consts):
+    """
+    Given a library index, filter out theorems which are heads that
+    contain only constants in the given list.
+    """
+    thms = []
+    for (title, c, filepos) in index:
+        thmlist = c[2]
+        for i in range(len(thmlist)):
+            thm = thmlist[i]
+            if not isinstance(thm, AutoImplNode) and not isinstance(thm, AutoEqNode):
+                if set(thm).issubset(consts):
+                    thms.append((title, c, filepos, i))
+    return thms
+
+
 def autocleanup(screen, tl, ttree):
     dirty1, dirty2 = logic.cleanup(screen, tl, ttree)
     logic.fill_macros(screen, tl)
@@ -437,14 +453,41 @@ def automate(screen, tl, ttree):
                         c = list_merge(node.const1, node.const2)
                     hypc = list_merge(hypc, c)
                 tprogress = False # whether or not some progress is made on the target side
-                if not set(tarc).issubset(hypc):
-                    pass # not implemented yet
-                else: # it is possible that the target can be directly proved from the hyps
-                    # check if some implication among the hyps can be used
-                    for imp in impls:
-                        if (tar.line, tar.version, False) not in imp.applied: # not yet applied to this head
-                            # check if this implication can be applied to this head
-                            pass # not implemented yet
+                # first see if there are any theorems/defns to load which are not implications
+                libthms = filter_theorems3(screen, index, tarc)
+                for (title, c, filepos, line) in libthms:
+                    headc = c[2][line]
+                    # check to see if constants of libthm are among the hyp constants hypc
+                    if set(headc).issubset(hypc):
+                        # check to see if thm already loaded, if not, load it
+                        if filepos not in libthms_loaded:
+                            library = open("library.dat", "r")
+                            logic.library_import(screen, tl, library, filepos)
+                            library.close()
+                            n1 = len(tl.tlist1.data)
+                            n2 = len(tl.tlist1.data)       
+                            j = len(tl.tlist1.data) - 1
+                            update_autotab(screen, tl, atab, [j], [])
+                            libthms_loaded[filepos] = j
+                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                            update_autotab(screen, tl, atab, dirty1, dirty2)
+                            done, plist = targets_proved(screen, tl, ttree)
+                            if check_duplicates(screen, tl, ttree, n1, n2):
+                                tprogress = True
+                                update_screen(screen, tl)
+                            if done:
+                                screen.dialog("All targets proved!")
+                                update_screen(screen, tl)
+                                return
+                if not tprogress:
+                    if not set(tarc).issubset(hypc):
+                        pass # not implemented yet
+                    else: # it is possible that the target can be directly proved from the hyps
+                        # check if some implication among the hyps can be used
+                        for imp in impls:
+                            if (tar.line, tar.version, False) not in imp.applied: # not yet applied to this head
+                                # check if this implication can be applied to this head
+                                pass # not implemented yet
                 # try to find a theorem that applies to the target
                 if not tprogress:
                     libthms = filter_theorems2(screen, index, tarc)

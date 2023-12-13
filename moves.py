@@ -15,7 +15,7 @@ from typeclass import ValuedFieldClass, SemiringClass, MonoidClass, \
      CompleteOrderedValuedFieldClass, FieldClass, OrderedRingClass, PosetClass
 from unification import unify, subst, trees_unify, is_predicate, \
      is_function_type, check_macros, substitute
-from utility import unquantify, relabel, relabel_constraints, append_tree, \
+from utility import unquantify, relabel, append_tree, \
      append_tree2, replace_tree, replace_tree2, add_sibling, add_descendant, \
      skolemize_quantifiers, skolemize_statement, insert_sort, target_compatible, \
      target_depends, deps_defunct, deps_intersect, deps_compatible, \
