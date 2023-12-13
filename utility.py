@@ -1212,7 +1212,6 @@ constant_dict = {
         DiffNode : '\\setminus',
         SetBuilderNode : '{|}',
         AbsNode : '||',
-        NotNode : '\\neg',
         NegNode : '-',
         ElemNode : '\\in',
         BoolNode : 'T/F',
@@ -1247,7 +1246,7 @@ def get_constants(screen, tl, tree):
           or isinstance(tree, DeadNode) or isinstance(tree, LambdaNode) \
           or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
           or isinstance(tree, Universum) or isinstance(tree, AndNode) \
-          or isinstance(tree, OrNode):
+          or isinstance(tree, OrNode) or isinstance(tree, NotNode):
             pass
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):

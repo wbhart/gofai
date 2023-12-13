@@ -145,7 +145,7 @@ a \leq b
 a < b \vee a = b
 
 Title: Not less than is greater than or equal
-[['Real'], [], (['<', '\\neg'], ['\\geq'])]
+[['Real'], [], (['<'], ['\\geq'])]
 [([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
@@ -155,7 +155,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \geq b
 
 Title: Not less than or equal is greater than
-[['Real'], [], (['\\leq', '\\neg'], ['>'])]
+[['Real'], [], (['\\leq'], ['>'])]
 [([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
@@ -323,7 +323,7 @@ Tags: #inequalities #\mathbb{R}
 a < b \vee a = b \vee a > b
 
 Title: Exclusivity of less than, equals and greater than
-[['Real'], [], ['<', '=', '>', '\\neg']]
+[['Real'], [], ['<', '=', '>']]
 [([], [], [], []), (['a', 'b'], ['a', 'b'], [], ['a', 'b', 'a', 'b', 'a', 'b', 'a', 'b'])]
 Tags: #inequalities #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
@@ -805,7 +805,7 @@ C \subseteq A
 A = B
 
 Title: Definition of empty set
-[['Set'], [], ['\\emptyset', '\\in', '\\neg']]
+[['Set'], [], ['\\emptyset', '\\in']]
 [([], [], [], []), (['x', '\\emptyset'], ['x', '\\emptyset'], [], ['x', '\\emptyset'])]
 Tags: #sets
 \forall X : Set, \forall x \in X
@@ -837,9 +837,9 @@ Title: Subset of the empty set is empty
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
-S \subseteq \emptyset(universe(S))
+S \subseteq \emptyset(X)
 ------------------------------
-S = \emptyset(universe(S))
+S = \emptyset(X)
 
 Title: Empty set strictly included in set implies set has an element
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
@@ -859,7 +859,7 @@ Tags: #sets #tests
 ------------------------------
 s \in S
 ------------------------------
-\emptyset(universe(S)) \subsetneq S
+\emptyset(X) \subsetneq S
 
 Title: Commutativity of set union
 [['Set'], [], ('=', ['\\cup'], ['\\cup'])]
@@ -943,9 +943,9 @@ Title: Union is empty implies the sets are empty
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
-S \cup T = \emptyset(universe(S))
+S \cup T = \emptyset(X)
 ------------------------------
-S = \emptyset(universe(S)) \wedge T = \emptyset(universe(S))
+S = \emptyset(X) \wedge T = \emptyset(X)
 
 Title: Definition of set intersection
 [['Set'], [], (['\\cap', '\\in'], ['\\in']), (['\\in'], ['\\cap', '\\in']), (['\\cap', '\\in'], ['\\in'])]
@@ -981,15 +981,15 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cap \emptyset(universe(S)) = \emptyset(universe(S))
+S \cap \emptyset(X) = \emptyset(X)
 
 Title: Problem : An element in one set of an empty intersection is not in the other
-[['Set'], [], (['=', '\\cap', '\\emptyset', '\\in'], ['\\in', '\\neg'])]
+[['Set'], [], (['=', '\\cap', '\\emptyset', '\\in'], ['\\in'])]
 [([], [], [], []), ((['S', 'T', '\\emptyset'], ['S', 'T', '\\emptyset'], ['S \\cap T'], ['S \\cap T', '\\emptyset', 'S']), (['T'], ['T'], [], ['T']))]
 Tags: #sets #tests 
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall s \in X
 ------------------------------
-S \cap T = \emptyset(universe(S))
+S \cap T = \emptyset(X)
 s \in S
 ------------------------------
 \neg(s \in T)
@@ -1235,7 +1235,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \in \mathcal{P}(\emptyset(universe(S))) \iff S = \emptyset(universe(S))
+S \in \mathcal{P}(\emptyset(X)) \iff S = \emptyset(X)
 
 Title: Power sets are contained if the sets are contained
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
@@ -1254,7 +1254,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-\emptyset(universe(S)) \in \mathcal{P}(S)
+\emptyset(X) \in \mathcal{P}(S)
 
 Title: Power set of an intersection is the intersection of the power sets
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
@@ -1275,22 +1275,22 @@ Tags: #sets
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
 
 Title: Definition of complement
-[['Set'], [], (['\\in', 'complement'], ['\\in', '\\neg']), (['\\in', '\\neg', 'universe'], ['\\in', 'complement']), (['\\in', 'complement'], ['\\in', 'universe'])]
-[([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S', 'x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S']))]
+[['Set'], [], (['\\in', 'complement'], ['\\in']), (['\\in'], ['\\in', 'complement']), (['\\in', 'complement'], ['\\in'])]
+[([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'X', 'S'], ['x', 'X', 'S'], [], ['x', 'X', 'x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'X'], ['x', 'X'], [], ['x', 'X']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
+x \in complement(S) \iff x \in X \wedge \neg(x \in S)
 
 Title: Definition of set universe
-[['Set'], [], (['\\in'], ['\\in', 'universe'])]
-[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
+[['Set'], [], (['\\in'], ['\\in'])]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['X'], ['X'], [], ['X']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in S \implies x \in universe(S)
+x \in S \implies x \in X
 
 Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]
@@ -1311,13 +1311,13 @@ Tags: #sets
 S \cup T = complement(complement(S) \cap complement(T))
 
 Title: Union of set and complement is universe
-[['Set'], [], ('=', ['\\cup', 'complement'], ['universe'])]
-[([], [], [], []), (['S'], ['S'], [], ['S', 'S', 'S'])]
+[['Set'], [], ('=', ['\\cup', 'complement'], [])]
+[([], [], [], []), (['S', 'X'], ['S', 'X'], [], ['S', 'S', 'X'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cup complement(S) = universe(S)
+S \cup complement(S) = X
 
 Title: Intersection of a set with its complement is the empty set
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
@@ -1454,7 +1454,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-A \setminus A = \emptyset(universe(A))
+A \setminus A = \emptyset(X)
 
 Title: Difference of any set with empty set is empty
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
@@ -1463,7 +1463,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-\emptyset \setminus A = \emptyset(universe(A))
+\emptyset \setminus A = \emptyset(X)
 
 Title: Difference of empty set with any set is that set
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
@@ -1472,7 +1472,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-A \setminus \emptyset(universe(A)) = A
+A \setminus \emptyset(X) = A
 
 Title: Difference of a set and its universe is the empty set
 [['Set'], [], ('=', ['\\emptyset', '\\setminus', 'complement'], ['\\emptyset'])]

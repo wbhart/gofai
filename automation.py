@@ -109,7 +109,7 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff=0):
             while k < len(atab.tar_heads):
                 t = atab.tar_heads[k]
                 if t.line == j:
-                    version = atab.tar_heads[j].version
+                    version = atab.tar_heads[k].version
                     del atab.tar_heads[k]
                 else:
                     k += 1
@@ -117,8 +117,41 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff=0):
         v = tlist2[j]
         c = get_constants(screen, tl, v)
         atab.tar_heads.append(AutoData(j, version + 1, c, None))
+            
     atab.nhyps = len(tlist1)
     atab.ntars = len(tlist2)
+
+def autotab_remove_deadnodes(screen, tl, atab, n1, n2):
+    list1 = tl.tlist1.data
+    list2 = tl.tlist1.data
+    for i in range(n1, len(list1)):
+        if isinstance(list1[i], DeadNode):
+            found = False
+            j = 0
+            while j < len(atab.hyp_heads):
+                if atab.hyp_heads[j].line == i:
+                    del atab.hyp_heads[j]
+                    found = True
+                    break
+                else:
+                    j += 1
+            if not found:
+                j = 0
+                while j < len(atab.hyp_impls):
+                    if atab.hyp_impls[j].line == i:
+                        del atab.hyp_impls[j]
+                        break
+                    else:
+                        j += 1
+    for i in range(n2, len(list2)):
+        if isinstance(list2[i], DeadNode):
+            j = 0
+            while j < len(atab.tar_heads):
+                if atab.tar_heads[j].line == i:
+                    del atab.tar_heads[j]
+                    break
+                else:
+                    j += 1
 
 def create_index(screen, tl):
     """
@@ -132,10 +165,6 @@ def create_index(screen, tl):
         title = title[7:-1]
         const_str = library.readline()[0:-1]
         success, consts = parse_consts(screen, const_str)
-        if not success:
-            screen.dialog(consts)
-            screen.dialog(title)
-            break
         term_str = library.readline()[0:-1]
         tags = library.readline() # skip tags
         filepos = library.tell()
@@ -352,10 +381,11 @@ def automate(screen, tl, ttree):
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
                                         done, plist = targets_proved(screen, tl, ttree)
-                                        if check_duplicates(screen, tl, ttree, n1, len(tl.tlist2.data)):
+                                        if check_duplicates(screen, tl, ttree, n1, len(tlist2)):
                                             hprogress = True
                                             progress = True
                                             update_screen(screen, tl)
+                                        autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2))
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)
@@ -428,16 +458,17 @@ def automate(screen, tl, ttree):
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
                                         done, plist = targets_proved(screen, tl, ttree)
-                                        if check_duplicates(screen, tl, ttree, n1, len(tl.tlist2.data)):
+                                        if check_duplicates(screen, tl, ttree, n1, len(tlist2)):
                                             hprogress = True
                                             update_screen(screen, tl)
+                                        autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2))
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)
                                             return
-            if not done:
+            tar = get_autonode(screen, atab.tar_heads, i)
+            if not done and tar:
                 # check if constants in target are all in hypotheses
-                tar = get_autonode(screen, atab.tar_heads, i)
                 tarc = tar.const1
                 hypc = []
                 heads = [] # list of autonodes for target compatible hyp_heads
@@ -449,8 +480,9 @@ def automate(screen, tl, ttree):
                         c = node.const1
                     else:
                         node = get_autonode(screen, atab.hyp_impls, k)
-                        impls.append(node)
-                        c = list_merge(node.const1, node.const2)
+                        if node:
+                            impls.append(node)
+                            c = list_merge(node.const1, node.const2)
                     hypc = list_merge(hypc, c)
                 tprogress = False # whether or not some progress is made on the target side
                 # first see if there are any theorems/defns to load which are not implications
@@ -475,6 +507,7 @@ def automate(screen, tl, ttree):
                             if check_duplicates(screen, tl, ttree, n1, n2):
                                 tprogress = True
                                 update_screen(screen, tl)
+                            autotab_remove_deadnodes(screen, tl, atab, n1, n2)
                             if done:
                                 screen.dialog("All targets proved!")
                                 update_screen(screen, tl)
@@ -494,7 +527,8 @@ def automate(screen, tl, ttree):
                     for (title, c, filepos, line) in libthms:
                         implc = c[2][line].left
                         # check to see if constants of libthm are among the hyp constants hypc
-                        if set(implc).issubset(hypc) or not hypc:
+                        if set(implc).issubset(hypc) or not hypc or not atab.hyp_impls or \
+                           not atab.hyp_heads:
                             # check to see if thm already loaded
                             line2 = tar.line
                             unifies = False
@@ -562,6 +596,7 @@ def automate(screen, tl, ttree):
                                         if check_duplicates(screen, tl, ttree, n1, n2):
                                             tprogress = True
                                             update_screen(screen, tl)
+                                        autotab_remove_deadnodes(screen, tl, atab, n1, n2)
                                         if done:
                                             screen.dialog("All targets proved!")
                                             update_screen(screen, tl)
