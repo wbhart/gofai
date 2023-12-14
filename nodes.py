@@ -298,6 +298,11 @@ class NeqNode(LRNode):
         return self.paren_repr(self.left)+" \\neq "+self.paren_repr(self.right)
 
 class ImpliesNode(LRNode):
+    def __init__(self, left, right, iff=False):
+        self.left = left
+        self.right = right
+        self.iff = iff # used by automation to denote implication that came from iff
+
     def __str__(self):
         return self.paren_str(self.left)+" \u21d2 "+self.paren_str(self.right)
 
@@ -622,10 +627,24 @@ class AutoImplNode:
     def __repr__(self):
         return "("+repr(self.left)+", "+repr(self.right)+")"
 
+class AutoIffNode:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __str__(self):
+        return "('\\iff', "+str(self.left)+", "+str(self.right)+")"
+
+    def __repr__(self):
+        return "('\\iff', "+repr(self.left)+", "+repr(self.right)+")"
+
 class AutoEqNode:
     def __init__(self, left, right):
         self.left = left
         self.right = right
+
+    def __str__(self):
+        return "('=', "+str(self.left)+", "+str(self.right)+")"
 
     def __repr__(self):
         return "('=', "+repr(self.left)+", "+repr(self.right)+")"

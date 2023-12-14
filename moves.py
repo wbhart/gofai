@@ -1052,7 +1052,10 @@ def cleanup(screen, tl, ttree):
     """
     dirty1, dirty2 = logic.cleanup(screen, tl, ttree)
     
-    screen.pad0[0] = str(tl.tlist0.data[0])
+    if tl.tlist0.data:
+        screen.pad0[0] = str(tl.tlist0.data[0])
+    else:
+        screen.pad0[0] = ''
     for i in dirty1:
         screen.pad1.pad[i] = str(tl.tlist1.data[i])
     for i in dirty2:
@@ -1085,7 +1088,10 @@ def convert(screen, tl):
         c2 = []
         for v in impls:
             if isinstance(v, ImpliesNode):
-                c2.append((get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+                if v.iff:
+                    c2.append(("\\iff", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+                else:
+                    c2.append((get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
             elif isinstance(v, EqNode):
                 c2.append(("=", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
             else:

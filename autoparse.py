@@ -1,16 +1,17 @@
 from parsimonious.grammar import Grammar
 from parsimonious.nodes import NodeVisitor, Node
 from parsimonious import exceptions
-from nodes import AutoImplNode, AutoEqNode
+from nodes import AutoImplNode, AutoIffNode, AutoEqNode
 
 conststring = Grammar(
     r"""
     conststring = "[" list ", " list ", " thmlist "]"
     thmlist = (thm ", ")* thm
-    thm = strlist / eqlistpair / listpair
+    thm = strlist / eqlistpair / ifflistpair / listpair
     list = emptylist / strlist
     listpair = "(" list ", " list ")"
     eqlistpair = "('=', " list ", " list ")"
+    ifflistpair = "('\\\\iff', " list ", " list ")"
     emptylist = "[]"
     strlist = "[" (text "," space)* text "]"
     space = ~"\s*"
@@ -33,6 +34,8 @@ class ConststringVisitor(NodeVisitor):
         return visited_children[0]
     def visit_listpair(self, node, visited_children):
         return AutoImplNode(visited_children[1], visited_children[3])
+    def visit_ifflistpair(self, node, visited_children):
+        return AutoIffNode(visited_children[1], visited_children[3])
     def visit_eqlistpair(self, node, visited_children):
         return AutoEqNode(visited_children[1], visited_children[3])
     def visit_emptylist(self, node, visited_children):

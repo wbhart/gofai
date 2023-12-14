@@ -691,7 +691,7 @@ is_lower_bound(U, l)
 \exists v \in \mathbb{R} is_infimum(U, v)
 
 Title: Definition of set inclusion
-[['Set'], [], (['\\subseteq'], ['\\implies', '\\in']), (['\\implies', '\\in'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subseteq'], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['\\subseteq'])]
 [([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B'])), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B']))]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
@@ -700,7 +700,7 @@ Tags: #sets #definition
 A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 
 Title: Extensionality of sets
-[['Set'], [], (['='], ['\\implies', '\\in']), (['\\implies', '\\in'], ['='])]
+[['Set'], [], ('\\iff', ['='], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['='])]
 [([], [], [], []), ((['S', 'T'], ['S', 'T'], [], ['S', 'T']), (['S', 'T'], ['S', 'T'], [], ['S', 'T', 'T', 'S'])), ((['S', 'T'], ['S', 'T'], [], ['S', 'T', 'T', 'S']), (['S', 'T'], ['S', 'T'], [], ['S', 'T']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
@@ -709,7 +709,7 @@ Tags: #sets #definition
 S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
 
 Title: Sets are equal iff they include one another
-[['Set'], [], (['='], ['\\subseteq']), (['\\subseteq'], ['=']), (['='], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['='], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['=']), ('\\iff', ['='], ['\\subseteq'])]
 [([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['B', 'A'], ['B', 'A'], [], ['B', 'A'])), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'B', 'A']), (['A', 'B'], ['A', 'B'], [], ['A', 'B'])), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B']))]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X) \forall B : Set(X)
@@ -718,7 +718,7 @@ Tags: #sets #definition
 A = B \iff A \subseteq B \wedge B \subseteq A
 
 Title: Definition of strict set inclusion
-[['Set'], [], (['\\subsetneq'], ['\\neq']), (['\\neq', '\\subseteq'], ['\\subsetneq']), (['\\subsetneq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\neq']), ('\\iff', ['\\neq', '\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
 [([], [], [], []), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B'])), ((['A', 'B'], ['A', 'B'], [], ['A', 'B', 'A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B'])), ((['A', 'B'], ['A', 'B'], [], ['A', 'B']), (['A', 'B'], ['A', 'B'], [], ['A', 'B']))]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
@@ -823,7 +823,7 @@ Tags: #sets
 \emptyset(X) \subseteq S
 
 Title: Definition of set union
-[['Set'], [], (['\\cup', '\\in'], ['\\in']), (['\\in'], ['\\cup', '\\in'])]
+[['Set'], [], ('\\iff', ['\\cup', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cup', '\\in'])]
 [([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\cup T'], ['x', 'S \\cup T']), (['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'x', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'x', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\cup T'], ['x', 'S \\cup T']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X) \forall T : Set(X) \forall x \in X
@@ -948,7 +948,7 @@ S \cup T = \emptyset(X)
 S = \emptyset(X) \wedge T = \emptyset(X)
 
 Title: Definition of set intersection
-[['Set'], [], (['\\cap', '\\in'], ['\\in']), (['\\in'], ['\\cap', '\\in']), (['\\cap', '\\in'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in']), ('\\iff', ['\\cap', '\\in'], ['\\in'])]
 [([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\cap T'], ['x', 'S \\cap T']), (['x', 'T'], ['x', 'T'], [], ['x', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'x', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\cap T'], ['x', 'S \\cap T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\cap T'], ['x', 'S \\cap T']), (['x', 'S'], ['x', 'S'], [], ['x', 'S']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X
@@ -1062,7 +1062,7 @@ Tags: #sets
 x = (c, d) \implies x[0] = c \wedge x[1] = d
 
 Title: Equality of pairs
-[['Set'], [], (['=', 'Tuple(2)'], ['=']), (['='], ['=', 'Tuple(2)']), (['=', 'Tuple(2)'], ['='])]
+[['Set'], [], ('\\iff', ['=', 'Tuple(2)'], ['=']), ('\\iff', ['='], ['=', 'Tuple(2)']), ('\\iff', ['=', 'Tuple(2)'], ['='])]
 [([], [], [], []), ((['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['(a, b)', '(c, d)'], ['a', 'b', 'c', 'd']), (['b', 'd'], ['b', 'd'], [], ['b', 'd'])), ((['a', 'c', 'b', 'd'], ['a', 'c', 'b', 'd'], [], ['a', 'c', 'b', 'd']), (['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['(a, b)', '(c, d)'], ['a', 'b', 'c', 'd'])), ((['a', 'b', 'c', 'd'], ['a', 'b', 'c', 'd'], ['(a, b)', '(c, d)'], ['a', 'b', 'c', 'd']), (['a', 'c'], ['a', 'c'], [], ['a', 'c']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X, \forall c \in X, \forall d \in X
@@ -1071,7 +1071,7 @@ Tags: #sets #definition
 (a, b) = (c, d) \iff a = c \wedge b = d
 
 Title: Definition of pair
-[['Set', '\\times'], [], (['is_pair'], ['1', '[]', '\\in']), (['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair']), (['is_pair'], ['0', '[]', '\\in']), (['is_pair'], ['=', 'Tuple(2)'])]
+[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['=', 'Tuple(2)'])]
 [([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '1', 'T'], ['x', '1', 'T'], [], ['x', '1', 'T'])), ((['x', '0', 'S', '1', 'T'], ['x', '0', 'S', '1', 'T'], [], ['x', 'x', '0', 'S', 'x', '1', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '0', 'S'], ['x', '0', 'S'], [], ['x', '0', 'S'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x'], ['x'], [], ['x']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
@@ -1080,7 +1080,7 @@ Tags: #sets #definition
 is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
 
 Title: Definition of cartesian product
-[['Set', '\\times'], [], (['is_pair'], ['\\in', '\\times']), (['\\in', '\\times'], ['is_pair'])]
+[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['\\in', '\\times']), ('\\iff', ['\\in', '\\times'], ['is_pair'])]
 [([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\times T'], ['x', 'S \\times T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], ['S \\times T'], ['x', 'S \\times T']), (['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
@@ -1098,7 +1098,7 @@ Tags: #sets
 x \in S \times T \implies x[0] \in S \wedge x[1] \in T
 
 Title: Pair in a cartesian product if elements in sets
-[['Set'], [], (['\\in'], ['Tuple(2)', '\\in', '\\times']), (['Tuple(2)', '\\in', '\\times'], ['\\in']), (['Tuple(2)', '\\in', '\\times'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\in'], ['Tuple(2)', '\\in', '\\times']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in'])]
 [([], [], [], []), ((['a', 'S', 'b', 'T'], ['a', 'S', 'b', 'T'], [], ['a', 'S', 'b', 'T']), (['a', 'b', 'S', 'T'], ['a', 'b', 'S', 'T'], ['(a, b)', 'S \\times T'], ['a', 'b', 'S \\times T'])), ((['a', 'b', 'S', 'T'], ['a', 'b', 'S', 'T'], ['(a, b)', 'S \\times T'], ['a', 'b', 'S \\times T']), (['b', 'T'], ['b', 'T'], [], ['b', 'T'])), ((['a', 'b', 'S', 'T'], ['a', 'b', 'S', 'T'], ['(a, b)', 'S \\times T'], ['a', 'b', 'S \\times T']), (['a', 'S'], ['a', 'S'], [], ['a', 'S']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X
@@ -1220,7 +1220,7 @@ Tags: #sets
 A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 
 Title: Definition of powerset
-[['Set'], [], (['\\in', '\\mathcal{P}'], ['\\subseteq']), (['\\subseteq'], ['\\in', '\\mathcal{P}'])]
+[['Set'], [], ('\\iff', ['\\in', '\\mathcal{P}'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\in', '\\mathcal{P}'])]
 [([], [], [], []), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S'])), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall U : Set(X)
@@ -1229,7 +1229,7 @@ Tags: #sets #definition
 U \in \mathcal{P}(S) \iff U \subseteq S
 
 Title: A set is an element of the powerset of the empty set iff it is empty
-[['Set'], [], (['\\emptyset', '\\in', '\\mathcal{P}'], ['=', '\\emptyset']), (['=', '\\emptyset'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
+[['Set'], [], ('\\iff', ['\\emptyset', '\\in', '\\mathcal{P}'], ['=', '\\emptyset']), ('\\iff', ['=', '\\emptyset'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
 [([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
@@ -1275,7 +1275,7 @@ Tags: #sets
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
 
 Title: Definition of complement
-[['Set'], [], (['\\in', 'complement'], ['\\in']), (['\\in'], ['\\in', 'complement']), (['\\in', 'complement'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement']), ('\\iff', ['\\in', 'complement'], ['\\in'])]
 [([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'X', 'S'], ['x', 'X', 'S'], [], ['x', 'X', 'x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S']), (['x', 'X'], ['x', 'X'], [], ['x', 'X']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
@@ -1296,7 +1296,7 @@ Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]
 [([], [], [], []), (['S'], ['S'], [], ['S', 'S'])]
 Tags: #sets
-\forall X, \forall S : Set(X)
+\forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
 complement(complement(S)) = S
@@ -1317,7 +1317,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cup complement(S) = X
+S \cup complement(S) = universe(S)
 
 Title: Intersection of a set with its complement is the empty set
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
@@ -1334,7 +1334,7 @@ Title: Complement of a set equal to its universe is the empty set
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
-S = complement(\emptyset(X))
+S = universe(S)
 ------------------------------
 complement(S) = \emptyset(X)
 
@@ -1463,7 +1463,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-\emptyset \setminus A = \emptyset(X)
+\emptyset(X) \setminus A = \emptyset(X)
 
 Title: Difference of empty set with any set is that set
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
@@ -1481,7 +1481,7 @@ Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
 ------------------------------
-A \setminus complement(\emptyset(X)) = \emptyset(X)
+A \setminus universe(A) = \emptyset(X)
 
 Title: Containment of sets is reversed upon taking differences with another set
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
@@ -1504,7 +1504,7 @@ B \setminus C \subseteq A
 B \setminus A \subseteq C
 
 Title: Definition of set builder
-[['Pred', 'Set'], [], (['\\in', '{|}'], ['\\in']), (['\\in'], ['\\in', '{|}']), (['\\in', '{|}'], [])]
+[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}']), ('\\iff', ['\\in', '{|}'], [])]
 [([], [], [], []), ((['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True]), (['x', 'S'], ['x', 'S'], [], ['x', 'S'])), ((['x', 'S'], ['x', 'S'], [], ['P(x)', 'x', 'S']), (['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True])), ((['x', 'S'], ['x', 'S'], [], ['x', 'S', 'P', True]), (['x'], ['x'], [], ['P(x)']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X, \forall P : Pred
@@ -1522,7 +1522,7 @@ Tags: #sets
 {x \in S | x \in T} = S \cap T
 
 Title: Definition of function
-[['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\implies', '\\in']), (['=', 'Tuple(2)', '\\implies', '\\in', '\\subseteq', '\\times'], ['is_function']), (['is_function'], ['Tuple(2)', '\\implies', '\\in']), (['is_function'], ['\\subseteq', '\\times'])]
+[['->', 'Set'], [], ('\\iff', ['is_function'], ['=', 'Tuple(2)', '\\implies', '\\in']), ('\\iff', ['=', 'Tuple(2)', '\\implies', '\\in', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\implies', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
 [([], [], [], []), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), (['A', 'f'], ['A', 'f'], [], ['A', 'f', 'f'])), ((['f', 'A', 'B'], ['f', 'A', 'B'], ['A \\times B'], ['f', 'A \\times B', 'A', 'B', 'f', 'A', 'f', 'f']), (['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B'])), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), (['A', 'B', 'f'], ['A', 'B', 'f'], [], ['A', 'B', 'f'])), ((['f', 'A', 'B'], ['f', 'A', 'B'], [], ['f', 'A', 'B']), (['f', 'A', 'B'], ['f', 'A', 'B'], ['A \\times B'], ['f', 'A \\times B']))]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B

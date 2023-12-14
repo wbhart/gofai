@@ -958,6 +958,8 @@ def insert_sort(screen, tl, s1, s2):
     exists in the tree.
     """
     r = find_sort(screen, tl, s1)
+    if not r:
+        screen.dialog(str(s1)+" <- "+str(s2))
     r.subsorts.append(SortNode(s2))
 
 def sorts_equal(s1, s2, assign=None):

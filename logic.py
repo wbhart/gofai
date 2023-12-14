@@ -498,12 +498,12 @@ def fake_import(screen, tl, library, filepos):
         impls.append(tree)
     elif isinstance(tree, IffNode):
         # split iff statement or P => (Q iff R)
-        impls.append(ImpliesNode(tree.left, tree.right))
-        impls.append(ImpliesNode(tree.right, tree.left))
+        impls.append(ImpliesNode(tree.left, tree.right, True))
+        impls.append(ImpliesNode(tree.right, tree.left, True))
     elif isinstance(tree, ImpliesNode) and isinstance(tree.right, IffNode):
         tpred = tree.left
-        impls.append(ImpliesNode(tree.right.left, tree.right.right))
-        impls.append(ImpliesNode(tree.right.right, tree.right.left))
+        impls.append(ImpliesNode(tree.right.left, tree.right.right, True))
+        impls.append(ImpliesNode(tree.right.right, tree.right.left, True))
     elif isinstance(tree, EqNode):
         impls.append(tree)
     elif isinstance(tree, ImpliesNode) and isinstance(tree.right, EqNode):
@@ -524,11 +524,11 @@ def fake_import(screen, tl, library, filepos):
                     P = impls[i].left.left
                     Q = impls[i].left.right
                     R = impls[i].right
-                    impls[i] = ImpliesNode(P, R)
-                    impls.append(ImpliesNode(Q, R))
+                    impls[i] = ImpliesNode(P, R, impls[i].iff)
+                    impls.append(ImpliesNode(Q, R, impls[i].iff))
             if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].right, AndNode):
-                impls.append(ImpliesNode(impls[i].left, impls[i].right.left))
-                impls[i] = ImpliesNode(impls[i].left, impls[i].right.right)
+                impls.append(ImpliesNode(impls[i].left, impls[i].right.left, impls[i].iff))
+                impls[i] = ImpliesNode(impls[i].left, impls[i].right.right, impls[i].iff)
         i += 1
     return qz, tpred, impls
 

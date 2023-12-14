@@ -4,8 +4,8 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
 from autoparse import parse_consts
 from moves import targets_proved
 from unification import unify
-from nodes import DeadNode, AutoImplNode, AutoEqNode, ImpliesNode, AndNode, SymbolNode, NeqNode, \
-     ForallNode
+from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
+     SymbolNode, NeqNode, ForallNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy
@@ -198,13 +198,13 @@ def filter_theorems1(screen, index, type_consts, consts):
         tconst = c[0]
         for i in range(len(thmlist)):
             thm = thmlist[i]
-            if isinstance(thm, AutoImplNode):
+            if isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode):
                 tc = thm.left
                 if set(tconst).issubset(type_consts) and set(tc).issubset(consts):
                     thms.append((title, c, filepos, i))
     return thms
 
-def filter_theorems2(screen, index, consts):
+def filter_theorems2(screen, index, consts, mode):
     """
     Given a library index, filter out theorems all of whose consequents
     contain only constants in the given list.
@@ -214,13 +214,13 @@ def filter_theorems2(screen, index, consts):
         thmlist = c[2]
         for i in range(len(thmlist)):
             thm = thmlist[i]
-            if isinstance(thm, AutoImplNode):
+            if (mode == 0 and isinstance(thm, AutoImplNode)) or isinstance(thm, AutoIffNode):
                 tc = thm.right
                 if set(tc).issubset(consts):
                     thms.append((title, c, filepos, i))
     return thms
 
-def filter_theorems3(screen, index, consts):
+def filter_theorems3(screen, index, consts1, consts2):
     """
     Given a library index, filter out theorems which are heads that
     contain only constants in the given list.
@@ -230,8 +230,9 @@ def filter_theorems3(screen, index, consts):
         thmlist = c[2]
         for i in range(len(thmlist)):
             thm = thmlist[i]
-            if not isinstance(thm, AutoImplNode) and not isinstance(thm, AutoEqNode):
-                if set(thm).issubset(consts):
+            if not isinstance(thm, AutoImplNode) and not isinstance(thm, AutoEqNode) and \
+               not isinstance(thm, AutoIffNode):
+                if set(thm).issubset(consts1) or set(thm).issubset(consts2):
                     thms.append((title, c, filepos, i))
     return thms
 
@@ -277,7 +278,7 @@ def update_screen(screen, tl):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-    
+
 def check_duplicates(screen, tl, ttree, n1, n2):
     """
     If n2 is equal to the number of targets in the tableau, check hypotheses
@@ -328,6 +329,7 @@ def automate(screen, tl, ttree):
     atab = AutoTab(screen, tl) # initialise automation data structure
     index = create_index(screen, tl)
     done = False # whether all targets are proved
+    mode = 0 # mode 0 = no adding tar metavars, mode 1 = add tar metavars with iffs
     while True: # keep going until theorem proved or progress stalls
         # get next unproved target
         i = 0
@@ -485,7 +487,7 @@ def automate(screen, tl, ttree):
                     hypc = list_merge(hypc, c)
                 tprogress = False # whether or not some progress is made on the target side
                 # first see if there are any theorems/defns to load which are not implications
-                libthms = filter_theorems3(screen, index, tarc)
+                libthms = filter_theorems3(screen, index, hypc, tarc)
                 for (title, c, filepos, line) in libthms:
                     headc = c[2][line]
                     # check to see if constants of libthm are among the hyp constants hypc
@@ -522,12 +524,12 @@ def automate(screen, tl, ttree):
                                 pass # not implemented yet
                 # try to find a theorem that applies to the target
                 if not tprogress: # TODO : remove the second restriction
-                    libthms = filter_theorems2(screen, index, tarc)
+                    libthms = filter_theorems2(screen, index, tarc, mode)
                     for (title, c, filepos, line) in libthms:
                         implc = c[2][line].left
                         # check to see if constants of libthm are among the hyp constants hypc
-                        if (tar.line not in tl.tars) and (set(implc).issubset(hypc) or not hypc or not atab.hyp_impls or \
-                           not atab.hyp_heads):
+                        if (tar.line not in tl.tars) and (set(implc).issubset(hypc) or \
+                           not hypc or not atab.hyp_impls or not atab.hyp_heads):
                             # check to see if thm already loaded
                             line2 = tar.line
                             unifies = False
@@ -586,27 +588,33 @@ def automate(screen, tl, ttree):
                                 if dep:
                                     n1 = len(tl.tlist1.data)
                                     n2 = len(tl.tlist2.data)
-                                    success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
-                                    if success:
-                                        update_autotab(screen, tl, atab, dirty1, dirty2)
-                                        dirty1, dirty2 = autocleanup(screen, tl, ttree)
-                                        update_autotab(screen, tl, atab, dirty1, dirty2)
-                                        done, plist = targets_proved(screen, tl, ttree)
-                                        if check_duplicates(screen, tl, ttree, n1, n2):
-                                            tprogress = True
-                                            update_screen(screen, tl)
-                                        autotab_remove_deadnodes(screen, tl, atab, n1, n2)
-                                        if done:
-                                            screen.dialog("All targets proved!")
-                                            update_screen(screen, tl)
-                                            return
+                                    var1 = metavars_used(tlist1[line1].left)
+                                    var2 = metavars_used(tlist1[line1].right)
+                                    if mode == 1 or set(var1).issubset(var2):
+                                        success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
+                                        if success:
+                                            update_autotab(screen, tl, atab, dirty1, dirty2)
+                                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                                            update_autotab(screen, tl, atab, dirty1, dirty2)
+                                            done, plist = targets_proved(screen, tl, ttree)
+                                            if check_duplicates(screen, tl, ttree, n1, n2):
+                                                tprogress = True
+                                                update_screen(screen, tl)
+                                            autotab_remove_deadnodes(screen, tl, atab, n1, n2)
+                                            if done:
+                                                screen.dialog("All targets proved!")
+                                                update_screen(screen, tl)
+                                                return
             if tprogress or not hprogress: # must move on if theorem reasoned back from
                 i += 1
             if hprogress or tprogress:
                 made_progress = True
         if not made_progress: # we aren't getting anywhere
-            screen.dialog("Unable to prove theorem automatically")
-            update_screen(screen, tl)
-            return
+            if mode < 1: # try more extreme things
+                mode += 1
+            else:
+                screen.dialog("Unable to prove theorem automatically")
+                update_screen(screen, tl)
+                return
 
         
