@@ -517,9 +517,9 @@ def fake_import(screen, tl, library, filepos):
             impls[i] = impls[i].left
         else:
             if isinstance(impls[i], ImpliesNode) and isinstance(impls[i].left, OrNode):
-                var1 = vars_used(impls[i].left.left)
-                var2 = vars_used(impls[i].left.right)
-                var = vars_used(impls[i].right)
+                var1 = vars_used(screen, tl, impls[i].left.left)
+                var2 = vars_used(screen, tl, impls[i].left.right)
+                var = vars_used(screen, tl, impls[i].right)
                 if set(var).issubset(var1) and set(var).issubset(var2):
                     P = impls[i].left.left
                     Q = impls[i].left.right

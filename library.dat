@@ -406,7 +406,7 @@ a < (a + b)/2
 
 Title: Absolute value of a value is greater than or equal to zero
 [['Real'], [], ['0', '\\geq', '||']]
-[([], [], [], []), (['a', '0'], ['a', '0'], [], ['a', '0'])]
+[([], [], [], []), (['a', '0'], ['a', '0'], [], ['|a|', '0'])]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -425,7 +425,7 @@ a = 0
 
 Title: Absolute value of product is product of absolute values
 [['Real'], [], ('=', ['*', '||'], ['*', '||'])]
-[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a * b', '|a| * |b|'], ['a * b', 'a', 'b'])]
+[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a * b', '|a| * |b|'], ['|a * b|', '|a| * |b|'])]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -434,7 +434,7 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 
 Title: Triangle inequality
 [['Real'], [], ['+', '\\leq', '||']]
-[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a + b', '|a| + |b|'], ['a + b', 'a', 'b'])]
+[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a + b', '|a| + |b|'], ['|a + b|', '|a| + |b|'])]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -443,7 +443,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 
 Title: Absolute value is independent of sign
 [['Real'], [], ('=', ['-', '||'], ['||'])]
-[([], [], [], []), (['a'], ['a'], [], ['a', 'a'])]
+[([], [], [], []), (['a'], ['a'], [], ['|-(a)|', '|a|'])]
 Tags: #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -452,7 +452,7 @@ Tags: #algebra #absolutevalue #\mathbb{R}
 
 Title: Absolute value less than or equal inequality split into two inequalities
 [['Real'], [], (['\\leq', '||'], ['-', '\\leq'])]
-[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a', 'a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['|a|']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -463,7 +463,7 @@ a \leq b
 
 Title: Less than or equal inequalities for absolute value
 [['Real'], [], ['-', '\\leq', '||']]
-[([], [], [], []), (['a'], ['a'], [], ['a', 'a', 'a', 'a'])]
+[([], [], [], []), (['a'], ['a'], [], ['-(|a|)', 'a', 'a', '|a|'])]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -473,7 +473,7 @@ a \leq |a|
 
 Title: Absolute value less than inequality split into two inequalities
 [['Real'], [], (['<', '||'], ['-', '<'])]
-[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a', 'a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['|a|']), (['a'], ['a'], [], ['a', 'a']))]
 Tags: #inequalities #iff #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -484,7 +484,7 @@ a < b
 
 Title: Negation of both sides of an equality
 [['Real'], [], (['='], ['-', '='])]
-[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['a']))]
+[([], [], [], []), ((['a'], ['a'], [], ['a']), (['a'], ['a'], [], ['-(a)']))]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -494,7 +494,7 @@ a = b
 
 Title: Multiplication by minus one negates a value
 [['Real'], [], ('=', ['*', '-', '1'], ['-'])]
-[([], [], [], []), (['a', '1'], ['a', '-(1)'], ['a * -(1)'], ['1', 'a', 'a'])]
+[([], [], [], []), (['a', '1'], ['a', '-(1)'], ['a * -(1)'], ['a * -(1)', '-(a)'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -503,7 +503,7 @@ a*-1 = -a
 
 Title: Addition of negated value equal to difference of values
 [['Real'], [], ('=', ['+', '-'], ['-'])]
-[([], [], [], []), (['a', 'b'], ['a', '-(b)', 'b'], ['a + -(b)', 'a - b'], ['b', 'a', 'a - b'])]
+[([], [], [], []), (['a', 'b'], ['a', '-(b)', 'b'], ['a + -(b)', 'a - b'], ['a + -(b)', 'a - b'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -512,7 +512,7 @@ a + -b = a - b
 
 Title: Reverse triangle inequality
 [['Real'], [], ['-', '\\leq', '||']]
-[([], [], [], []), (['a', 'b'], ['|a|', '|b|', 'a', 'b'], ['|a| - |b|', 'a - b'], ['a', 'b', 'a - b'])]
+[([], [], [], []), (['a', 'b'], ['|a|', '|b|', 'a', 'b'], ['|a| - |b|', 'a - b'], ['||a| - |b||', '|a - b|'])]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -521,7 +521,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 
 Title: Triangle inequality variant with subtraction
 [['Real'], [], ['+', '-', '\\leq', '||']]
-[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a - b', '|a| + |b|'], ['a - b', 'a', 'b'])]
+[([], [], [], []), (['a', 'b'], ['a', 'b', '|a|', '|b|'], ['a - b', '|a| + |b|'], ['|a - b|', '|a| + |b|'])]
 Tags: #inequalities #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -530,7 +530,7 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 
 Title: Expansion of negated sum
 [['Real'], [], ('=', ['+', '-'], ['-'])]
-[([], [], [], []), (['a', 'b'], ['a', 'b', '-(a)'], ['a + b', '-(a) - b'], ['a + b', 'a', 'b'])]
+[([], [], [], []), (['a', 'b'], ['a', 'b', '-(a)'], ['a + b', '-(a) - b'], ['-(a + b)', '-(a) - b'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -539,7 +539,7 @@ Tags: #algebra #\mathbb{R}
 
 Title: Expansion of negated difference
 [['Real'], [], ('=', ['-'], ['+', '-'])]
-[([], [], [], []), (['a', 'b'], ['a', 'b', '-(a)'], ['a - b', '-(a) + b'], ['a - b', 'a', 'b'])]
+[([], [], [], []), (['a', 'b'], ['a', 'b', '-(a)'], ['a - b', '-(a) + b'], ['-(a - b)', '-(a) + b'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -548,7 +548,7 @@ Tags: #algebra #\mathbb{R}
 
 Title: Expansion of negated difference, variant
 [['Real'], [], ('=', ['+', '-'], ['-'])]
-[([], [], [], []), (['a', 'b'], ['-(a)', 'b', 'a'], ['-(a) + b', 'a - b'], ['a', 'b', 'a - b'])]
+[([], [], [], []), (['a', 'b'], ['-(a)', 'b', 'a'], ['-(a) + b', 'a - b'], ['-(-(a) + b)', 'a - b'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -557,7 +557,7 @@ Tags: #algebra #\mathbb{R}
 
 Title: Simplification of double negation
 [['Real'], [], ('=', ['-'], [])]
-[([], [], [], []), (['a'], ['a'], [], ['a', 'a'])]
+[([], [], [], []), (['a'], ['a'], [], ['-(-(a))', 'a'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -566,7 +566,7 @@ Tags: #algebra #\mathbb{R}
 
 Title: Expansion of negated difference, variant
 [['Real'], [], ('=', ['-'], ['+'])]
-[([], [], [], []), (['a', 'b'], ['-(a)', 'b', 'a'], ['-(a) - b', 'a + b'], ['a', 'b', 'a + b'])]
+[([], [], [], []), (['a', 'b'], ['-(a)', 'b', 'a'], ['-(a) - b', 'a + b'], ['-(-(a) - b)', 'a + b'])]
 Tags: #algebra #\mathbb{R}
 \forall a \in \mathbb{R} \forall b \in \mathbb{R}
 ------------------------------
@@ -1054,7 +1054,7 @@ S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
 Title: Components of pair
 [['Set'], [], (['=', 'Tuple(2)'], ['0', '1', '=', '[]'])]
-[([], [], [], []), ((['c', 'd'], ['c', 'd'], ['(c, d)'], ['c', 'd']), (['0', 'c', '1', 'd'], ['0', 'c', '1', 'd'], [], ['0', 'c', '1', 'd']))]
+[([], [], [], []), ((['c', 'd'], ['c', 'd'], ['(c, d)'], ['c', 'd']), (['0', 'c', '1', 'd'], ['0', 'c', '1', 'd'], [], ['c', 'd']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall c \in X, \forall d \in X, \forall x \in X \times X
 ------------------------------
@@ -1072,7 +1072,7 @@ Tags: #sets #definition
 
 Title: Definition of pair
 [['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['=', 'Tuple(2)'])]
-[([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '1', 'T'], ['x', '1', 'T'], [], ['x', '1', 'T'])), ((['x', '0', 'S', '1', 'T'], ['x', '0', 'S', '1', 'T'], [], ['x', 'x', '0', 'S', 'x', '1', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '0', 'S'], ['x', '0', 'S'], [], ['x', '0', 'S'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x'], ['x'], [], ['x']))]
+[([], [], [], []), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '1', 'T'], ['x', '1', 'T'], [], ['x[1]', 'T'])), ((['x', '0', 'S', '1', 'T'], ['x', '0', 'S', '1', 'T'], [], ['x', 'x[0]', 'S', 'x[1]', 'T']), (['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x', '0', 'S'], ['x', '0', 'S'], [], ['x[0]', 'S'])), ((['x', 'S', 'T'], ['x', 'S', 'T'], [], ['x', 'S', 'T']), (['x'], ['x'], [], ['x']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -1090,7 +1090,7 @@ is_pair(x, S, T) \iff x \in S \times T
 
 Title: Element of cartesian product has components in the sets
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
-[([], [], [], []), ((['S', 'T'], ['S', 'T'], ['S \\times T'], ['S \\times T']), (['0', 'S', '1', 'T'], ['0', 'S', '1', 'T'], [], ['0', 'S', '1', 'T']))]
+[([], [], [], []), ((['S', 'T'], ['S', 'T'], ['S \\times T'], ['S \\times T']), (['0', 'S', '1', 'T'], ['0', 'S', '1', 'T'], [], ['S', 'T']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -1221,7 +1221,7 @@ A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 
 Title: Definition of powerset
 [['Set'], [], ('\\iff', ['\\in', '\\mathcal{P}'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\in', '\\mathcal{P}'])]
-[([], [], [], []), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S'])), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', 'S']))]
+[([], [], [], []), ((['U', 'S'], ['U', 'S'], [], ['U', '\\mathcal{P}(S)']), (['U', 'S'], ['U', 'S'], [], ['U', 'S'])), ((['U', 'S'], ['U', 'S'], [], ['U', 'S']), (['U', 'S'], ['U', 'S'], [], ['U', '\\mathcal{P}(S)']))]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall U : Set(X)
 ------------------------------
@@ -1230,7 +1230,7 @@ U \in \mathcal{P}(S) \iff U \subseteq S
 
 Title: A set is an element of the powerset of the empty set iff it is empty
 [['Set'], [], ('\\iff', ['\\emptyset', '\\in', '\\mathcal{P}'], ['=', '\\emptyset']), ('\\iff', ['=', '\\emptyset'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
-[([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']))]
+[([], [], [], []), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\mathcal{P}(\\emptyset)']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset'])), ((['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\emptyset']), (['S', '\\emptyset'], ['S', '\\emptyset'], [], ['S', '\\mathcal{P}(\\emptyset)']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1239,7 +1239,7 @@ S \in \mathcal{P}(\emptyset(X)) \iff S = \emptyset(X)
 
 Title: Power sets are contained if the sets are contained
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
-[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['S']))]
+[([], [], [], []), ((['S'], ['S'], [], ['S']), (['S'], ['S'], [], ['\\mathcal{P}(S)']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1249,7 +1249,7 @@ S \subseteq T
 
 Title: Empty set is an element of the powerset of every set
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
-[([], [], [], []), (['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', 'S'])]
+[([], [], [], []), (['\\emptyset', 'S'], ['\\emptyset', 'S'], [], ['\\emptyset', '\\mathcal{P}(S)'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1258,7 +1258,7 @@ Tags: #sets
 
 Title: Power set of an intersection is the intersection of the power sets
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
-[([], [], [], []), (['S', 'T'], ['S', 'T', '\\mathcal{P}(S)', '\\mathcal{P}(T)'], ['S \\cap T', '\\mathcal{P}(S) \\cap \\mathcal{P}(T)'], ['S \\cap T', 'S', 'T'])]
+[([], [], [], []), (['S', 'T'], ['S', 'T', '\\mathcal{P}(S)', '\\mathcal{P}(T)'], ['S \\cap T', '\\mathcal{P}(S) \\cap \\mathcal{P}(T)'], ['\\mathcal{P}(S \\cap T)', '\\mathcal{P}(S) \\cap \\mathcal{P}(T)'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1267,7 +1267,7 @@ Tags: #sets
 
 Title: Union of powersets is contained in powerset of the union
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
-[([], [], [], []), (['S', 'T'], ['\\mathcal{P}(S)', '\\mathcal{P}(T)', 'S', 'T'], ['\\mathcal{P}(S) \\cup \\mathcal{P}(T)', 'S \\cup T'], ['S', 'T', 'S \\cup T'])]
+[([], [], [], []), (['S', 'T'], ['\\mathcal{P}(S)', '\\mathcal{P}(T)', 'S', 'T'], ['\\mathcal{P}(S) \\cup \\mathcal{P}(T)', 'S \\cup T'], ['\\mathcal{P}(S) \\cup \\mathcal{P}(T)', '\\mathcal{P}(S \\cup T)'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -1312,7 +1312,7 @@ S \cup T = complement(complement(S) \cap complement(T))
 
 Title: Union of set and complement is universe
 [['Set'], [], ('=', ['\\cup', 'complement'], [])]
-[([], [], [], []), (['S', 'X'], ['S', 'X'], [], ['S', 'S', 'X'])]
+[([], [], [], []), (['S'], ['S'], [], ['S', 'S', 'S'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1329,8 +1329,8 @@ Tags: #sets
 S \cap complement(S) = \emptyset(X)
 
 Title: Complement of a set equal to its universe is the empty set
-[['Set'], [], (['=', '\\emptyset', 'complement'], ['=', '\\emptyset', 'complement'])]
-[([], [], [], []), ((['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']), (['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']))]
+[['Set'], [], (['='], ['=', '\\emptyset', 'complement'])]
+[([], [], [], []), (([], [], [], []), (['\\emptyset'], ['\\emptyset'], [], ['\\emptyset']))]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -1475,8 +1475,8 @@ Tags: #sets
 A \setminus \emptyset(X) = A
 
 Title: Difference of a set and its universe is the empty set
-[['Set'], [], ('=', ['\\emptyset', '\\setminus', 'complement'], ['\\emptyset'])]
-[([], [], [], []), (['A', '\\emptyset'], ['A', '\\emptyset'], [], ['A', '\\emptyset', '\\emptyset'])]
+[['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
+[([], [], [], []), (['A', '\\emptyset'], ['A', '\\emptyset'], [], ['A', 'A', '\\emptyset'])]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------

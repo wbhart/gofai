@@ -1,6 +1,7 @@
 from utility import is_implication, get_constants, get_init_vars, list_merge, deps_compatible, \
      TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
-     append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used
+     append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
+     vars_used, max_type_size
 from autoparse import parse_consts
 from moves import targets_proved
 from unification import unify
@@ -39,8 +40,15 @@ class AutoTab:
         hyp_heads = []
         hyp_impls = []
         tar_heads = []
+        max_depth = 0
+        max_width = 0
+        function_depth = 1 # 1 to allow for is_blah predicates
         for i in range(len(tlist1)):
             v = tlist1[i]
+            d, w, f = max_type_size(screen, tl, v)
+            max_depth = max(max_depth, d)
+            max_width = max(max_width, w)
+            function_depth = max(function_depth, f)
             if is_implication(v):
                 v, univs = unquantify(screen, v, False)
                 c1 = get_constants(screen, tl, v.left)
@@ -53,12 +61,19 @@ class AutoTab:
                 hyp_heads.append(AutoData(i, 0, c, None))
         for j in range(len(tlist2)):
            v = tlist2[j]
+           d, w, f = max_type_size(screen, tl, v)
+           max_depth = max(max_depth, d)
+           max_width = max(max_width, w)
+           function_depth = max(function_depth, f)
            c = get_constants(screen, tl, v)
            tar_heads.append(AutoData(j, 0, c, None))
         self.hyp_heads = hyp_heads
         self.hyp_impls = hyp_impls
         self.tar_heads = tar_heads
         self.thms = []
+        self.max_depth = max_depth
+        self.max_width = max_width
+        self.function_depth = function_depth
 
 def update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff=0):
     """
@@ -313,13 +328,54 @@ def check_duplicates(screen, tl, ttree, n1, n2):
             dup2 = False
     if dup2:
         for i in range(n2, len(tlist2)):
-            for j in range(n2, len(tlist1)):
+            for j in range(n1, len(tlist1)):
                 if deps_defunct(screen, tl, ttree, i, j):
                     tlist1[j] = DeadNode(tlist1[j])
             tlist2[i] = DeadNode(tlist2[i])
     else:
         nodup_found = True
     return nodup_found
+
+def check_sizes(screen, tl, atab, n1, n2):
+    """
+    Check for and remove hyps/tars whose type sizes exceed the maximum type
+    sizes allowed (initially the maximum sizes in the initial tableau)
+    """
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    nooversize_found = False
+    if n2 == len(tlist2): # only check if not checking targets
+        for i in range(n1, len(tlist1)):
+            if not isinstance(tlist1[i], DeadNode):
+                d, w, f = max_type_size(screen, tl, tlist1[i])
+                if d > atab.max_depth or w > atab.max_width or f > atab.function_depth:
+                    tlist1[i] = DeadNode(tlist1[i])
+                else:
+                    nooversize_found = True
+    else: # reasoning back so update max function_depth
+        for i in range(n1, len(tlist1)):
+            if not isinstance(tlist1[i], DeadNode):
+                d, w, f = max_type_size(screen, tl, tlist1[i])
+                atab.max_depth = max(d, atab.max_depth)
+                atab.max_width = max(w, atab.max_width)
+                atab.function_depth = max(f, atab.function_depth)
+        for i in range(n2, len(tlist2)):
+            if not isinstance(tlist2[i], DeadNode):
+                d, w, f = max_type_size(screen, tl, tlist2[i])
+                atab.max_depth = max(d, atab.max_depth)
+                atab.max_width = max(w, atab.max_width)
+                atab.function_depth = max(f, atab.function_depth)
+    for i in range(n2, len(tlist2)):
+        if not isinstance(tlist2[i], DeadNode):
+            d, w, f = max_type_size(screen, tl, tlist2[i])
+            if d > atab.max_depth or w > atab.max_width:
+                for j in range(n1, len(tlist1)):
+                    if deps_defunct(screen, tl, ttree, i, j):
+                        tlist1[j] = DeadNode(tlist1[j])
+                tlist2[i] = DeadNode(tlist2[i])
+            else:
+                nooversize_found = True
+    return nooversize_found
 
 def automate(screen, tl, ttree):
     libthms_loaded = dict() # keep track of which library theorems we loaded, and where
@@ -357,18 +413,21 @@ def automate(screen, tl, ttree):
                     ht = get_constants(screen, tl, tl.tlist0.data[0]) if tl.tlist0.data else []
                     # first check if any hyp_impls can be applied to head
                     for imp in atab.hyp_impls:
-                        if (hyp.num_mv == 0 or imp.num_mv <= 0) and set(imp.const1).issubset(hc):
+                        if imp.num_mv <= 0 and set(imp.const1).issubset(hc):
                             unifies = False
                             line1 = imp.line
                             if (hyp.line, hyp.version, True) not in imp.applied:
-                                imp.applied.append((hyp.line, hyp.version, True))
-                                thm = tlist1[line1]
-                                thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
-                                if isinstance(thm, ImpliesNode):
-                                    prec, u = unquantify(screen, thm.left, True)
-                                    if not isinstance(prec, AndNode):
-                                        # check if precedent unifies with hyp
-                                        unifies, assign, macros = unify(screen, tl, prec, tlist1[line2])
+                                v1 = vars_used(screen, tl, tlist1[line1])
+                                v2 = vars_used(screen, tl, tlist1[line2])
+                                if v1 or v2: # ensure not applying metavar thm to metavar head
+                                    imp.applied.append((hyp.line, hyp.version, True))
+                                    thm = tlist1[line1]
+                                    thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+                                    if isinstance(thm, ImpliesNode):
+                                        prec, u = unquantify(screen, thm.left, True)
+                                        if not isinstance(prec, AndNode):
+                                            # check if precedent unifies with hyp
+                                            unifies, assign, macros = unify(screen, tl, prec, tlist1[line2])
                             if unifies:
                                 # apply modus ponens
                                 dep = tl.tlist1.dependency(line1)
@@ -382,7 +441,9 @@ def automate(screen, tl, ttree):
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
                                         done, plist = targets_proved(screen, tl, ttree)
-                                        if check_duplicates(screen, tl, ttree, n1, len(tlist2)):
+                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2))
+                                        c2 = check_sizes(screen, tl, atab, n1, len(tlist2))
+                                        if c1 and c2:
                                             hprogress = True
                                             progress = True
                                             update_screen(screen, tl)
@@ -400,17 +461,19 @@ def automate(screen, tl, ttree):
                             if filepos in libthms_loaded:
                                 j = libthms_loaded[filepos] # get position loaded in tableau
                                 tnode = get_autonode(screen, atab.hyp_impls, j + line)
-                                if tnode and (hyp.num_mv == 0 or tnode.num_mv <= 0) and \
+                                if tnode and tnode.num_mv <= 0 and \
                                    (hyp.line, hyp.version, True) not in tnode.applied:
                                     tnode.applied.append((hyp.line, hyp.version, True))
-                                    mv_diff = hyp.num_mv + max(tnode.num_mv, 0)
                                     thm = tlist1[j + line]
                                     thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
                                     if isinstance(thm, ImpliesNode):
                                         prec, u = unquantify(screen, thm.left, True)
                                         if not isinstance(prec, AndNode):
                                             # check if precedent unifies with hyp
-                                            unifies, assign, macros = unify(screen, tl, prec, tlist1[line2])
+                                            v1 = vars_used(screen, tl, prec)
+                                            v2 = vars_used(screen, tl, tlist1[line2])
+                                            if v1 or v2: # ensure not applying metavar thm to metavar head
+                                                unifies, assign, macros = unify(screen, tl, prec, tlist1[line2])
                             else: # library theorem not yet loaded
                                 fake_tl = TreeList()
                                 fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
@@ -425,10 +488,12 @@ def automate(screen, tl, ttree):
                                 if isinstance(thm, ImpliesNode):
                                     mv_diff = len(metavars_used(thm.right)) - len(metavars_used(thm.left))
                                     prec, u = unquantify(screen, thm.left, True)
-                                    if not isinstance(prec, AndNode) and (hyp.num_mv == 0 or mv_diff <= 0) :
+                                    if not isinstance(prec, AndNode) and mv_diff <= 0:
                                         # check if precedent unifies with hyp
-                                        mv_diff = hyp.num_mv + max(mv_diff, 0)
-                                        unifies, assign, macros = unify(screen, fake_tl, prec, tlist1[line2])
+                                        v1 = vars_used(screen, tl, prec)
+                                        v2 = vars_used(screen, tl, tlist1[line2])
+                                        if v1 or v2: # ensure not applying metavar thm to metavar head
+                                            unifies, assign, macros = unify(screen, fake_tl, prec, tlist1[line2])
                                         if unifies:
                                             # transfer library result to tableau
                                             dirty1 = []
@@ -455,11 +520,13 @@ def automate(screen, tl, ttree):
                                     n1 = len(tl.tlist1.data)
                                     success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], True)
                                     if success:
-                                        update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
+                                        update_autotab(screen, tl, atab, dirty1, dirty2, 0)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
-                                        update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
+                                        update_autotab(screen, tl, atab, dirty1, dirty2, 0)
                                         done, plist = targets_proved(screen, tl, ttree)
-                                        if check_duplicates(screen, tl, ttree, n1, len(tlist2)):
+                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2))
+                                        c2 = check_sizes(screen, tl, atab, n1, len(tlist2))
+                                        if c1 and c2:
                                             hprogress = True
                                             update_screen(screen, tl)
                                         autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2))
@@ -505,7 +572,9 @@ def automate(screen, tl, ttree):
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                             update_autotab(screen, tl, atab, dirty1, dirty2)
                             done, plist = targets_proved(screen, tl, ttree)
-                            if check_duplicates(screen, tl, ttree, n1, n2):
+                            c1 = check_duplicates(screen, tl, ttree, n1, n2)
+                            c2 = check_sizes(screen, tl, atab, n1, n2)
+                            if c1 and c2:
                                 tprogress = True
                                 update_screen(screen, tl)
                             autotab_remove_deadnodes(screen, tl, atab, n1, n2)
@@ -597,7 +666,9 @@ def automate(screen, tl, ttree):
                                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                             update_autotab(screen, tl, atab, dirty1, dirty2)
                                             done, plist = targets_proved(screen, tl, ttree)
-                                            if check_duplicates(screen, tl, ttree, n1, n2):
+                                            c1 = check_duplicates(screen, tl, ttree, n1, n2)
+                                            c2 = check_sizes(screen, tl, atab, n1, n2)
+                                            if c1 and c2:
                                                 tprogress = True
                                                 update_screen(screen, tl)
                                             autotab_remove_deadnodes(screen, tl, atab, n1, n2)

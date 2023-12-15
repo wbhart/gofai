@@ -958,8 +958,6 @@ def insert_sort(screen, tl, s1, s2):
     exists in the tree.
     """
     r = find_sort(screen, tl, s1)
-    if not r:
-        screen.dialog(str(s1)+" <- "+str(s2))
     r.subsorts.append(SortNode(s2))
 
 def sorts_equal(s1, s2, assign=None):
@@ -1387,6 +1385,137 @@ def binary_string(tree, arglist):
     else:
         return arglist[0]+" "+constant_dict[type(tree)]+" "+arglist[1]
         
+def vars_used(screen, tl, tree):
+    """
+    Return a list of all the variables which are not metavariables, which
+    appear in the tree.
+    """
+    var_list = []
+    mv = []
+
+    def process(tree):
+        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            mv.append(tree.var.name())
+            process(tree.left)
+        elif isinstance(tree, VarNode):
+            name = tree.name()
+            if not tree.is_metavar and name not in mv:
+                var_list.append(name)
+        elif isinstance(tree, FnApplNode):
+            if isinstance(tree.var, VarNode):
+                process(tree.var)
+            for v in tree.args:
+                process(v)
+        elif isinstance(tree, TupleNode):
+            for v in tree.args:
+                process(v)
+        elif isinstance(tree, LRNode):
+            process(tree.left)
+            process(tree.right)
+
+    process(tree)
+    return var_list
+
+def type_depth(screen, tl, tree):
+    """
+    Given a type of a term, determine the maximum depth of the type as measured
+    by powerset depth.
+    """
+    if isinstance(tree, NumberSort) or isinstance(tree, Universum):
+        return 0
+    elif isinstance(tree, VarNode):
+        return type_depth(screen, tl, tree.sort)
+    elif isinstance(tree, TupleSort):
+        return max(type_depth(screen, tl, v) for v in tree.sorts)
+    elif isinstance(tree, SetSort):
+        return type_depth(screen, tl, tree.sort) + 1
+    else:
+        raise Exception("Unknown type "+str(type(tree))) 
+
+def type_width(screen, tl, tree):
+    """
+    Given a type of a term, determine the maximum width of the type as measured
+    by cartesian product width.
+    """
+    if tree == None or isinstance(tree, NumberSort) or \
+         isinstance(tree, Universum) or isinstance(tree, VarNode):
+        return 1
+    elif isinstance(tree, TupleSort):
+       n = len(tree.sorts) # width at this level
+       if n > 2 or n < 2:
+           return max(max(type_width(screen, tl, v) for v in tree.sorts), n)
+       else:
+           t1 = isinstance(tree.sorts[0], TupleSort)
+           t2 = isinstance(tree.sorts[1], TupleSort)
+           if t1 and t2:
+               return type_width(screen, tl, tree.sorts[0]) + \
+                      type_width(screen, tl, tree.sorts[1])
+           elif t1:
+               return max(type_width(screen, tl, tree.sorts[1]), \
+                      1 + type_width(screen, tl, tree.sorts[0]))
+           elif t2:
+               return max(type_width(screen, tl, tree.sorts[0]), \
+                      1 + type_width(screen, tl, tree.sorts[1]))
+           else:
+               return max(2, max(type_width(screen, tl, tree.sorts[0]), \
+                      type_width(screen, tl, tree.sorts[1])))
+    elif isinstance(tree, SetSort):
+        return type_width(screen, tl, tree.sort)
+    else:
+        raise Exception("Unknown type "+str(type(tree)))
+
+def function_depth(screen, tl, tree):
+    """
+    Given a parse tree, return the maximum function application depth.
+    """
+    if tree == None or isinstance(tree, LeafNode):
+        return 0
+    elif isinstance(tree, TupleNode):
+        return max(function_depth(screen, tl, v) for v in tree.args) if tree.args else 0
+    elif isinstance(tree, FnApplNode):
+        return max(function_depth(screen, tl, tree.var), \
+               max(function_depth(screen, tl, v) for v in tree.args) + 1) if tree.args else 1
+    elif isinstance(tree, LRNode):
+        return max(function_depth(screen, tl, tree.left), \
+                   function_depth(screen, tl, tree.right))
+
+def max_type_size(screen, tl, tree):
+    """
+    Given a type annotated parse tree, return a tuple (max_depth, max_width,
+    max_fn_depth) giving the maximum depth and width of any types of any terms
+    occuring in the tree and the maximum function depth.
+    """
+    if tree == None:
+        return 0, 1, 0
+    elif is_binary_op(screen, tl, tree):
+        return type_depth(screen, tl, tree.sort), \
+               type_width(screen, tl, tree.sort), \
+               function_depth(screen, tl, tree)
+    elif isinstance(tree, TupleNode) or \
+         isinstance(tree, VarNode) or isinstance(tree, AbsNode) or \
+         isinstance(tree, NegNode) or isinstance(tree, PowerSetNode):
+        return type_depth(screen, tl, tree.sort), \
+               type_width(screen, tl, tree.sort), \
+               function_depth(screen, tl, tree)
+    elif isinstance(tree, FnApplNode):
+        if isinstance(tree.var, VarNode) and tree.var.name() in system_predicates:
+            d, w, f = max_type_size(screen, tl, tree.args[0])
+            return d, w, f + 1
+        else:
+            return type_depth(screen, tl, tree.sort), \
+               type_width(screen, tl, tree.sort), \
+               function_depth(screen, tl, tree)
+    elif isinstance(tree, SetSort):
+        return type_depth(screen, tl, tree), 1, 0
+    elif isinstance(tree, LeafNode):
+        return 0, 1, 0
+    elif isinstance(tree, LRNode):
+        d1, w1, f1 = max_type_size(screen, tl, tree.left)
+        d2, w2, f2 = max_type_size(screen, tl, tree.right)
+        return max(d1, d2), max(w1, w2), max(f1, f2)
+    else:
+        raise Exception("Unknown node type "+str(type(tree)))
+    
 def get_terms(screen, tl, tree, vars):
     """
     Given a parse tree, compute four lists. The first is the list of all
@@ -1396,7 +1525,7 @@ def get_terms(screen, tl, tree, vars):
     fourth is the set of all full terms that appear in the tree which only
     involve constants and variables. For the purposes of this function, a
     function application of a constant function to a set of variables or
-    constants or a tuple of variables or constants, etc. qualifies as aB
+    constants or a tuple of variables or constants, etc. qualifies as a
     binary term.
     """
     terms0 = []
@@ -1466,10 +1595,6 @@ def get_terms(screen, tl, tree, vars):
                 termsn.append(s1)
             elif t2:
                 termsn.append(s2)
-            return False, ''
-        elif isinstance(tree, LRNode):
-            processn(tree.left, termsn, False)
-            processn(tree.right, termsn, False)
             return False, ''
         elif isinstance(tree, FnApplNode) or isinstance(tree, TupleNode):
             flag_list = []
@@ -1547,6 +1672,10 @@ def get_terms(screen, tl, tree, vars):
                 if top == False:
                     termsn.append(str1)
                 return True, str1
+        elif isinstance(tree, LRNode):
+            processn(tree.left, termsn, False)
+            processn(tree.right, termsn, False)
+            return False, ''
         return False, ''
         
     process1(tree, terms0, terms1, terms2)
