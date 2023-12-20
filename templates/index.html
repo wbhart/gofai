@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <title>Theorem Prover Interface</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        #header {
+            text-align: center; /* Center the text within the header */
+            /* If you need the header to align with the leftPane width only */
+            margin-right: 200px; /* Assuming rightPane is 200px wide */
+        }
+
+        #container {
+            display: flex;
+            height: 78vh;
+        }
+
+        #leftPane {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0; /* Prevent flex items from growing beyond the container width */
+        }
+
+        #rightPane {
+            /* Adjust width as needed */
+            width: 200px;
+            display: flex;
+            flex-direction: column;align-items: center;
+        }
+
+        .editablePane {
+            overflow-y: auto;
+            border: 1px solid black; /* To visually distinguish the panes */
+        }
+
+        #quantifierZone {
+            height: 20px; /* Adjust for a single line */
+        }
+
+        #hypothesisZone, #targetZone {
+            flex-grow: 1;
+        }
+
+        #popup {
+            display: none; /* Hidden by default */
+            position: fixed; /* Fixed position relative to the viewport */
+            left: 50%; /* Center horizontally */
+            top: 50%; /* Center vertically */
+            transform: translate(-50%, -50%); /* Adjust position to truly center */
+            z-index: 1000; /* Ensure it's above other content */
+            background-color: white; /* Background color for the popup */
+            border: 1px solid black; /* Optional border */
+            padding: 20px; /* Padding around the content */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Optional shadow for better appearance */
+        }
+
+        /* Optional: Add a full-screen overlay behind the popup */
+        #overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5); /* Semi-transparent black */
+            z-index: 999; /* Just below the popup */
+        }
+
+        #dropdown{
+            border: 1px solid "black";
+            width: 50vw;
+        }
+
+        button {
+            display: block;
+            margin-bottom: 10px;
+            width: 150px;
+            text-align: center;
+            padding: 5px;
+        }
+    </style>
+    <!-- Include Socket.IO Client from CDN -->
+    <script src="https://cdn.socket.io/socket.io-3.0.3.min.js"></script>
+</head>
+<body>
+    <div id="header">
+        <h1>Automated Theorem Prover version 0.0.1</h1>
+    </div>
+    <div id="container">
+        <div id="leftPane">
+            <div id="quantifierZone" class="editablePane">
+               <div contenteditable="true"></div>
+            </div>
+    	<div id="hypothesisZone" class="editablePane">
+               <div contenteditable="true"></div>
+            </div>
+	    <div id="targetZone" class="editablePane">
+               <div contenteditable="true"></div>
+               <!-- Add more divs as needed -->
+            </div>
+        </div>
+        <div id="rightPane">
+            <button id="loadButton" onclick="loadTableau()">Load Tableau</button>
+            <button id="clearButton" onclick="clearTableau()">Clear Tableau</button>
+            <button id="startButton" onclick="startTheoremProving()">Start</button>
+            <button id="modusPonensButton" onclick="modusPonens()" disabled>Modus Ponens</button>
+            <button id="modusTollensButton" onclick="modusTollens()" disabled>Modus Tollens</button>
+            <button id="importButton" onclick="importTheorem()" disabled>Import Theorem</button>
+            <button id="cancelButton" onclick="cancel()" disabled>Cancel</button>
+            <!-- Other buttons -->
+        </div>
+    </div>
+    <p id="status" style="width: 90vw;"></p>
+    <div id="overlay"></div>
+        </div><div id="popup" style="display: none;">
+            <div>
+               <label for="tagsInput">Tags:</label>
+               <input type="text" id="tagsInput" onchange="updateDropdown()" style="border: 1px solid black">
+            </div>
+            <div>
+            <label for="letterInput">Starting letter:</label>
+            <input type="text" id="letterInput" onchange="updateDropdown()" style="border: 1px solid black">
+            </div>
+            <select id="dropdown"></select>
+            <button id="load" onclick="loadTheorem()">Load</button>
+            <button id="cancel" onclick="cancelLoad()">Cancel</button>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

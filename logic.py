@@ -1,7 +1,8 @@
 from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
-     add_sibling, vars_used, domain, codomain, universe, metavars_used
+     add_sibling, vars_used, domain, codomain, universe, metavars_used, \
+     tags_to_list, canonicalise_tags
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -335,6 +336,23 @@ def clear_tableau(screen, tl):
     tl.tlist1.dep = dict()
     tl.loaded_theorem = None
     tl.focus = tl.tlist0
+
+def filter_library(screen, tl, library, tags):
+    tags = canonicalise_tags(tags) # deal with constraint shorthands
+    taglist = tags_to_list(tags)
+    print("taglist:"+str(taglist))
+    filtered_titles = []
+    title = library.readline()
+    while title: # check for EOF
+        library.readline() # skip constants for now
+        library.readline() # skip terms for now
+        libtaglist = tags_to_list(library.readline()[0:-1])
+        if all(elem in libtaglist for elem in taglist):
+            filtered_titles.append((library.tell(), title[7:-1]))
+        while title != '\n':
+            title = library.readline()
+        title = library.readline()
+    return filtered_titles
 
 def library_load(screen, tl, library, filepos):
     """

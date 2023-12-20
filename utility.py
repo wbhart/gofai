@@ -325,9 +325,6 @@ def qz_copy_var(screen, tl, extras, name, new_name, copied):
           tree.left = new_node 
           copied.append(new_node)  
        tree = tree.left
-    screen.pad0.pad[0] = str(qz)
-    screen.pad0.refresh()
-    screen.focus.refresh()
        
 def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
     """

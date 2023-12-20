@@ -329,7 +329,6 @@ def mark_proved(screen, tl, ttree, n):
                     if deps_defunct(screen, tl, ttree, n, i):
                         tl.tlist1.data[i] = DeadNode(tl.tlist1.data[i])
                         dirty1.append(i)
-                screen.pad1.refresh()
                 for i in range(0, len(tl.tlist2.data)):
                     if target_depends(screen, tl, ttree, i, n): 
                         tl.tlist2.data[i] = DeadNode(tl.tlist2.data[i])
@@ -386,7 +385,7 @@ def check_contradictions(screen, tl, ttree, tarmv):
                                 plist += pl
     return dirty1, dirty2, plist
 
-def targets_proved(screen, tl, ttree):
+def check_targets_proved(screen, tl, ttree):
     """
     This is the main wrapper which is called every move to see if we are done.
     First it computes all metavariables used in the targets. It then checks a
@@ -426,6 +425,10 @@ def targets_proved(screen, tl, ttree):
         dirty2 += d2
         plist += pl
         hydras_done.append(hydra)
+    return dirty1, dirty2, all(t.proved for t in ttree.andlist) or ttree.proved, plist
+
+def targets_proved(screen, tl, ttree):
+    dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
     for i in dirty1:
         screen.pad1.pad[i] = str(tl.tlist1.data[i])
     for i in dirty2:
@@ -433,7 +436,7 @@ def targets_proved(screen, tl, ttree):
     screen.pad1.refresh()
     screen.pad2.refresh()
     screen.focus.refresh()
-    return all(t.proved for t in ttree.andlist) or ttree.proved, plist
+    return done, plist
 
 def fill_macros(screen, tl):
     """
@@ -992,7 +995,7 @@ def modus_tollens(screen, tl, ttree):
         return
     line2_list = [line2]
     n = 1
-    t = t.left if forward else t.right
+    t = t.right if forward else t.left
     t = complement_tree(t) # modus tollens unifies with complement
     while isinstance(t, ForallNode): # implication is assumed to have only forall quantifiers
         t = t.left
@@ -1086,29 +1089,39 @@ def convert(screen, tl):
         c0 = get_constants(screen, tl, qz) 
         c1 = get_constants(screen, tl, tpred)
         c2 = []
+        nc2 = []
         for v in impls:
             if isinstance(v, ImpliesNode):
                 if v.iff:
-                    c2.append(("\\iff", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+                    c2.append(("\\iff", get_constants(screen, tl, v.left), \
+                                        get_constants(screen, tl, v.right)))
+                    nc2.append(("\\iff", get_constants(screen, tl, complement_tree(v.left)), \
+                                        get_constants(screen, tl, complement_tree(v.right))))
                 else:
                     c2.append((get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+                    nc2.append((get_constants(screen, tl, complement_tree(v.left)), \
+                                get_constants(screen, tl, complement_tree(v.right))))
             elif isinstance(v, EqNode):
                 c2.append(("=", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
+                nc2.append(("=", get_constants(screen, tl, v.left), get_constants(screen, tl, v.right)))
             else:
                 c2.append(get_constants(screen, tl, v))
-        var = get_init_vars(screen, tl, qz) 
-        d1 = get_terms(screen, tl, tpred, var)
-        d2 = []
-        for v in impls:
-            if isinstance(v, ImpliesNode):
-                d2.append((get_terms(screen, tl, v.left, var), get_terms(screen, tl, v.right, var)))
-            else:
-                d2.append(get_terms(screen, tl, v, var))
+                nc2.append(get_constants(screen, tl, complement_tree(v)))
+        #var = get_init_vars(screen, tl, qz) 
+        #d1 = get_terms(screen, tl, tpred, var)
+        #d2 = []
+        #for v in impls:
+        #    if isinstance(v, ImpliesNode):
+        #        d2.append((get_terms(screen, tl, v.left, var), get_terms(screen, tl, v.right, var)))
+        #    else:
+        #        d2.append(get_terms(screen, tl, v, var))
         const_str = "["+str(c0)+", "+str(c1)+", "+", ".join(str(v) for v in c2)+"]\n"
-        terms_str = "["+str(d1)+", "+", ".join(str(v) for v in d2)+"]\n"
+        nconst_str = "["+str(c0)+", "+str(c1)+", "+", ".join(str(v) for v in nc2)+"]\n"
+        #terms_str = "["+str(d1)+", "+", ".join(str(v) for v in d2)+"]\n"
         library2.write(title)
         library2.write(const_str)
-        library2.write(terms_str)
+        library2.write(nconst_str)
+        #library2.write(terms_str)
         library2.write(tags)
         library.seek(filepos)
         fstr = library.readline()

@@ -82,7 +82,6 @@ def main(stdscr):
             clear_tableau(screen, tl)
             started = False
             ttree = None
-            reset = True
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
