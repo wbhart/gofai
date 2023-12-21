@@ -2,8 +2,9 @@ var socket = io.connect('http://127.0.0.1:9001');
 
 var isUpdatingContent = false; // Whether an editable div is having its content updated
 var isEditError = false; // Whether an editable div is having its content updated
-var mode = 0; // What mode are we in? -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite
+var mode = 0; // What mode are we in? -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import
 var mmode = 0; // modus ponens/tollens step, 0 = get implication, 1 = get predicate
+var rmode = 0; // rewrite step, 0 = get equality, 1 = get selection
 var error_line = -1; // line edit error is unresolved
 
 function updateStatus(message) {
@@ -12,7 +13,7 @@ function updateStatus(message) {
 } 
 
 function switch_mode(new_mode) {
-   // mode 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import
+   // mode -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import
    mode = new_mode;
    switch (mode) {
        case -1:
@@ -21,46 +22,42 @@ function switch_mode(new_mode) {
            document.getElementById('startButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
+           document.getElementById('rewriteButton').disabled = true;
            document.getElementById('importButton').disabled = true;
            document.getElementById('cancelButton').disabled = true;
            break;
        case 0:
+           allowEdit();
            document.getElementById('loadButton').disabled = false;
            document.getElementById('clearButton').disabled = false;
            document.getElementById('startButton').disabled = false;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
+           document.getElementById('rewriteButton').disabled = true;
            document.getElementById('importButton').disabled = true;
            document.getElementById('cancelButton').disabled = true;
            break;
        case 1:
+           noEdit();
            document.getElementById('loadButton').disabled = true;
            document.getElementById('clearButton').disabled = false;
            document.getElementById('startButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = false;
            document.getElementById('modusTollensButton').disabled = false;
+           document.getElementById('rewriteButton').disabled = false;
            document.getElementById('importButton').disabled = false;
            document.getElementById('cancelButton').disabled = true;
            break;
        case 2:
        case 3:
-           document.getElementById('loadButton').disabled = true;
-           document.getElementById('clearButton').disabled = true;
-           document.getElementById('startButton').disabled = true;
-           document.getElementById('modusPonensButton').disabled = true;
-           document.getElementById('modusTollensButton').disabled = true;
-           document.getElementById('importButton').disabled = true;
-           document.getElementById('cancelButton').disabled = false;
-           break;
        case 4:
-           // not supported for now
-           break;
        case 5:
            document.getElementById('loadButton').disabled = true;
            document.getElementById('clearButton').disabled = true;
            document.getElementById('startButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
+           document.getElementById('rewriteButton').disabled = true;
            document.getElementById('importButton').disabled = true;
            document.getElementById('cancelButton').disabled = false;
    }
@@ -72,16 +69,10 @@ function handleFocus(event) {
     var index = divsArray.indexOf(this); // Find the index of the current div
     var paneId = parentPane.id;
     switch (mode) {
-        case -1:
-            event.target.blur();
-            break;
         case 0:
             if (!isUpdatingContent && !isEditError) {
                 fetchAndFillContent(this, index); // Function to fetch content from Python
             }
-            break;
-        case 1:
-            event.target.blur();
             break;
         case 2:
             event.target.blur();
@@ -95,8 +86,6 @@ function handleFocus(event) {
                         this.style.color = 'blue';
                         socket.emit('select_predicate', { paneId: paneId, lineNumber: index });
                         break;
-                    default:
-                        event.target.blur();
                 }
             }
             if (paneId === 'targetZone') {
@@ -105,8 +94,6 @@ function handleFocus(event) {
                         this.style.color = 'blue';
                         socket.emit('select_predicate', { paneId: paneId, lineNumber: index });
                         break; 
-                    default:
-                        event.target.blur();
                 }
             }
             break;
@@ -122,8 +109,6 @@ function handleFocus(event) {
                         this.style.color = 'blue';
                         socket.emit('select_predicate', { paneId: paneId, lineNumber: index });
                         break;
-                    default:
-                        event.target.blur();
                 }
             }
             if (paneId === 'targetZone') {
@@ -131,16 +116,20 @@ function handleFocus(event) {
                     case 1:
                         this.style.color = 'blue';
                         socket.emit('select_predicate', { paneId: paneId, lineNumber: index });
-                        break; 
-                    default:
-                        event.target.blur();
+                        break;
                 }
             }
             break;
         case 4:
-            // not supported for now
-            break;
-        case 5:
+            switch (rmode) {
+                case 0:
+                    event.target.blur();
+                    if (paneId === 'hypothesisZone') {
+                        this.style.color = 'blue';
+                        socket.emit('rewrite_start', { lineNumber: index });
+                    }
+                break;
+            }
     }
 }
 
@@ -150,23 +139,10 @@ function handleBlur(event) {
     var index = divsArray.indexOf(this); // Find the index of the current div
     var pane = parentPane.id;
     switch (mode) {
-        case -1:
-            break;
         case 0:
             if (!isUpdatingContent) {
                 updateDiv(event.target)
             }
-            break;
-        case 1:
-            break;
-        case 2:
-            break;
-        case 3:
-            break;
-        case 4:
-            // not supported for now
-            break;
-        case 5:
     }
 }
 
@@ -176,6 +152,24 @@ function unselect() {
 
     editableDivs.forEach(function(div) {
         div.style.color = 'black';
+    });
+}
+
+function noEdit() {
+    // unselect the text in all contenteditable divs
+    var editableDivs = document.querySelectorAll('#leftPane .editablePane div');
+
+    editableDivs.forEach(function(div) {
+        div.style.contenteditable = 'false';
+    });
+}
+
+function allowEdit() {
+    // unselect the text in all contenteditable divs
+    var editableDivs = document.querySelectorAll('#leftPane .editablePane div');
+
+    editableDivs.forEach(function(div) {
+        div.style.contenteditable = 'true';
     });
 }
 
@@ -199,6 +193,12 @@ function modusTollens() {
     updateStatus("Select implication")
     switch_mode(3);
     mmode = 0;
+}
+
+function rewriteFormula() {
+    updateStatus("Select equality")
+    switch_mode(4);
+    rmode = 0;
 }
 
 function clearTableau() {
@@ -250,8 +250,10 @@ function isTableauEmpty() {
 
 function setupEditableDivListeners() {
     document.querySelectorAll('.editablePane div').forEach(div => {
+        div.addEventListener('keydown', handleKeyPress);
         div.addEventListener('focus', handleFocus);
         div.addEventListener('blur', handleBlur);
+        div.addEventListener('mouseup', getSelectedText);
     });
 }
 
@@ -329,10 +331,6 @@ socket.on('update_line', function(data) {
     }
 });
 
-document.querySelectorAll('.editablePane div').forEach(lineDiv => {
-    lineDiv.addEventListener('keydown', handleKeyPress);
-});
-
 function handleKeyPress(event) {
     if (mode === 0 && event.key === 'Enter') {
         event.preventDefault(); // Prevents default Enter key behavior (new line)
@@ -395,6 +393,7 @@ function addNewLineToPane(paneId) {
     newLine.addEventListener('keydown', handleKeyPress);
     newLine.addEventListener('focus', handleFocus);
     newLine.addEventListener('blur', handleBlur);
+    newLine.addEventListener('mouseup', getSelectedText);
     pane.appendChild(newLine);
 }
 
@@ -511,3 +510,36 @@ socket.on('get_predicate', function(num) {
         updateStatus('Select predicate'+num)
     }
 });
+
+socket.on('get_selection', function() {
+    rmode = 1;
+    updateStatus('Select expression to rewrite')
+});
+
+function getSelectedText(event) {
+    if (mode === 4 && rmode === 1) {
+        var selection = window.getSelection();
+    
+        if (selection.rangeCount > 0) {
+            var div = event.target
+            var parentPane = div.parentElement;
+            var divsArray = Array.from(parentPane.querySelectorAll('div'));
+            var index = divsArray.indexOf(div);
+            var paneId = parentPane.id;
+
+            var range = selection.getRangeAt(0);
+            var selectedText = range.toString();
+
+            var divContent = div.innerText;
+            var start = range.startOffset;
+            var end = range.endOffset;
+
+            if (start !== end) {
+                console.log('Selected text:', selectedText);
+                console.log('Start index:', start, 'End index:', end);
+
+                socket.emit('rewrite_selection', { paneId: paneId, lineNumber: index, start: start, end: end });
+            }
+        }
+    }
+}

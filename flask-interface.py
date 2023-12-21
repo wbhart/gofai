@@ -2,11 +2,12 @@ from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 from tree import TreeList
 from logic import modus_ponens, modus_tollens, cleanup, clear_tableau, filter_library, \
-     library_load, fill_macros, library_import
+     library_load, fill_macros, library_import, equality_substitution
 from utility import filter_titles, initialise_sorts, type_vars, process_sorts, \
-     TargetNode, target_compatible, update_constraints, process_sorts, complement_tree
+     TargetNode, target_compatible, update_constraints, process_sorts, complement_tree, \
+     trim_spaces, find_all
 from moves import check_targets_proved
-from nodes import ForallNode, IffNode, ImpliesNode, AndNode
+from nodes import ForallNode, IffNode, ImpliesNode, AndNode, EqNode
 from parser import statement, StatementVisitor
 from parsimonious import exceptions
 import json
@@ -16,6 +17,7 @@ tl = None # tableau
 ttree = None # target dependency tree
 filtered_titles = None # (filepos, title) pairs filtered from library
 impl = None # implication in modus_ponens/tollens
+equ = None # equality in rewrite
 pred_list = None # list of predicates to use in modus ponens/tollens
 predicate = None # predicate being used in mp/mt
 num_preds = 0 # number of predicates selected
@@ -248,7 +250,60 @@ def handle_select_predicate(data):
             emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
                  'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
             autocleanup(screen, tl, ttree)
-            
+
+@socketio.on('rewrite_start')
+def handle_rewrite(data):
+    global screen
+    global tl
+    global equ
+    line1 = data['lineNumber']
+    equ = line1
+    t = tl.tlist1.data[line1]
+    while isinstance(t, ForallNode):
+        t = t.left
+    if not isinstance(t, EqNode): # not an equality
+        emit('error', {'msg' : 'Not an equality', 'restart' : False})
+    else:
+        move = 4
+        emit('get_selection')
+
+@socketio.on('rewrite_selection')
+def handle_rewrite_selection(data):
+    global screen
+    global tl
+    global ttree
+    global equ
+    hyp = data['paneId'] == 'hypothesisZone'
+    line2 = data['lineNumber']
+    start = data['start']
+    end = data['end']
+    if hyp:
+        tlist = tl.tlist1.data
+    else:
+        tlist = tl.tlist2.data
+    string = str(tlist[line2])
+    start, sub_string = trim_spaces(string, start, end)
+    if sub_string == '':
+        emit('error', {'msg' : 'Empty selection', 'restart' : False})
+    else:
+        idx = find_all(string, sub_string)
+        n = idx.index(start) # which occurence of substring do we want (0-indexed)
+        if not equality_substitution(screen, tl, equ, line2, hyp, sub_string, n):
+            emit('error', {'msg' : 'Equality cannot be applied', 'restart' : False})
+        else:
+            if hyp:
+                dirty1 = [line2]
+                dirty2 = []
+            else:
+                dirty1 = []
+                dirty2 = [line2]
+            dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
+            dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
+            dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
+            emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
+                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+            autocleanup(screen, tl, ttree)
+
 @socketio.on('library_load')
 def handle_library_load(data):
     global screen
