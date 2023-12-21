@@ -37,10 +37,12 @@
 
         #quantifierZone {
             height: 20px; /* Adjust for a single line */
+            min-height: 20px;
         }
 
         #hypothesisZone, #targetZone {
             flex-grow: 1;
+            min-height: 20px;
         }
 
         #popup {
@@ -105,6 +107,7 @@
             <button id="loadButton" onclick="loadTableau()">Load Tableau</button>
             <button id="clearButton" onclick="clearTableau()">Clear Tableau</button>
             <button id="startButton" onclick="startTheoremProving()">Start</button>
+            <button id="automateButton" onclick="startAutomation()">Automate</button>
             <button id="modusPonensButton" onclick="modusPonens()" disabled>Modus Ponens</button>
             <button id="modusTollensButton" onclick="modusTollens()" disabled>Modus Tollens</button>
             <button id="rewriteButton" onclick="rewriteFormula()" disabled>Rewrite</button>

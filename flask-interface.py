@@ -10,6 +10,7 @@ from moves import check_targets_proved
 from nodes import ForallNode, IffNode, ImpliesNode, AndNode, EqNode
 from parser import statement, StatementVisitor
 from parsimonious import exceptions
+from automation import automate
 import json
 
 screen = None # dummy screen parameter
@@ -66,13 +67,13 @@ def autocleanup(screen, tl, ttree):
     dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
     dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
     emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-         'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+         'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
     dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
     dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
     dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
     dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
     emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-         'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+         'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
     for i in plist:
         msg = 'Target '+str(i)+' proved!'
         emit('error', {'msg' : msg, 'restart' : False})
@@ -248,7 +249,7 @@ def handle_select_predicate(data):
             dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
             dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
             emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
             autocleanup(screen, tl, ttree)
 
 @socketio.on('rewrite_start')
@@ -301,7 +302,7 @@ def handle_rewrite_selection(data):
             dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
             dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
             emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
             autocleanup(screen, tl, ttree)
 
 @socketio.on('library_load')
@@ -319,7 +320,7 @@ def handle_library_load(data):
             dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
             library.close()
             emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
             return
     library.close()
 
@@ -343,7 +344,7 @@ def handle_library_import(data):
                 dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
                 dirtytxt2 = []
                 emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-                     'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+                     'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
                 autocleanup(screen, tl, ttree)
                 return
     library.close()
@@ -367,9 +368,33 @@ def handle_start():
         dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]
         move = 1
         emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
-             'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2})
+             'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
     else:
         emit('error', {'msg' : error, 'restart' : True})
+
+@socketio.on('run_automation')
+def handle_automation():
+    global screen
+    global tl
+    global ttree
+    if automate(screen, tl, ttree, 'javascript'):
+        dirty1 = []
+        dirty2 = []
+        dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
+        dirtytxt1 = []
+        dirtytxt2 = []
+        emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
+             'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
+        emit('done')
+    else:
+        dirty1 = []
+        dirty2 = []
+        dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
+        dirtytxt1 = []
+        dirtytxt2 = []
+        emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
+             'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
+        emit('not_done')
 
 if __name__ == '__main__':
     initialize()

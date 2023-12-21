@@ -2,7 +2,7 @@ var socket = io.connect('http://127.0.0.1:9001');
 
 var isUpdatingContent = false; // Whether an editable div is having its content updated
 var isEditError = false; // Whether an editable div is having its content updated
-var mode = 0; // What mode are we in? -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import
+var mode = 0; // What mode are we in? -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import, 6 = automation
 var mmode = 0; // modus ponens/tollens step, 0 = get implication, 1 = get predicate
 var rmode = 0; // rewrite step, 0 = get equality, 1 = get selection
 var error_line = -1; // line edit error is unresolved
@@ -13,13 +13,14 @@ function updateStatus(message) {
 } 
 
 function switch_mode(new_mode) {
-   // mode -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import
+   // mode -1 = done, 0 = init, 1 = started, 2 = mp, 3 = mt, 4 = rewrite, 5 = import, 6 = automation
    mode = new_mode;
    switch (mode) {
        case -1:
            document.getElementById('loadButton').disabled = true;
            document.getElementById('clearButton').disabled = false;
            document.getElementById('startButton').disabled = true;
+           document.getElementById('automateButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
            document.getElementById('rewriteButton').disabled = true;
@@ -31,6 +32,7 @@ function switch_mode(new_mode) {
            document.getElementById('loadButton').disabled = false;
            document.getElementById('clearButton').disabled = false;
            document.getElementById('startButton').disabled = false;
+           document.getElementById('automateButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
            document.getElementById('rewriteButton').disabled = true;
@@ -42,6 +44,7 @@ function switch_mode(new_mode) {
            document.getElementById('loadButton').disabled = true;
            document.getElementById('clearButton').disabled = false;
            document.getElementById('startButton').disabled = true;
+           document.getElementById('automateButton').disabled = false;
            document.getElementById('modusPonensButton').disabled = false;
            document.getElementById('modusTollensButton').disabled = false;
            document.getElementById('rewriteButton').disabled = false;
@@ -55,11 +58,24 @@ function switch_mode(new_mode) {
            document.getElementById('loadButton').disabled = true;
            document.getElementById('clearButton').disabled = true;
            document.getElementById('startButton').disabled = true;
+           document.getElementById('automateButton').disabled = true;
            document.getElementById('modusPonensButton').disabled = true;
            document.getElementById('modusTollensButton').disabled = true;
            document.getElementById('rewriteButton').disabled = true;
            document.getElementById('importButton').disabled = true;
            document.getElementById('cancelButton').disabled = false;
+           break;
+        case 6:
+           document.getElementById('loadButton').disabled = true;
+           document.getElementById('clearButton').disabled = true;
+           document.getElementById('startButton').disabled = true;
+           document.getElementById('automateButton').disabled = true;
+           document.getElementById('modusPonensButton').disabled = true;
+           document.getElementById('modusTollensButton').disabled = true;
+           document.getElementById('rewriteButton').disabled = true;
+           document.getElementById('importButton').disabled = true;
+           document.getElementById('cancelButton').disabled = true;
+       
    }
 }
 
@@ -199,6 +215,12 @@ function rewriteFormula() {
     updateStatus("Select equality")
     switch_mode(4);
     rmode = 0;
+}
+
+function startAutomation() {
+    console.log("automation started");
+    switch_mode(6);
+    socket.emit('run_automation');
 }
 
 function clearTableau() {
@@ -369,6 +391,13 @@ socket.on('done', function() {
     alert('All targets proved!');
 });
 
+socket.on('not_done', function() {
+    updateStatus(''); // clear any status message
+    unselect(); // clear any selected hypotheses/targets
+    switch_mode(1);
+    alert('Unable to prove theorem');
+});
+
 socket.on('edit_error', function(data) {
     console.log("Error received:", data.msg);  // Add this line for debugging
     isUpdatingContent = true;
@@ -472,8 +501,9 @@ socket.on('update_dirty', function(data) {
     dirtytxt1 = data.dirtytxt1;
     dirty2 = data.dirty2;
     dirtytxt2 = data.dirtytxt2;
+    reset_mode = data.reset_mode
     unselect();
-    if (mode > 0) {
+    if (reset_mode && mode > 0) {
         switch_mode(1);
     }
     updateStatus('');

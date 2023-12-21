@@ -54,7 +54,10 @@ def main(stdscr):
                screen.dialog(error)
         elif c == 'a': # automation
             if started:
-                automate(screen, tl, ttree)
+                if automate(screen, tl, ttree):
+                    screen.dialog("All targets proved!")
+                else:
+                    screen.dialog("Unable to prove theorem.")
                 skip = True
         elif c == 'p': # modus ponens
             if started:

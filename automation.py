@@ -3,7 +3,7 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
      append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
      vars_used, max_type_size, complement_tree
 from autoparse import parse_consts
-from moves import targets_proved
+from moves import check_targets_proved
 from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
      SymbolNode, NeqNode, ForallNode
@@ -11,6 +11,14 @@ from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy
 import logic
+
+automation_limit = 150 # number of lines in hypothesis pane before automation gives up
+
+try:
+    from flask import Flask, render_template
+    from flask_socketio import SocketIO, emit
+except:
+    pass
 
 class AutoData:
     def __init__(self, line, version, const1, const2, nconst1, nconst2):
@@ -281,36 +289,47 @@ def autocleanup(screen, tl, ttree):
         screen.dialog(error)
     return dirty1, dirty2
 
-def update_screen(screen, tl):
-    tlist1 = tl.tlist1.data
-    tlist2 = tl.tlist2.data
-    pad1 = screen.pad1.pad
-    pad2 = screen.pad2.pad
-    screen.pad0.pad[0] = str(tl.tlist0.data[0])
-    line = screen.pad0.scroll_line + screen.pad0.cursor_line
-    string = screen.pad0.pad[line]
-    while True:
-        i = screen.pad0.scroll_char + nchars_to_chars(string, \
-                screen.pad0.scroll_char, screen.pad0.cursor_char) # current pos. within string
-        if i < len(string):
-            iswide = iswide_char(string[i])
-            screen.pad0.move_right(iswide)
-        else:
-            break
-    for i in range(len(tlist1)):
-        pad1[i] = str(tlist1[i])
-    for i in range(len(tlist2)):
-        pad2[i] = str(tlist2[i])
-    while tl.tlist1.line != tl.tlist1.len():
-        screen.pad1.cursor_down()
+def update_screen(screen, tl, interface):
+    global automation_limit
+    if interface == 'curses':
+        tlist1 = tl.tlist1.data
+        tlist2 = tl.tlist2.data
+        pad1 = screen.pad1.pad
+        pad2 = screen.pad2.pad
+        screen.pad0.pad[0] = str(tl.tlist0.data[0])
+        line = screen.pad0.scroll_line + screen.pad0.cursor_line
+        string = screen.pad0.pad[line]
+        while True:
+            i = screen.pad0.scroll_char + nchars_to_chars(string, \
+                    screen.pad0.scroll_char, screen.pad0.cursor_char) # current pos. within string
+            if i < len(string):
+                iswide = iswide_char(string[i])
+                screen.pad0.move_right(iswide)
+            else:
+                break
+        for i in range(len(tlist1)):
+            pad1[i] = str(tlist1[i])
+        for i in range(len(tlist2)):
+            pad2[i] = str(tlist2[i])
+        while tl.tlist1.line != tl.tlist1.len():
+            screen.pad1.cursor_down()
+            screen.pad1.refresh()
+            tl.tlist1.line += 1
+        tl.tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
+        tl.tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
+        screen.pad0.refresh()
         screen.pad1.refresh()
-        tl.tlist1.line += 1
-    tl.tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
-    tl.tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
-    screen.pad0.refresh()
-    screen.pad1.refresh()
-    screen.pad2.refresh()
-    screen.focus.refresh()
+        screen.pad2.refresh()
+        screen.focus.refresh()
+    elif interface == 'javascript':
+        dirty1 = [i for i in range(len(tl.tlist1.data))]
+        dirty2 = [i for i in range(len(tl.tlist2.data))]
+        dirtytxt0 = '' # don't display qz during automation
+        dirtytxt1 = [str(v) for v in tl.tlist1.data]
+        dirtytxt2 = [str(v) for v in tl.tlist2.data]
+        emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
+             'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': False})
+    return len(tl.tlist1.data) > automation_limit
 
 def check_duplicates(screen, tl, ttree, n1, n2):
     """
@@ -395,7 +414,7 @@ def check_sizes(screen, tl, atab, n1, n2):
                 nooversize_found = True
     return nooversize_found
 
-def automate(screen, tl, ttree):
+def automate(screen, tl, ttree, interface='curses'):
     libthms_loaded = dict() # keep track of which library theorems we loaded, and where
     fake_ttree = TargetNode(-1, []) # used for fake loading of library results
     tlist1 = tl.tlist1.data
@@ -471,18 +490,18 @@ def automate(screen, tl, ttree):
                                         update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, mv_diff)
-                                        done, plist = targets_proved(screen, tl, ttree)
+                                        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                         c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2))
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2))
                                         if c1 and c2:
                                             hprogress = True
                                             progress = True
-                                            update_screen(screen, tl)
+                                            if update_screen(screen, tl, interface):
+                                                return False
                                         autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2))
                                         if done:
-                                            screen.dialog("All targets proved!")
-                                            update_screen(screen, tl)
-                                            return
+                                            update_screen(screen, tl, interface)
+                                            return True
                     # if no progress, look for library result that can be applied to head
                     if not progress:
                         libthms = filter_theorems1(screen, index, ht, hc)
@@ -575,17 +594,17 @@ def automate(screen, tl, ttree):
                                         update_autotab(screen, tl, atab, dirty1, dirty2, 0)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, 0)
-                                        done, plist = targets_proved(screen, tl, ttree)
+                                        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                         c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2))
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2))
                                         if c1 and c2:
                                             hprogress = True
-                                            update_screen(screen, tl)
+                                            if update_screen(screen, tl, interface):
+                                                return False
                                         autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2))
                                         if done:
-                                            screen.dialog("All targets proved!")
-                                            update_screen(screen, tl)
-                                            return
+                                            update_screen(screen, tl, interface)
+                                            return True
             tar = get_autonode(screen, atab.tar_heads, i)
             if not done and tar:
                 # check if constants in target are all in hypotheses
@@ -623,17 +642,17 @@ def automate(screen, tl, ttree):
                             libthms_loaded[filepos] = j
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                             update_autotab(screen, tl, atab, dirty1, dirty2)
-                            done, plist = targets_proved(screen, tl, ttree)
+                            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                             c1 = check_duplicates(screen, tl, ttree, n1, n2)
                             c2 = check_sizes(screen, tl, atab, n1, n2)
                             if c1 and c2:
                                 tprogress = True
-                                update_screen(screen, tl)
+                                if update_screen(screen, tl, interface):
+                                    return False
                             autotab_remove_deadnodes(screen, tl, atab, n1, n2)
                             if done:
-                                screen.dialog("All targets proved!")
-                                update_screen(screen, tl)
-                                return
+                                update_screen(screen, tl, interface)
+                                return True
                 if not tprogress:
                     if not set(tarc).issubset(hypc):
                         pass # not implemented yet
@@ -717,17 +736,17 @@ def automate(screen, tl, ttree):
                                             update_autotab(screen, tl, atab, dirty1, dirty2)
                                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                             update_autotab(screen, tl, atab, dirty1, dirty2)
-                                            done, plist = targets_proved(screen, tl, ttree)
+                                            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                             c1 = check_duplicates(screen, tl, ttree, n1, n2)
                                             c2 = check_sizes(screen, tl, atab, n1, n2)
                                             if c1 and c2:
                                                 tprogress = True
-                                                update_screen(screen, tl)
+                                                if update_screen(screen, tl, interface):
+                                                    return False
                                             autotab_remove_deadnodes(screen, tl, atab, n1, n2)
                                             if done:
-                                                screen.dialog("All targets proved!")
-                                                update_screen(screen, tl)
-                                                return
+                                                update_screen(screen, tl, interface)
+                                                return True
             if tprogress or not hprogress: # must move on if theorem reasoned back from
                 i += 1
             if hprogress or tprogress:
@@ -736,8 +755,7 @@ def automate(screen, tl, ttree):
             if mode < 1: # try more extreme things
                 mode += 1
             else:
-                screen.dialog("Unable to prove theorem automatically")
-                update_screen(screen, tl)
-                return
+                update_screen(screen, tl, interface)
+                return False
 
         
