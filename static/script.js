@@ -280,26 +280,26 @@ function setupEditableDivListeners() {
 }
 
 window.onload = function() {
-        socket.emit('clear_tableau'); // Clear the tableau on the Python side
-        clearPanes() // Clear the three panes in the interface
-        isUpdatingContent = false
-        isEditError = false
-        error_line = -1;
-        unselect();
-        switch_mode(0);
-        // Assuming the text edit div has contenteditable attribute
-        var textEditDiv = document.querySelector('.editablePane div[contenteditable="true"]');
-        var quantifierZone = document.getElementById('quantifierZone');
+    socket.emit('clear_tableau'); // Clear the tableau on the Python side
+    clearPanes() // Clear the three panes in the interface
+    isUpdatingContent = false
+    isEditError = false
+    error_line = -1;
+    unselect();
+    switch_mode(0);
+    // Assuming the text edit div has contenteditable attribute
+    var textEditDiv = document.querySelector('.editablePane div[contenteditable="true"]');
+    var quantifierZone = document.getElementById('quantifierZone');
 
-        if (textEditDiv && quantifierZone) {
-            // Get the height of the text edit div
-            var height = textEditDiv.offsetHeight;
+    if (textEditDiv && quantifierZone) {
+        // Get the height of the text edit div
+        var height = textEditDiv.offsetHeight;
 
-            // Set the height of the quantifier zone
-            quantifierZone.style.height = height + 'px';
-        }
-        setupEditableDivListeners()
-    };
+        // Set the height of the quantifier zone
+        quantifierZone.style.height = height + 'px';
+    }
+    setupEditableDivListeners()
+};
 
 socket.on('connect', function() {
     console.log("Successfully connected to WebSocket server.");
