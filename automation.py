@@ -517,6 +517,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, mv_diff)
                                         dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
+                                        update_screen(screen, tl, interface, dirty1, dirty2)
                                         c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2), interface)
                                         if c1 and c2:
@@ -620,6 +621,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
                                         dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
+                                        update_screen(screen, tl, interface, dirty1, dirty2)
                                         c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2), interface)
                                         if c1 and c2:
@@ -667,6 +669,7 @@ def automate(screen, tl, ttree, interface='curses'):
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                             update_autotab(screen, tl, atab, dirty1, dirty2, interface)
                             dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
+                            update_screen(screen, tl, interface, dirty1, dirty2)
                             c1 = check_duplicates(screen, tl, ttree, n1, n2, interface)
                             c2 = check_sizes(screen, tl, atab, n1, n2, interface)
                             if c1 and c2:
@@ -760,6 +763,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                             update_autotab(screen, tl, atab, dirty1, dirty2, interface)
                                             dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
+                                            update_screen(screen, tl, interface, dirty1, dirty2)
                                             c1 = check_duplicates(screen, tl, ttree, n1, n2, interface)
                                             c2 = check_sizes(screen, tl, atab, n1, n2, interface)
                                             if c1 and c2:
