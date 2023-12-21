@@ -314,6 +314,7 @@ def handle_library_load(data):
     library = open("library.dat", "r")
     for filepos, title in filtered_titles:
         if title == selected_string:
+            tl.loaded_theorem = filepos
             dirty1, dirty2 = library_load(screen, tl, library, filepos)
             dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
             dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
