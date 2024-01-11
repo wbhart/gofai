@@ -3,6 +3,8 @@ import curses.ascii # ascii classification
 from enum import Enum
 from curses import wrapper
 
+line_limit = 600 # maximum number of lines in each pane of tableau
+
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 
 def iswide_char(c):
@@ -282,8 +284,8 @@ class Screen:
 
         # initialise pads with plenty of lines
         self.pad0 = Pad(self.win0, 1, 1, 1, 1, curses.COLS, border=True)
-        self.pad1 = Pad(self.win1, 200, 3, 1, self.win1_height - 2, curses.COLS, border=True)
-        self.pad2 = Pad(self.win2, 200, self.win1_height + 2, 1, self.win2_height - 2, curses.COLS, border=True)
+        self.pad1 = Pad(self.win1, line_limit, 3, 1, self.win1_height - 2, curses.COLS, border=True)
+        self.pad2 = Pad(self.win2, line_limit, self.win1_height + 2, 1, self.win2_height - 2, curses.COLS, border=True)
         self.pad3 = Pad(self.win3, 1, curses.LINES - 1, 0, 1, curses.COLS)
 
         # pad with current focus

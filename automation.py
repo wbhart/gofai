@@ -4,21 +4,25 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
      vars_used, max_type_size, complement_tree
 from autoparse import parse_consts
 from moves import check_targets_proved
-from unification import unify
+from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
-     SymbolNode, NeqNode, ForallNode
+     SymbolNode, NeqNode, ForallNode, EqNode, NotNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy
 import logic
 
-automation_limit = 150 # number of lines in hypothesis pane before automation gives up
+automation_limit = 500 # number of lines in hypothesis pane before automation gives up
 
 try:
     from flask import Flask, render_template
     from flask_socketio import SocketIO, emit
 except:
     pass
+
+class SkolemNode:
+    def __init__(self, lines):
+        self.lines = lines
 
 class AutoData:
     def __init__(self, line, version, const1, const2, nconst1, nconst2):
@@ -30,7 +34,7 @@ class AutoData:
         self.nconst2 = nconst2 # negated constants on right side of implication
         self.applied = [] # list of heads that have been applied to this
         self.num_mv = 0 # number of metavariables impl will increase or head has been increased
-
+        
     def __str__(self):
         return str(self.line)
 
@@ -46,6 +50,16 @@ class AutoTab:
         self.nhyps = len(tlist1)
         self.ntars = len(tlist2)
         self.vars = get_init_vars(screen, tl, tlist0[0]) if tlist0 else [] # vars in initial tableau
+        self.depth = dict() # search depth at which hypothesis was found
+        for i in range(len(tlist1)):
+            self.depth[i] = 0
+        #self.sk_ref = None # where in the qz we have checked up to for new skolems
+        #self.sk_nodes = [] # list of skolem nodes for removing duplicates up to skolem vars
+        #if tlist0:
+        #    tree = tlist0[0]
+        #    while tree.left:
+        #        tree = tree.left
+        #    self.sk_ref = tree
         qz_data = [AutoData(0, 0, get_constants(screen, tl, tlist0[0]), None, None, None)] if tlist0 else []
         hyp_heads = []
         hyp_impls = []
@@ -349,7 +363,7 @@ def update_screen(screen, tl, interface, d1, d2):
              'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': False})
     return len(tl.tlist1.data) > automation_limit
 
-def check_duplicates(screen, tl, ttree, n1, n2, interface):
+def check_duplicates(screen, tl, ttree, n1, n2, tar, interface):
     """
     If n2 is equal to the number of targets in the tableau, check hypotheses
     starting at index n1 for duplicates with prior hypotheses (up to) possibly
@@ -371,9 +385,10 @@ def check_duplicates(screen, tl, ttree, n1, n2, interface):
             nodup = True
             for j in range(n1):
                 if is_duplicate_upto_metavars(tlist1[i], tlist1[j]):
-                    tlist1[i] = DeadNode(tlist1[i])
-                    dirty1.append(i)
-                    nodup = False
+                    if deps_compatible(screen, tl, ttree, tar, j):
+                        tlist1[i] = DeadNode(tlist1[i])
+                        dirty1.append(i)
+                        nodup = False
             if nodup:
                 nodup_found = True
     dup2 = True
@@ -396,6 +411,130 @@ def check_duplicates(screen, tl, ttree, n1, n2, interface):
         nodup_found = True
     update_screen(screen, tl, interface, dirty1, dirty2)
     return nodup_found
+
+def contains_skolems(screen, tl, tree, sk):
+    """
+    Given a list of skolem variable names, return True if any of them appear in
+    the given tree.
+    """
+    var = vars_used(screen, tl, tree)
+    for n in sk:
+        if n in var:
+            return True
+    return False
+
+def is_sk_duplicate(screen, tl, node, sn, sk):
+    """
+    Return True if the deductions listed in node are duplicates (up to renaming
+    skolems and metavars).
+    """
+    tlist1 = tl.tlist1.data
+    if len(sn.lines) != len(node.lines): # check same number of deducts
+        return False
+    from_vars = [] # names vars are renamed from
+    to_vars = [] # names vars are renamed to
+    trees = [tlist1[i] for i in node.lines]
+    for i in sn.lines:
+        tree2 = tlist1[i]
+        found = False # if the given line is duplicated
+        for j in range(len(trees)):
+            tree1 = trees[j]
+            if is_duplicate_upto_metavars(tree1, tree2, sk, from_vars, to_vars):
+                found = True
+                del trees[j]
+                break
+        if not found:
+            return False
+    return True
+
+def wind_skolems(screen, tl, atab):
+    """
+    Move skolem reference to end of qz
+    """
+    tlist0 = tl.tlist0.data
+    if atab.sk_ref == None:
+        if tlist0:
+            tree = tlist0[0]
+        else:
+            return # no skolems
+    else:
+        tree = atab.sk_ref
+        if not tree.left:
+            return # no skolems
+        tree = tree.left
+    while tree.left:
+        tree = tree.left
+    atab.sk_ref = tree
+    
+def check_skolems(screen, tl, atab, n1, interface):
+    """
+    Deduplicate new deductions that are the same as prior ones up to names of
+    skolem variables.
+    """
+    dirty1 = []
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    # get a list of new skolem vars
+    sk = [] # new skolem vars
+    if atab.sk_ref == None:
+        if tlist0:
+            tree = tlist0[0]
+        else:
+            return True # no skolems
+    else:
+        tree = atab.sk_ref
+        if not tree.left:
+            return True # no skolems
+        tree = tree.left
+    while tree.left:
+        if isinstance(tree, ForallNode):
+            sk.append(tree.var.name())
+        tree = tree.left
+    atab.sk_ref = tree
+    if isinstance(tree, ForallNode):
+        sk.append(tree.var.name())
+    if not sk:
+        return True # no skolems
+    # create new skolem struct
+    new_deducts = []
+    for i in range(n1, len(tlist1)):
+        if contains_skolems(screen, tl, tlist1[i], sk):
+            new_deducts.append(i)
+    if new_deducts:
+        sn = SkolemNode(new_deducts)
+        # check for duplicates
+        for node in atab.sk_nodes:
+            if is_sk_duplicate(screen, tl, node, sn, sk):
+                for i in new_deducts:
+                    tlist1[i] = DeadNode(tlist1[i])
+                    dirty1.append(i)
+                update_screen(screen, tl, interface, dirty1, [])
+                return False
+        # save new skolem node
+        atab.sk_nodes.append(sn)
+    return True
+    
+def check_trivial(screen, tl, atab, n1, interface):
+    tlist1 = tl.tlist1.data
+    dirty1 = []
+    for i in range(n1, len(tlist1)):
+        tree = tlist1[i]
+        if isinstance(tree, ImpliesNode):
+            if str(tree.left) == str(tree.right):
+                tlist1[i] = DeadNode(tlist1[i])
+                dirty1.append(i)
+            elif isinstance(tree.right, EqNode):
+                if str(tree.right.left) == str(tree.right.right):
+                    tlist1[i] = DeadNode(tlist1[i])
+                    dirty1.append(i)
+        elif isinstance(tree, EqNode):
+            if str(tree.left) == str(tree.right):
+                tlist1[i] = DeadNode(tlist1[i])
+                dirty1.append(i)
+    if dirty1:
+        update_screen(screen, tl, interface, dirty1, [])
+        return False
+    return True
 
 def check_sizes(screen, tl, atab, n1, n2, interface):
     """
@@ -454,6 +593,8 @@ def automate(screen, tl, ttree, interface='curses'):
     index = create_index(screen, tl, library)
     done = False # whether all targets are proved
     mode = 0 # mode 0 = no adding tar metavars, mode 1 = add tar metavars with iffs
+    current_depth = 1 # depth we are currently searching to
+    depth_progress = False # whether we've made progress at current depth
     while True: # keep going until theorem proved or progress stalls
         # get next unproved target
         i = 0
@@ -472,9 +613,11 @@ def automate(screen, tl, ttree, interface='curses'):
                     hyps.append(j)
             # find all consequences of individual hypotheses (Fredy's ball)
             hprogress = False # whether some progress is made on the hypothesis side
+            tprogress = False # whether some progress is made on the target side
             for j in hyps:
                 hyp = get_autonode(screen, atab.hyp_heads, j)
-                if hyp: # hypothesis is a head
+                hdepth = atab.depth[j]
+                if hyp and hdepth < current_depth: # hypothesis is a head
                     progress = False
                     line2 = hyp.line
                     hc = hyp.const1
@@ -483,10 +626,11 @@ def automate(screen, tl, ttree, interface='curses'):
                     for imp in atab.hyp_impls:
                         pos = set(imp.const1).issubset(hc)
                         neg = set(imp.nconst2).issubset(hc)
-                        if imp.num_mv <= 0 and (pos or neg):
+                        line1 = imp.line
+                        idepth = atab.depth[line1]
+                        if imp.num_mv <= 0 and (pos or neg) and idepth < current_depth:
                             unifies1 = False
                             unifies2 = False
-                            line1 = imp.line
                             if (hyp.line, hyp.version, True) not in imp.applied:
                                 v1 = vars_used(screen, tl, tlist1[line1])
                                 v2 = vars_used(screen, tl, tlist1[line2])
@@ -500,11 +644,18 @@ def automate(screen, tl, ttree, interface='curses'):
                                             if not isinstance(prec, AndNode):
                                                 # check if precedent unifies with hyp
                                                 unifies1, assign, macros = unify(screen, tl, prec, tlist1[line2])
+                                                # check all metavars were assigned
+                                                if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
+                                                    unifies1 = False
                                         if neg:
                                             prec, u = unquantify(screen, thm.right, True)
                                             if not isinstance(prec, AndNode):
                                                 # check if neg consequent unifies with hyp
-                                                unifies2, assign, macros = unify(screen, tl, complement_tree(prec), tlist1[line2])
+                                                comp = complement_tree(prec)
+                                                unifies2, assign, macros = unify(screen, tl, comp, tlist1[line2])
+                                                # check all metavars were assigned
+                                                if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
+                                                    unifies2 = False
                             if unifies1 or unifies2:
                                 # apply modus ponens and or modus tollens
                                 dep = tl.tlist1.dependency(line1)
@@ -517,15 +668,20 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if not success and unifies2:
                                         success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, [line2], True)
                                     if success:
+                                        for k in dirty1:
+                                            atab.depth[k] = max(hdepth, idepth) + 1
                                         mv_diff = hyp.num_mv + max(imp.num_mv, 0)
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, mv_diff)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                                        for k in dirty1:
+                                            atab.depth[k] = max(hdepth, idepth) + 1
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, mv_diff)
                                         dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                         update_screen(screen, tl, interface, dirty1, dirty2)
-                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
+                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), i, interface)
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2), interface)
-                                        if c1 and c2:
+                                        c3 = check_trivial(screen, tl, atab, n1, interface)
+                                        if c1 and c2 and c3:
                                             hprogress = True
                                             progress = True
                                         if autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2), interface):
@@ -545,8 +701,10 @@ def automate(screen, tl, ttree, interface='curses'):
                             if filepos in libthms_loaded:
                                 j = libthms_loaded[filepos] # get position loaded in tableau
                                 tnode = get_autonode(screen, atab.hyp_impls, j + line)
+                                idepth = atab.depth[j + line]
                                 if tnode and tnode.num_mv <= 0 and \
-                                   (hyp.line, hyp.version, True) not in tnode.applied:
+                                   (hyp.line, hyp.version, True) not in tnode.applied and \
+                                   idepth < current_depth:
                                     tnode.applied.append((hyp.line, hyp.version, True))
                                     thm = tlist1[j + line]
                                     thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
@@ -558,6 +716,9 @@ def automate(screen, tl, ttree, interface='curses'):
                                             v2 = vars_used(screen, tl, tlist1[line2])
                                             if v1 or v2: # ensure not applying metavar thm to metavar head
                                                 unifies1, assign, macros = unify(screen, tl, prec, tlist1[line2])
+                                                # check all metavars were assigned
+                                                if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
+                                                    unifies1 = False
                                         if not unifies1:
                                             prec, u = unquantify(screen, thm.right, False)
                                             if not isinstance(prec, AndNode):
@@ -565,7 +726,11 @@ def automate(screen, tl, ttree, interface='curses'):
                                                 v1 = vars_used(screen, tl, prec)
                                                 v2 = vars_used(screen, tl, tlist1[line2])
                                                 if v1 or v2: # ensure not applying metavar thm to metavar head
-                                                    unifies2, assign, macros = unify(screen, tl, complement_tree(prec), tlist1[line2])
+                                                    comp = complement_tree(prec)
+                                                    unifies2, assign, macros = unify(screen, tl, comp, tlist1[line2])
+                                                    # check all metavars were assigned
+                                                    if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
+                                                        unifies2 = False
                             else: # library theorem not yet loaded
                                 fake_tl = TreeList()
                                 fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
@@ -600,9 +765,12 @@ def automate(screen, tl, ttree, interface='curses'):
                                         fake_tlist0 = fake_tl.tlist0.data
                                         if fake_tlist0:
                                             append_quantifiers(tl.tlist0.data, fake_tlist0[0])
+                                        #wind_skolems(screen, tl, atab)
                                         fake_list1 = fake_tl.tlist1.data
                                         for k in range(len(fake_list1)):
                                             append_tree(tlist1, fake_list1[k], dirty1)
+                                            atab.depth[len(tlist1) - 1] = 0
+                                        idepth = 0
                                         libthms_loaded[filepos] = j
                                         tl.vars = fake_tl.vars
                                         tl.stree = fake_tl.stree
@@ -615,21 +783,26 @@ def automate(screen, tl, ttree, interface='curses'):
                                 dep = tl.tlist1.dependency(line1)
                                 dep = target_compatible(screen, tl, ttree, dep, line2, True)
                                 if dep:
-                                    n1 = len(tl.tlist1.data)
+                                    n1 = len(tlist1)
                                     success = False
                                     if unifies1:
                                         success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], True)
                                     elif unifies2:
                                         success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, [line2], True)
                                     if success:
+                                        for k in dirty1:
+                                            atab.depth[k] = max(hdepth, idepth) + 1
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
                                         dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                                        for k in dirty1:
+                                            atab.depth[k] = max(hdepth, idepth) + 1
                                         update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
                                         dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                         update_screen(screen, tl, interface, dirty1, dirty2)
-                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
+                                        c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), i, interface)
                                         c2 = check_sizes(screen, tl, atab, n1, len(tlist2), interface)
-                                        if c1 and c2:
+                                        c3 = check_trivial(screen, tl, atab, n1, interface)
+                                        if c1 and c2 and c3:
                                             hprogress = True
                                         if autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2), interface):
                                             library.close()
@@ -669,16 +842,15 @@ def automate(screen, tl, ttree, interface='curses'):
                             n1 = len(tl.tlist1.data)
                             n2 = len(tl.tlist1.data)       
                             j = len(tl.tlist1.data) - 1
+                            atab.depth[j] = 0
                             update_autotab(screen, tl, atab, [j], [], interface)
                             libthms_loaded[filepos] = j
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                            for k in dirty1:
+                                atab.depth[k] = 0
                             update_autotab(screen, tl, atab, dirty1, dirty2, interface)
                             dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                             update_screen(screen, tl, interface, dirty1, dirty2)
-                            c1 = check_duplicates(screen, tl, ttree, n1, n2, interface)
-                            c2 = check_sizes(screen, tl, atab, n1, n2, interface)
-                            if c1 and c2:
-                                tprogress = True
                             if autotab_remove_deadnodes(screen, tl, atab, n1, n2, interface):
                                 library.close()
                                 return False
@@ -686,17 +858,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                 update_screen(screen, tl, interface, None, None)
                                 library.close()
                                 return True
-                if not tprogress:
-                    if not set(tarc).issubset(hypc):
-                        pass # not implemented yet
-                    else: # it is possible that the target can be directly proved from the hyps
-                        # check if some implication among the hyps can be used
-                        for imp in impls:
-                            if (tar.line, tar.version, False) not in imp.applied: # not yet applied to this head
-                                # check if this implication can be applied to this head
-                                pass # not implemented yet
                 # try to find a theorem that applies to the target
-                if not tprogress: # TODO : remove the second restriction
+                if not tprogress:
                     libthms = filter_theorems2(screen, index, tarc, mode)
                     for (title, c, nc, filepos, line) in libthms:
                         implc = c[2][line].left
@@ -704,7 +867,7 @@ def automate(screen, tl, ttree, interface='curses'):
                         pos = set(implc).issubset(hypc)
                         neg = set(nimplc).issubset(hypc)
                         # check to see if constants of libthm are among the hyp constants hypc
-                        if (tar.line not in tl.tars) and (pos or neg or \
+                        if (pos or neg or \
                            not hypc or not atab.hyp_impls or not atab.hyp_heads):
                             # check to see if thm already loaded
                             line2 = tar.line
@@ -757,6 +920,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                         fake_list1 = fake_tl.tlist1.data
                                         for k in range(len(fake_list1)):
                                             append_tree(tlist1, fake_list1[k], dirty1)
+                                            atab.depth[len(tlist1) - 1] = 0
                                         libthms_loaded[filepos] = j
                                         tl.vars = fake_tl.vars
                                         tl.stree = fake_tl.stree
@@ -779,12 +943,16 @@ def automate(screen, tl, ttree, interface='curses'):
                                         elif unifies2:
                                             success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, [line2], False)
                                         if success:
+                                            for k in dirty1:
+                                                atab.depth[k] = 0
                                             update_autotab(screen, tl, atab, dirty1, dirty2, interface)
                                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                                            for k in dirty1:
+                                                atab.depth[k] = 0
                                             update_autotab(screen, tl, atab, dirty1, dirty2, interface)
                                             dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                             update_screen(screen, tl, interface, dirty1, dirty2)
-                                            c1 = check_duplicates(screen, tl, ttree, n1, n2, interface)
+                                            c1 = check_duplicates(screen, tl, ttree, n1, n2, i, interface)
                                             c2 = check_sizes(screen, tl, atab, n1, n2, interface)
                                             if c1 and c2:
                                                 tprogress = True
@@ -795,16 +963,22 @@ def automate(screen, tl, ttree, interface='curses'):
                                                 update_screen(screen, tl, interface, None, None)
                                                 library.close()
                                                 return True
+                                            #wind_skolems(screen, tl, atab)
             if tprogress or not hprogress: # must move on if theorem reasoned back from
                 i += 1
             if hprogress or tprogress:
                 made_progress = True
+                depth_progress = True
         if not made_progress: # we aren't getting anywhere
-            if mode < 1: # try more extreme things
-                mode += 1
+            if depth_progress:
+                current_depth += 1 # search to higher depth
+                depth_progress = False
             else:
-                update_screen(screen, tl, interface, None, None)
-                library.close()
-                return False
+                if mode < 1: # try more extreme things
+                    mode += 1
+                else:
+                    update_screen(screen, tl, interface, None, None)
+                    library.close()
+                    return False
 
         

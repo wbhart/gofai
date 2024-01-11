@@ -499,6 +499,8 @@ def metavars_used(tree):
     def search(tree):
         if tree == None:
             return
+        elif isinstance(tree, SetOfNode):
+            pass
         elif isinstance(tree, LRNode):
             search(tree.left)
             search(tree.right)
@@ -552,12 +554,14 @@ def vars_used(tree):
     search(tree)
     return used
 
-def is_duplicate_upto_metavars(tree1, tree2):
+def is_duplicate_upto_metavars(tree1, tree2, sk=None, from_vars=None, to_vars=None):
     """
     Return True if the two parse trees are the same with the possible exception
     of metavariables with different names.
     """
     mv_dict = dict() # corresponding name in tree2 of metavars found in tree1
+    new_from = [] # variables renamed to
+    new_to = [] # variables renamed to
 
     def process(tree1, tree2, mv_dict):
         if tree1 == None:
@@ -575,10 +579,37 @@ def is_duplicate_upto_metavars(tree1, tree2):
                 return tree2.name() == mv_dict[tree1.name()]
             elif tree1.is_metavar:
                 mv_dict[tree1.name()] = tree2.name()
+                if sk:
+                    new_from.append(tree1.name())
+                    new_to.append(tree2.name())
                 return True
             else:
                 return tree1.name() == tree2.name()
         elif isinstance(tree1, FnApplNode):
+            if sk:
+                if tree1.is_skolem:
+                    if not tree2.is_skolem:
+                        return False
+                    name1 = tree1.name()
+                    name2 = tree2.name()
+                    if name2 in sk:
+                        found = False
+                        for i in range(len(from_vars)):
+                            if name1 == from_vars[i]:
+                                found = True
+                                if name2 != to_vars[i]:
+                                    return False
+                                break
+                        if not found:
+                            for i in range(len(new_from)):
+                                if name1 == new_from[i]:
+                                    found = True
+                                    if name2 != new_to[i]:
+                                        return False
+                                    break
+                        if not found:
+                            new_from.append(name1)
+                            new_to.append(name2)
             if not process(tree1.var, tree2.var, mv_dict):
                 return False
             if len(tree1.args) != len(tree2.args):
@@ -618,7 +649,13 @@ def is_duplicate_upto_metavars(tree1, tree2):
         else:
             raise Exception("Type "+str(type(tree1))+" unknown")
 
-    return process(tree1, tree2, mv_dict)
+    val = process(tree1, tree2, mv_dict)
+    if sk and val:
+        for i in new_from:
+            from_vars.append(i)
+        for i in new_to:
+            to_vars.append(i)
+    return val
 
 class TargetNode:
     """

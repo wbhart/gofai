@@ -1281,7 +1281,7 @@ Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in complement(S) \iff x \in X \wedge \neg(x \in S)
+x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 
 Title: Definition of set universe
 [['Set'], [], (['\\in'], ['\\in'])]
