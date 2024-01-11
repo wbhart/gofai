@@ -2,7 +2,7 @@ from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
      add_sibling, vars_used, domain, codomain, universe, metavars_used, \
-     tags_to_list, canonicalise_tags
+     tags_to_list, canonicalise_tags, record_move
 from unification import check_macros, unify, substitute
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -141,17 +141,21 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if forward:
         stmt, _ = relabel(screen, tl, univs, stmt, True)
         append_tree(tlist1.data, stmt, dirty1)
-        tlist1.dep[len(tlist1.data) - 1] = dep
+        n = len(tlist1.data) - 1
+        tlist1.dep[n] = dep
+        record_move(screen, tl, n, ('p', line1, line2_list))
     else:
         if copied:
             substitute(copied[0], assign)
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = [line2]
+            n = len(tlist1.data) - 1
+            tlist1.dep[n] = [line2]
+            record_move(screen, tl, n, ('p', line1, []))
         else:
             append_tree(tlist2.data, stmt, dirty2)
-            add_descendant(ttree, line2, len(tlist2.data) - 1)
+            add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
             tl.tars[line2] = True
     return True, dirty1, dirty2
 
@@ -232,17 +236,21 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     if forward:
         stmt, _ = relabel(screen, tl, univs, stmt, True)
         append_tree(tlist1.data, stmt, dirty1)
-        tlist1.dep[len(tlist1.data) - 1] = dep
+        n = len(tlist1.data) - 1
+        tlist1.dep[n] = dep
+        record_move(screen, tl, n, ('t', line1, line2_list))
     else:
         if copied:
             substitute(copied[0], assign)
         if line2 in tl.tars: # we already reasoned from this target
             stmt = complement_tree(stmt)
             append_tree(tlist1.data, stmt, dirty1) # add negation to hypotheses
-            tlist1.dep[len(tlist1.data) - 1] = [line2]
+            n = len(tlist1.data) - 1
+            tlist1.dep[n] = [line2]
+            record_move(screen, tl, n, ('t', line1, []))
         else:
             append_tree(tlist2.data, stmt, dirty2)
-            add_descendant(ttree, line2, len(tlist2.data) - 1)
+            add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
             tl.tars[line2] = True
     return True, dirty1, dirty2
 
@@ -307,6 +315,7 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
     found, tree = find(tree, string, n, subst)
     if found:
         if is_hyp:
+            record_move(screen, tl, line2, ('e', line1))
             tl.tlist1.data[line2] = tree
         else:
             tl.tlist2.data[line2] = tree
@@ -336,6 +345,7 @@ def clear_tableau(screen, tl):
     tl.tlist1.dep = dict()
     tl.loaded_theorem = None
     tl.focus = tl.tlist0
+    tl.moves = []
 
 def filter_library(screen, tl, library, tags):
     tags = canonicalise_tags(tags) # deal with constraint shorthands
@@ -749,11 +759,15 @@ def cleanup(screen, tl, ttree):
                     else:
                         append_tree(tl1, tl1[i].right, dirty1)
                         replace_tree(tl1, i, tl1[i].left, dirty1)
-                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                        n = len(tl1) - 1
+                        tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                        record_move(screen, tl, n, ('c', i))
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
                     replace_tree(tl1, i, tl1[i].left.left, dirty1)
-                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                    n = len(tl1) - 1
+                    tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                    record_move(screen, tl, n, ('c', i))
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
                     var2 = metavars_used(tl1[i].left.right)
@@ -765,13 +779,17 @@ def cleanup(screen, tl, ttree):
                         R = tl1[i].right
                         append_tree(tl1, ImpliesNode(Q, R), dirty1)
                         replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
-                        tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                        n = len(tl1) - 1
+                        tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                        record_move(screen, tl, n, ('c', i))
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     stmt = ImpliesNode(deepcopy(tl1[i].left), tl1[i].right.left)
                     append_tree(tl1, stmt, dirty1)
                     stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
                     replace_tree(tl1, i, stmt, dirty1)
-                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                    n = len(tl1) - 1
+                    tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                    record_move(screen, tl, n, ('c', i))
                 i += 1
                 while len(mv) > m:
                     mv.pop()

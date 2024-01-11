@@ -256,7 +256,7 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 break
         if unifies:
             for (c, d) in v:
-                d1, d2, pl = mark_proved(screen, tl, ttree, c)
+                d1, d2, pl = mark_proved(screen, tl, ttree, c, unifications[c][d])
                 dirty1 += d1
                 dirty2 += d2
                 plist += pl
@@ -287,7 +287,7 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                         unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies:
-                            d1, d2, pl = mark_proved(screen, tl, ttree, j)
+                            d1, d2, pl = mark_proved(screen, tl, ttree, j, i)
                             dirty1 += d1
                             dirty2 += d2
                             plist += pl
@@ -301,19 +301,23 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
                 unifies, assign, macros = unify(screen, tl, tlist2[i].left, tlist2[i].right)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if unifies:
-                    d1, d2, p1 = mark_proved(screen, tl, ttree, i)
+                    d1, d2, p1 = mark_proved(screen, tl, ttree, i, -1)
                     dirty1 += d1
                     dirty2 += d2
                     plist += pl
     return dirty1, dirty2, plist
 
-def mark_proved(screen, tl, ttree, n):
+def mark_proved(screen, tl, ttree, n, reason=None):
     """
     Given a target dependency tree, ttree, mark target n within this tree as
     proved, along with all the descendents of that node. Also set all
     hypotheses that can only be used to prove now proven nodes, to DeadNode
     (which shows up as a dashed line in the tableau) along with all the now
-    proven nodes.
+    proven nodes. The parameter reason denotes how the target was proved.
+    It can be the index of a hypothesis which it unified with, a pair of
+    hypotheses which contradicted, -1 which indicates a target which was an
+    equality which was tautological after unification. None means that it
+    was proved by proving a set of targets the conjunction of which imply it.
     """
     dirty1 = []
     dirty2 = []
@@ -323,6 +327,7 @@ def mark_proved(screen, tl, ttree, n):
         if ttree.num == n:
             if not ttree.proved:
                 ttree.proved = True
+                ttree.reason = reason
                 if n >= 0:
                     plist.append(ttree.num)
                 for i in range(0, len(tl.tlist1.data)):
@@ -379,7 +384,7 @@ def check_contradictions(screen, tl, ttree, tarmv):
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                         if unifies: # we found a contradiction
                             for t in di:
-                                d1, d2, pl = mark_proved(screen, tl, ttree, t)
+                                d1, d2, pl = mark_proved(screen, tl, ttree, t, (i, j))
                                 dirty1 += d1
                                 dirty2 += d2
                                 plist += pl
@@ -1133,3 +1138,43 @@ def convert(screen, tl):
         title = library.readline()
     library.close()
     library2.close()
+
+def show_prune(screen, tl, new_tl, hyps, tars):
+    """
+    Given a list of hypotheses and targets to keep and a new tableau, place
+    only the given items in the new tableau and display it.
+    """
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    screen.pad0
+    pad0 = screen.pad0.pad
+    pad1 = screen.pad1.pad
+    pad2 = screen.pad2.pad
+    if tlist0:
+        new_tl.tlist0.data.append(tlist0[0])
+        pad0[0] = str(tlist0[0])
+    for i in range(len(hyps)):
+        new_tl.tlist1.data.append(tlist1[hyps[i]])
+        pad1[i] = str(tlist1[hyps[i]])
+    for i in range(len(hyps), len(tlist1)):
+        pad1[i] = ''
+    for i in range(len(tars)):
+        new_tl.tlist2.data.append(tlist2[tars[i]])
+        pad2[i] = str(tlist2[tars[i]])
+    for i in range(len(tars), len(tlist2)):
+        pad2[i] = ''
+    new_tl.focus = new_tl.tlist1
+    screen.pad1.scroll_line = 0 
+    screen.pad1.scroll_char = 0 
+    screen.pad1.cursor_line = 0 
+    screen.pad1.cursor_char = 0 
+    screen.pad2.scroll_line = 0 
+    screen.pad2.scroll_char = 0 
+    screen.pad2.cursor_line = 0 
+    screen.pad2.cursor_char = 0 
+    screen.pad0.refresh()
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus = screen.pad1
+    screen.focus.refresh()

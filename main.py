@@ -6,9 +6,9 @@ from editor import get_text, edit
 from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality_substitution, targets_proved, \
-     library_load, fill_macros, convert
+     library_load, fill_macros, convert, show_prune
 from utility import TargetNode, initialise_sorts, type_vars, process_sorts, \
-     update_constraints
+     update_constraints, prune_move_list
 from automation import automate
 
 def main(stdscr):
@@ -18,7 +18,8 @@ def main(stdscr):
     ttree = None # track which targets have been proved
     skip = False # whether to skip checking completion
     reset = False # whether to reset dependencies
-    
+    done = False # whether the theorem has been proved
+
     while True:
         c = stdscr.getkey()
         if c == '\t': # TAB = switch window focus (and associated pad)
@@ -56,6 +57,7 @@ def main(stdscr):
             if started:
                 if automate(screen, tl, ttree):
                     screen.dialog("All targets proved!")
+                    done = True
                 else:
                     screen.dialog("Unable to prove theorem.")
                 skip = True
@@ -84,12 +86,22 @@ def main(stdscr):
         elif c == 'c': # clear_tableau
             clear_tableau(screen, tl)
             started = False
+            done = False
             ttree = None
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
         elif c == 'z': # rewrite library
             convert(screen, tl)
+        elif c == 'n': # prune proof
+            if done:
+                (hyps, tars) = prune_move_list(screen, tl, ttree)
+                new_tl = TreeList()
+                show_prune(screen, tl, new_tl, hyps, tars)
+                ttree = None
+                tl = new_tl
+                done = False
+                skip = True
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus
@@ -130,6 +142,7 @@ def main(stdscr):
                         screen.focus.refresh()
                         if done:
                             screen.dialog("All targets proved")
+                            done = True
                             started = False
                     else:
                         screen.dialog(error)

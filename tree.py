@@ -42,6 +42,7 @@ class TreeList:
         self.sorts_processed = (0, 0, 0) # num of quantifiers/hyps/tars constraint processed
         self.depmin = 0 # number of variables in qz from original tableau
         self.loaded_theorem = None # filepos of loaded theorem, if any
+        self.moves = [] # moves that were used to prove the theorem
         
     def switch_list(self):
         if self.focus == self.tlist0:

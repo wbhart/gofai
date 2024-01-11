@@ -480,6 +480,60 @@ def replace_tree2(pad, tlist, i, stmt):
     replace_tree(tlist, i, stmt, None)
     pad[i] = str(tlist[i])
 
+def record_move(screen, tl, i, reason):
+    moves = tl.moves
+    n = len(moves)
+    if i >= n:
+        for j in range(n, i + 1):
+            moves.append([])
+    moves[i].append(reason)
+
+def prune_move_list(screen, tl, ttree):
+    moves = tl.moves
+    tars = [] # list of targets required by proof
+    hyps = [] # list of hypotheses required by proof
+    unproc = [] # unprocessed list
+    if not ttree:
+        return [], []
+    for node in ttree.andlist:
+        unproc.append(node)
+    while unproc: # process targets
+        node = unproc.pop()
+        tars.append(node.num)
+        for i in node.extra_hyps:
+            if i not in hyps:
+                hyps.append(i)
+        if node.reason == None: # proved by proving targets in andlist
+            for n in node.andlist:
+                unproc.append(n)
+        elif isinstance(node.reason, tuple):
+            (i, j) = node.reason
+            if i not in hyps:
+                hyps.append(i)
+            if j not in hyps:
+                hyps.append(j)
+        elif node.reason != -1:
+            i = node.reason
+            if i not in hyps:
+                hyps.append(i)
+    unproc = hyps
+    hyps = []
+    while unproc: # process hyps
+        i = unproc.pop()
+        if i not in hyps:
+            hyps.append(i)
+            if i < len(moves):
+                reason = moves[i] # list of moves applied to prove i
+                for r in reason:
+                    if len(r) == 3: # mp/mt
+                        (c, l1, l2_list) = r
+                        unproc.append(l1)
+                        unproc += l2_list
+                    else: # cleanup/equiv
+                        c, l = r
+                        unproc.append(l)
+    return sorted(hyps), sorted(tars)
+            
 def is_implication(tree):
     """
     Given a parse tree, determine whether it is an implication, possibly
@@ -671,6 +725,8 @@ class TargetNode:
         self.andlist = andlist # a list of targets that would prove this target
         self.metavars = [] # metavariables used by this target
         self.unifies = [] # list of hyps this target unifies with on its own
+        self.reason = None # how target was proved (hyp. i, contr. (i, j), equal. -1, andlist None)
+        self.extra_hyps = [] # any extra hypotheses which were needed to prove node
 
     def __str__(self):
         if not self.andlist:
@@ -721,17 +777,20 @@ def add_sibling(screen, tl, ttree, i, j):
             return True
     return False
 
-def add_descendant(ttree, i, j):
+def add_descendant(ttree, i, j, hyp=None):
     """
     Find target i in the given target tree and add a descendent j. This is
     done when proving target j will be sufficient to prove target i, e.g.
     because we reasoned backwards to j from i.
     """
     if ttree.num == i:
-        ttree.andlist = [TargetNode(j)]
+        n = TargetNode(j)
+        if hyp:
+            n.extra_hyps.append(hyp)
+        ttree.andlist = [n]
         return True
     for P in ttree.andlist:
-        if add_descendant(P, i, j):
+        if add_descendant(P, i, j, hyp):
             return True
     return False
 
