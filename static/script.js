@@ -223,6 +223,12 @@ function startAutomation() {
     socket.emit('run_automation');
 }
 
+function pruneProof() {
+    removePruneButton();
+    clearPanes() // Clear the three panes in the interface
+    socket.emit('prune_proof');
+}
+
 function clearTableau() {
     // Ask the user for confirmation
     var userConfirmed = confirm("Do you really want to clear the tableau?");
@@ -235,6 +241,7 @@ function clearTableau() {
         isEditError = false
         error_line = -1;
         unselect();
+        removePruneButton();
         switch_mode(0);
     }
 }
@@ -388,6 +395,7 @@ socket.on('done', function() {
     updateStatus(''); // clear any status message
     unselect(); // clear any selected hypotheses/targets
     switch_mode(-1);
+    addPruneButton();
     alert('All targets proved!');
 });
 
@@ -572,4 +580,23 @@ function getSelectedText(event) {
             }
         }
     }
+}
+
+function addPruneButton() {
+  const section = document.getElementById('rightPane');
+  const button = document.createElement('button');
+  button.textContent = 'Prune';
+  button.id = 'pruneButton'; // Assign an id for easy access later
+
+  // Add an event listener to the button for the 'click' event
+  button.addEventListener('click', pruneProof);
+
+  section.appendChild(button);
+}
+
+function removePruneButton() {
+  const button = document.getElementById('pruneButton');
+  if (button) {
+    button.remove();
+  }
 }

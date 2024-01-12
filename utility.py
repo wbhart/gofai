@@ -534,6 +534,37 @@ def prune_move_list(screen, tl, ttree):
                         unproc.append(l)
     return sorted(hyps), sorted(tars)
             
+def treelist_prune(screen, tl, new_tl, hyps, tars):
+    """
+    Given a list of hypotheses and targets to keep and a new tableau, place
+    only the given items in the new tableau.
+    """
+    tlist0 = tl.tlist0.data
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+    var_list = []
+    for i in range(len(hyps)):
+        new_tl.tlist1.data.append(tlist1[hyps[i]])
+    for i in range(len(tars)):
+        new_tl.tlist2.data.append(tlist2[tars[i]])
+    for tree in new_tl.tlist1.data:
+        v = vars_used(screen, tl, tree, True)
+        var_list = list_merge(var_list, sorted(v))
+    for tree in new_tl.tlist2.data:
+        v = vars_used(screen, tl, tree, True)
+        var_list = list_merge(var_list, sorted(v))
+    if tlist0:
+        qz = NotNode(tlist0[0]) # temporary wrapper
+        tree = qz
+        while tree.left:
+            if tree.left.var.name() not in var_list:
+                tree.left = tree.left.left
+            else:
+                tree = tree.left
+        if qz.left:
+            new_tl.tlist0.data.append(qz.left)
+    new_tl.focus = new_tl.tlist1
+    
 def is_implication(tree):
     """
     Given a parse tree, determine whether it is an implication, possibly

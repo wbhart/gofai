@@ -5,7 +5,7 @@ from logic import modus_ponens, modus_tollens, cleanup, clear_tableau, filter_li
      library_load, fill_macros, library_import, equality_substitution
 from utility import filter_titles, initialise_sorts, type_vars, process_sorts, \
      TargetNode, target_compatible, update_constraints, process_sorts, complement_tree, \
-     trim_spaces, find_all
+     trim_spaces, find_all, prune_move_list, treelist_prune
 from moves import check_targets_proved
 from nodes import ForallNode, IffNode, ImpliesNode, AndNode, EqNode
 from parser import statement, StatementVisitor
@@ -117,6 +117,24 @@ def handle_clear_tableau():
     global ttree
     clear_tableau(screen, tl)
     ttree = None
+
+@socketio.on('prune_proof')
+def handle_prune():
+    global screen
+    global tl
+    global ttree
+    (hyps, tars) = prune_move_list(screen, tl, ttree)
+    new_tl = TreeList()
+    treelist_prune(screen, tl, new_tl, hyps, tars)   
+    ttree = None
+    tl = new_tl
+    dirty1 = [i for i in range(len(tl.tlist1.data))]
+    dirty2 = [i for i in range(len(tl.tlist2.data))]
+    dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
+    dirtytxt1 = [str(tl.tlist1.data[i]) for i in dirty1]
+    dirtytxt2 = [str(tl.tlist2.data[i]) for i in dirty2]        
+    emit('update_dirty', {'dirtytxt0': dirtytxt0, 'dirty1': dirty1, \
+                 'dirtytxt1': dirtytxt1, 'dirty2': dirty2, 'dirtytxt2': dirtytxt2, 'reset_mode': True})
     
 @socketio.on('fetch_line_content')
 def handle_fetch_line_content(data):

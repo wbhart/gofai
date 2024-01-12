@@ -24,7 +24,8 @@ from utility import unquantify, relabel, append_tree, \
      domain, codomain, system_unary_functions, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
      get_constants, merge_lists, process_constraints, get_terms, get_init_vars, \
-     sorts_compatible, coerce_sorts, sorts_equal, vars_used, list_merge
+     sorts_compatible, coerce_sorts, sorts_equal, vars_used, list_merge, \
+     treelist_prune
 import logic
 
 from editor import edit
@@ -1151,35 +1152,19 @@ def show_prune(screen, tl, new_tl, hyps, tars):
     pad0 = screen.pad0.pad
     pad1 = screen.pad1.pad
     pad2 = screen.pad2.pad
-    var_list = []
+    
+    treelist_prune(screen, tl, new_tl, hyps, tars)
+
     for i in range(len(hyps)):
-        new_tl.tlist1.data.append(tlist1[hyps[i]])
         pad1[i] = str(tlist1[hyps[i]])
     for i in range(len(hyps), len(tlist1)):
         pad1[i] = ''
     for i in range(len(tars)):
-        new_tl.tlist2.data.append(tlist2[tars[i]])
         pad2[i] = str(tlist2[tars[i]])
     for i in range(len(tars), len(tlist2)):
         pad2[i] = ''
-    for tree in new_tl.tlist1.data:
-        v = vars_used(screen, tl, tree, True)
-        var_list = list_merge(var_list, sorted(v))
-    for tree in new_tl.tlist2.data:
-        v = vars_used(screen, tl, tree, True)
-        var_list = list_merge(var_list, sorted(v))
-    if tlist0:
-        qz = NotNode(tlist0[0]) # temporary wrapper
-        tree = qz
-        while tree.left:
-            if tree.left.var.name() not in var_list:
-                tree.left = tree.left.left
-            else:
-                tree = tree.left
-        if qz.left:
-            new_tl.tlist0.data.append(qz.left)
-            screen.pad0.pad[0] = str(new_tl.tlist0.data[0])
-    new_tl.focus = new_tl.tlist1
+    if new_tl.tlist0.data:
+        screen.pad0.pad[0] = str(new_tl.tlist0.data[0])
     screen.pad0.scroll_line = 0 
     screen.pad0.scroll_char = 0 
     screen.pad0.cursor_line = 0 
