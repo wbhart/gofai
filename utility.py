@@ -577,37 +577,6 @@ def metavars_used(tree):
     search(tree)
     return used
 
-def vars_used(tree):
-    """
-    Given a parsed statement, return a list of names of variables (as
-    strings) that occur in the given statement.
-    """
-    used = []
-
-    def search(tree):
-        if tree == None:
-            return
-        elif isinstance(tree, LRNode):
-            search(tree.left)
-            search(tree.right)
-        elif isinstance(tree, VarNode):
-            name = tree.name()
-            if name not in used:
-                used.append(name)
-        elif isinstance(tree, FnApplNode):
-            if isinstance(tree.var, VarNode):
-                name = tree.name()
-                if name not in used:
-                    used.append(name)
-            for v in tree.args:
-                search(v)
-        elif isinstance(tree, TupleNode):
-            for v in tree.args:
-                search(v)
-        
-    search(tree)
-    return used
-
 def is_duplicate_upto_metavars(tree1, tree2, sk=None, from_vars=None, to_vars=None):
     """
     Return True if the two parse trees are the same with the possible exception
@@ -1478,10 +1447,10 @@ def binary_string(tree, arglist):
     else:
         return arglist[0]+" "+constant_dict[type(tree)]+" "+arglist[1]
         
-def vars_used(screen, tl, tree):
+def vars_used(screen, tl, tree, include_metavars=False):
     """
-    Return a list of all the variables which are not metavariables, which
-    appear in the tree.
+    Return a list of all the variables, which appear in the tree. By default
+    this will not include metavars. But this can be overridden.
     """
     var_list = []
     mv = []
@@ -1492,7 +1461,7 @@ def vars_used(screen, tl, tree):
             process(tree.left)
         elif isinstance(tree, VarNode):
             name = tree.name()
-            if not tree.is_metavar and name not in mv:
+            if (include_metavars or not tree.is_metavar) and name not in mv:
                 var_list.append(name)
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):
