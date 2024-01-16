@@ -270,7 +270,7 @@ def relabel_varname(name, var_dict):
     var_dict[name] = subscript
     return name+'_'+str(subscript)
 
-def qz_copy_var(screen, tl, extras, name, new_name, copied):
+def qz_copy_var(screen, tl, extras, name, new_name, copied, assign=None):
     """
     Make a copy, in the quantifier zone of the tableau, of the variable with
     the given name. The copy will be given the new_name specified, but type
@@ -304,6 +304,8 @@ def qz_copy_var(screen, tl, extras, name, new_name, copied):
           elif isinstance(new_node.var, FnApplNode): # TODO : not sure if this is used any more
               new_node.var.var._name = new_name # rename
           new_node.left = None
+          if assign:
+              new_node = substitute(new_node, assign)
           tl.tlist0.data.append(new_node)
           copied.append(new_node)
           return
@@ -323,10 +325,12 @@ def qz_copy_var(screen, tl, extras, name, new_name, copied):
               new_node.var.var._name = new_name # rename
           new_node.left = None
           tree.left = new_node 
+          if assign:
+              new_node = substitute(new_node, assign)
           copied.append(new_node)  
        tree = tree.left
        
-def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
+def relabel(screen, tl, extras, tree, update_qz=False, temp=False, assign=None):
     """
     Relabel inplace all metavars in the given tree. This is the primary
     mechanism to prevent variable capture.
@@ -360,13 +364,13 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
                 new_name = vars_dict[name]
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name, copied)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied, assign)
             elif not constraint and tree.is_metavar:
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name, copied)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied, assign)
         elif isinstance(tree, SetBuilderNode):
             name = tree.left.left.name()
             new_name = relabel_varname(name, tldict)
@@ -382,13 +386,13 @@ def relabel(screen, tl, extras, tree, update_qz=False, temp=False):
                 new_name = vars_dict[name] # TODO : add setter for assignment
                 tree.var._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name, copied)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied, assign)
             elif tree.is_metavar:
                 new_name = relabel_varname(name, tldict)
                 vars_dict[name] = new_name
                 tree.var._name = new_name
                 if update_qz:
-                    qz_copy_var(screen, tl, extras, name, new_name, copied)
+                    qz_copy_var(screen, tl, extras, name, new_name, copied, assign)
             else:
                 process(tree.var, constraint)
             for v in tree.args:

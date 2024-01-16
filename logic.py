@@ -139,7 +139,7 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
         return False, dirty1, dirty2 # fail: predicate does not match implication
     stmt = substitute(deepcopy(conseq), assign)
     if forward:
-        stmt, _ = relabel(screen, tl, univs, stmt, True)
+        stmt, _ = relabel(screen, tl, univs, stmt, True, assign=assign)
         append_tree(tlist1.data, stmt, dirty1)
         n = len(tlist1.data) - 1
         tlist1.dep[n] = dep
@@ -217,7 +217,6 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     
     qP2 = tree2
     conseq = tree1.left if forward else tree1.right
-    
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
@@ -234,7 +233,7 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
         return False, dirty1, dirty2 # fail: predicate does not match implication
     stmt = complement_tree(substitute(deepcopy(conseq), assign))
     if forward:
-        stmt, _ = relabel(screen, tl, univs, stmt, True)
+        stmt, _ = relabel(screen, tl, univs, stmt, True, assign=assign)
         append_tree(tlist1.data, stmt, dirty1)
         n = len(tlist1.data) - 1
         tlist1.dep[n] = dep
