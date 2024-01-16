@@ -343,6 +343,8 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
     subst = tl.tlist1.data[line1]
     subst, univs = unquantify(screen, subst, True)
     tree = tl.tlist1.data[line2] if is_hyp else tl.tlist2.data[line2]
+    if metavars_used(tree): # ensure we are transforming something concrete
+        return False, None, None 
     if not check_only:
         tree = deepcopy(tree)
         dirty1 = []

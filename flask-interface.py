@@ -380,6 +380,7 @@ def handle_start():
     ok, error = process_sorts(screen, tl)
     if ok:
         ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+        autocleanup(screen, tl, ttree)
         dirty1 = [i for i in range(len(tl.tlist1.data))]
         dirty2 = [i for i in range(len(tl.tlist2.data))]
         dirtytxt0 = str(tl.tlist0.data[0]) if tl.tlist0.data else ''
