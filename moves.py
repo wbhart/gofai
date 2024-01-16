@@ -65,7 +65,8 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
         if ttree.num != -1:
             ttree.unifies = []
             for i in range(len(tlist1)):
-                if deps_compatible(screen, tl, ttree_full, ttree.num, i):
+                if not isinstance(tlist2[ttree.num], DeadNode) and not isinstance(tlist1[i], DeadNode) and \
+                       deps_compatible(screen, tl, ttree_full, ttree.num, i):
                     unifies, assign, macros = unify(screen, tl, tlist2[ttree.num], tlist1[i])
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if unifies:
@@ -84,7 +85,8 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                     if ttree.metavars not in hydras:
                         hydras.append(ttree.metavars)
             for i in range(len(tlist1)):
-                if deps_compatible(screen, tl, ttree_full, ttree.num, i): # a contradiction to hyp i would prove this target
+                if not isinstance(tlist1[i], DeadNode) and \
+                        deps_compatible(screen, tl, ttree_full, ttree.num, i): # a contradiction to hyp i would prove this target
                     tree1 = complement_tree(tlist1[i])
                     mv1 = metavars_used(tlist1[i])
                     for j in range(len(tlist1)):
@@ -95,7 +97,7 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv):
                                 if target_depends(screen, tl, ttree_full, ttree.num, d):
                                     dep_ok = True # ttree.num is a descendent of d
                                     break
-                            if dep_ok: # this contradiction can prove target ttree.num
+                            if dep_ok and not isinstance(tlist1[j], DeadNode): # this contradiction can prove target ttree.num
                                 tree2 = tlist1[j]
                                 unifies, assign, macros = unify(screen, tl, tree1, tree2)
                                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
@@ -280,10 +282,10 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv):
     tlist2 = tl.tlist2.data
     for i in range(len(tlist1)):
         mv1 = metavars_used(tlist1[i])
-        if not any(v in tarmv for v in mv1):
+        if not isinstance(tlist1[i], DeadNode) and not any(v in tarmv for v in mv1):
             for j in range(len(tlist2)):
                 mv2 = metavars_used(tlist2[j])
-                if not any(v in tarmv for v in mv2):
+                if not isinstance(tlist2[j], DeadNode) and not any(v in tarmv for v in mv2):
                     if deps_compatible(screen, tl, ttree, j, i):
                         unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
                         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
@@ -373,11 +375,11 @@ def check_contradictions(screen, tl, ttree, tarmv):
     tlist1 = tl.tlist1.data
     for i in range(len(tlist1)):
         mv1 = metavars_used(tlist1[i])
-        if not any(v in tarmv for v in mv1):
+        if not isinstance(tlist1[i], DeadNode) and not any(v in tarmv for v in mv1):
             tree1 = complement_tree(tlist1[i])
             for j in range(0, i):
                 mv2 = metavars_used(tlist1[j])
-                if not any(v in tarmv for v in mv2):
+                if not isinstance(tlist1[j], DeadNode) and not any(v in tarmv for v in mv2):
                     di = deps_intersect(screen, tl, ttree, i, j)
                     if di: # hyps i and j can be used to prove targets
                         tree2 = tlist1[j]

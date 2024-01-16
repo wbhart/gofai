@@ -2,14 +2,14 @@ from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
      add_sibling, vars_used, domain, codomain, universe, metavars_used, \
-     tags_to_list, canonicalise_tags, record_move
-from unification import check_macros, unify, substitute
+     tags_to_list, canonicalise_tags, record_move, duplicate_move
+from unification import check_macros, unify, substitute, same_tree
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
      ExistsNode, TupleNode, FnApplNode, NotNode, IffNode, SetOfNode, EqNode, \
      SymbolNode, SubseteqNode, VarNode
 from parser import to_ast
-from sorts import FunctionConstraint, DomainTuple
+from sorts import FunctionConstraint, DomainTuple, PredSort
 
 def fill_macros(screen, tl):
     """
@@ -320,6 +320,91 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
         else:
             tl.tlist2.data[line2] = tree
     return found
+
+def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, check_only=False):
+    """
+    Given that line1 of the hypothesis pane is an equality to be applied, apply
+    that equality to the first full term of the statement at line2 to which it
+    applies.
+
+    If is_hyp = True, the statement to which the substitution is to be applied
+    is a hypothesis, otherwise it is a target.
+
+    The expression that is to be modified need not match one side of the equality
+    exactly, it merely needs to unify with it. Any assignments that result from
+    unification are also applied.
+
+    If for some reason the unification fails, the function returns False and
+    no changes are made. Otherwise if check_only is False, the tableau is
+    augmented with the modified version. If check_only is True the function
+    simply returns whether or not a place was found where the substitution
+    could be applied.
+    """
+    subst = tl.tlist1.data[line1]
+    subst, univs = unquantify(screen, subst, True)
+    tree = tl.tlist1.data[line2] if is_hyp else tl.tlist2.data[line2]
+    if not check_only:
+        tree = deepcopy(tree)
+        dirty1 = []
+        dirty2 = []
+
+    def find(tree, subst):
+        found = False
+        if tree == None:
+            return False, None, None
+        if not isinstance(tree.sort, PredSort): # we found a term
+            left = subst.left if is_hyp else subst.right
+            right = subst.right if is_hyp else subst.left
+            unifies, assign, macros = unify(screen, tl, left, tree)
+            if not check_only:
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+            if not unifies:
+                return False, tree, None # does not unify, bogus selection
+            else:
+                if check_only:
+                    return True, tree, None
+                else:
+                    return True, substitute(deepcopy(right), assign), assign
+        if isinstance(tree, LRNode):
+            found, tree.left, assign = find(tree.left, subst)
+            if not found:
+                found, tree.right, assign = find(tree.right, subst)
+            return found, tree, assign
+        elif isinstance(tree, LeafNode):
+            return found, tree, None
+        elif isinstance(tree, TupleNode) or isinstance (tree, FnApplNode):
+            for i in range(0, len(tree.args)):
+                 found, tree.args[i], assign = find(tree.args[i], subst)
+                 if found:
+                     break
+            if not found and isinstance(tree, FnApplNode):
+                found, tree.var, assign = find(tree.var, subst)
+            return found, tree, assign
+        raise Exception("Node not dealt with : "+str(type(tree)))
+
+    found, tree, assign = find(tree, subst)
+    if not check_only and found:
+        tree = substitute(tree, assign) # we may have assigned metavars used elsewhere in the expression
+        if is_hyp:
+            append_tree(tl.tlist1.data, tree, dirty1)
+            n = len(tl.tlist1.data) - 1
+            tl.tlist1.dep[n] = dep
+            record_move(screen, tl, n, ('e', line1, [line2]))
+        else:
+            if line2 in tl.tars: # we already reasoned from this target
+                tree = complement_tree(tree)
+                append_tree(tl.tlist1.data, tree, dirty1) # add negation to hypotheses
+                n = len(tl.tlist1.data) - 1
+                tl.tlist1.dep[n] = [line2]
+                record_move(screen, tl, n, ('e', line1, []))
+            else:
+                append_tree(tl.tlist2.data, tree, dirty2)
+                add_descendant(ttree, line2, len(tl.tlist2.data) - 1, line1)
+                tl.tars[line2] = True
+    if check_only:
+        return found, None, None
+    else:
+        return found, dirty1, dirty2
 
 def clear_tableau(screen, tl):
     """
@@ -752,22 +837,20 @@ def cleanup(screen, tl, ttree):
                     rollback()
                 while isinstance(tl1[i], AndNode):
                     # First check we don't have P \wedge P
-                    unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
-                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                    if unifies and not assign:
+                    if same_tree(screen, tl, tl1[i].left, tl1[i].right):
                         replace_tree(tl1, i, tl1[i].left, dirty1)
                     else:
                         append_tree(tl1, tl1[i].right, dirty1)
                         replace_tree(tl1, i, tl1[i].left, dirty1)
                         n = len(tl1) - 1
                         tl.tlist1.dep[n] = tl.tlist1.dependency(i)
-                        record_move(screen, tl, n, ('c', i))
+                        duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
                     replace_tree(tl1, i, tl1[i].left.left, dirty1)
                     n = len(tl1) - 1
                     tl.tlist1.dep[n] = tl.tlist1.dependency(i)
-                    record_move(screen, tl, n, ('c', i))
+                    duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
                     var2 = metavars_used(tl1[i].left.right)
@@ -777,19 +860,32 @@ def cleanup(screen, tl, ttree):
                         P = tl1[i].left.left
                         Q = tl1[i].left.right
                         R = tl1[i].right
-                        append_tree(tl1, ImpliesNode(Q, R), dirty1)
-                        replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
-                        n = len(tl1) - 1
-                        tl.tlist1.dep[n] = tl.tlist1.dependency(i)
-                        record_move(screen, tl, n, ('c', i))
+                        # first check we don't have P => P
+                        if same_tree(screen, tl, P, R):
+                            replace_tree(tl1, i, ImpliesNode(Q, R), dirty1)
+                        else:
+                            replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
+                            # first check we don't have Q => Q
+                            if not same_tree(screen, tl, Q, R):
+                                append_tree(tl1, ImpliesNode(Q, deepcopy(R)), dirty1)
+                                n = len(tl1) - 1
+                                tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                                duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
-                    stmt = ImpliesNode(deepcopy(tl1[i].left), tl1[i].right.left)
-                    append_tree(tl1, stmt, dirty1)
-                    stmt = ImpliesNode(tl1[i].left, tl1[i].right.right)
-                    replace_tree(tl1, i, stmt, dirty1)
-                    n = len(tl1) - 1
-                    tl.tlist1.dep[n] = tl.tlist1.dependency(i)
-                    record_move(screen, tl, n, ('c', i))
+                    P = tl1[i].left
+                    Q = tl1[i].right.left
+                    R = tl1[i].right.right
+                    # first check we don't have P => P
+                    if same_tree(screen, tl, P, R):
+                        replace_tree(tl1, i, ImpliesNode(P, Q), dirty1)
+                    else:
+                        replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
+                        # first check we don't have P => P
+                        if not same_tree(screen, tl, P, Q):
+                            append_tree(tl1, ImpliesNode(deepcopy(P), Q), dirty1)
+                            n = len(tl1) - 1
+                            tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                            duplicate_move(screen, tl, n, i)
                 i += 1
                 while len(mv) > m:
                     mv.pop()
@@ -805,7 +901,7 @@ def cleanup(screen, tl, ttree):
                     append_tree(tl1, complement_tree(tl2[j].left), dirty1)
                     hyps_done = False
                     replace_tree(tl2, j, tl2[j].right, dirty2)
-                    tl.tlist1.dep[len(tl1) - 1] = [j]
+                    n = tl.tlist1.dep[len(tl1) - 1] = [j]
                 if isinstance(tl2[j], ImpliesNode):
                     # can't relabel or metavar dependencies between existing targets broken
                     # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
@@ -836,7 +932,7 @@ def cleanup(screen, tl, ttree):
                     j += 1
                 while len(mv) > m:
                     mv.pop()
-    
+
     if qz:
         tl.constraints_processed = (0, 0, 0)
         tl.sorts_processed = (0, 0, 0)

@@ -482,11 +482,19 @@ def replace_tree2(pad, tlist, i, stmt):
 
 def record_move(screen, tl, i, reason):
     moves = tl.moves
-    n = len(moves)
-    if i >= n:
-        for j in range(n, i + 1):
+    num = len(moves)
+    if i >= num:
+        for j in range(num, i + 1):
             moves.append([])
     moves[i].append(reason)
+
+def duplicate_move(screen, tl, i, k):
+    moves = tl.moves
+    num = len(moves)
+    if i >= num:
+        for j in range(num, i + 1):
+            moves.append([])
+    moves[i] = moves[k]
 
 def prune_move_list(screen, tl, ttree):
     moves = tl.moves
@@ -525,11 +533,11 @@ def prune_move_list(screen, tl, ttree):
             if i < len(moves):
                 reason = moves[i] # list of moves applied to prove i
                 for r in reason:
-                    if len(r) == 3: # mp/mt
+                    if len(r) == 3: # mp/mt/equiv
                         (c, l1, l2_list) = r
                         unproc.append(l1)
                         unproc += l2_list
-                    else: # cleanup/equiv
+                    else: # cleanup
                         c, l = r
                         unproc.append(l)
     return sorted(hyps), sorted(tars)
@@ -574,6 +582,15 @@ def is_implication(tree):
         return is_implication(tree.left)
     return isinstance(tree, ImpliesNode)
 
+def is_equality(tree):
+    """
+    Given a parse tree, determine whether it is an equality, possibly
+    quantified.
+    """
+    if isinstance(tree, ForallNode):
+        return is_equality(tree.left)
+    return isinstance(tree, EqNode)
+    
 def metavars_used(tree):
     """
     Given a parsed statement, return a list of names of metavariables (as
@@ -1010,6 +1027,8 @@ def find_sort(screen, tl, s):
                     return t
         t = SortNode(deepcopy(s))
         stree[n - 1].subsorts.append(t)
+        if tl.sorts_recording: # if we are recording modifications in case of rollback
+            tl.sorts_record.append(stree[n-1].subsorts)
         return t
     else:
         def find(st, s):
@@ -1052,6 +1071,18 @@ def insert_sort(screen, tl, s1, s2):
     """
     r = find_sort(screen, tl, s1)
     r.subsorts.append(SortNode(s2))
+    if tl.sorts_recording: # if we are recording modifications in case of rollback
+        tl.sorts_record.append(r.subsorts)
+
+def sorts_mark(screen, tl):
+    tl.sorts_recording = True
+    tl.sorts_record = []
+
+def sorts_rollback(screen, tl):
+    while tl.sorts_record:
+        s = tl.sorts_record.pop()
+        s.pop()
+    tl.sorts_recording = False
 
 def sorts_equal(s1, s2, assign=None):
     """
@@ -1514,7 +1545,8 @@ def type_depth(screen, tl, tree):
     Given a type of a term, determine the maximum depth of the type as measured
     by powerset depth.
     """
-    if isinstance(tree, NumberSort) or isinstance(tree, Universum):
+    if isinstance(tree, NumberSort) or isinstance(tree, Universum) or \
+        isinstance(tree, PredSort):
         return 0
     elif isinstance(tree, VarNode):
         return type_depth(screen, tl, tree.sort)
@@ -1531,7 +1563,8 @@ def type_width(screen, tl, tree):
     by cartesian product width.
     """
     if tree == None or isinstance(tree, NumberSort) or \
-         isinstance(tree, Universum) or isinstance(tree, VarNode):
+         isinstance(tree, Universum) or isinstance(tree, VarNode) or \
+         isinstance(tree, PredSort):
         return 1
     elif isinstance(tree, TupleSort):
        n = len(tree.sorts) # width at this level

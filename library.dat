@@ -916,7 +916,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
 ------------------------------
-S \cup \emptyset = S
+S \cup \emptyset(X) = S
 
 Title: Union of a set with itself is itself
 [['Set'], [], ('=', ['\\cup'], [])]
@@ -1077,7 +1077,7 @@ Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
 ------------------------------
-is_pair(x, S, T) \iff (\exists c \in S, \exists d \in T x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
+is_pair(x, S, T) \iff (\exists c \in X, \exists d \in X x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
 
 Title: Definition of cartesian product
 [['Set', '\\times'], [], ('\\iff', ['is_pair'], ['\\in', '\\times']), ('\\iff', ['\\in', '\\times'], ['is_pair'])]

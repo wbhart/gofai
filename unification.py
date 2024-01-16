@@ -8,7 +8,8 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
                   SetBuilderNode, LambdaNode, mark_binder_vars
 from utility import sorts_equal, find_sort, sorts_compatible, coerce_sorts, subst, \
-                  make_substitution, substitute, is_predicate, is_expression
+                  make_substitution, substitute, is_predicate, is_expression, universe, \
+                  domain, codomain
 from sorts import Sort, PredSort, SetSort, TupleSort, NumberSort, Universum, \
                   CartesianConstraint
 
@@ -262,6 +263,13 @@ def check_macros(screen, tl, macros, assign, qz):
             return False
     return True
     
+def same_tree(screen, tl, tree1, tree2):
+    unifies, assign, macros = unify(screen, tl, tree1, tree2)
+    # TODO: when called from cleanup, macros aren't expanded because types are not in qz
+    # but when trying to eliminate duplicates, expanding macros to identify duplicates is
+    # going to be essential
+    return unifies and not assign and not macros
+
 def is_function_type(sort):
     return isinstance(sort, SetSort) and isinstance(sort.sort, TupleSort) and \
                    len(sort.sort.sorts) == 2

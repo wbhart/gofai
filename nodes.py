@@ -131,7 +131,7 @@ class NaturalNode(LeafNode):
     def __init__(self, string):
         self.value = int(string)
         self.constraint = NumberSort('\\mathbb{N}', OrderedSemiringClass())
-        self.sort = SetSort(self.constraint)
+        self.sort = self.constraint
 
     def __str__(self):
         return str(self.value)
