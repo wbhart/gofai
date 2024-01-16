@@ -1553,7 +1553,7 @@ def type_depth(screen, tl, tree):
         isinstance(tree, PredSort):
         return 0
     elif isinstance(tree, VarNode):
-        return type_depth(screen, tl, tree.sort)
+        return type_depth(screen, tl, tree.constraint.sort)
     elif isinstance(tree, TupleSort):
         return max(type_depth(screen, tl, v) for v in tree.sorts)
     elif isinstance(tree, SetSort):

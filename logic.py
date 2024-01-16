@@ -354,8 +354,8 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
         if tree == None:
             return False, None, None
         if not isinstance(tree.sort, PredSort): # we found a term
-            left = subst.left if is_hyp else subst.right
-            right = subst.right if is_hyp else subst.left
+            left = subst.left
+            right = subst.right
             unifies, assign, macros = unify(screen, tl, left, tree)
             if not check_only:
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)

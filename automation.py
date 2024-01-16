@@ -665,8 +665,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                                 # check if precedent unifies with hyp
                                                 unifies1, assign, macros = unify(screen, tl, prec, tlist1[line2])
                                                 # check all metavars were assigned
-                                                if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
-                                                    unifies1 = False
+                                                #if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
+                                                #    unifies1 = False
                                         if neg:
                                             prec, u = unquantify(screen, thm.right, True)
                                             if not isinstance(prec, AndNode):
@@ -674,8 +674,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                                 comp = complement_tree(prec)
                                                 unifies2, assign, macros = unify(screen, tl, comp, tlist1[line2])
                                                 # check all metavars were assigned
-                                                if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
-                                                    unifies2 = False
+                                                #if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
+                                                #    unifies2 = False
                                     elif isinstance(thm, EqNode):
                                         unifies3, _, _ = logic.limited_equality_substitution(screen, tl, ttree, None, \
                                                                                     line1, line2, True, True)
@@ -743,8 +743,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                             if v1 or v2: # ensure not applying metavar thm to metavar head
                                                 unifies1, assign, macros = unify(screen, tl, prec, tlist1[line2])
                                                 # check all metavars were assigned
-                                                if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
-                                                    unifies1 = False
+                                                #if unifies1 and metavars_used(substitute(deepcopy(prec), assign)):
+                                                #    unifies1 = False
                                         if not unifies1:
                                             prec, u = unquantify(screen, thm.right, False)
                                             if not isinstance(prec, AndNode):
@@ -755,8 +755,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                                     comp = complement_tree(prec)
                                                     unifies2, assign, macros = unify(screen, tl, comp, tlist1[line2])
                                                     # check all metavars were assigned
-                                                    if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
-                                                        unifies2 = False
+                                                    #if unifies2 and metavars_used(substitute(deepcopy(comp), assign)):
+                                                    #    unifies2 = False
                                     elif isinstance(thm, EqNode):
                                         v1 = vars_used(screen, tl, tlist1[j + line])
                                         v2 = vars_used(screen, tl, tlist1[line2])
