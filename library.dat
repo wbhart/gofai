@@ -1357,15 +1357,6 @@ Tags: #sets #definition
 ------------------------------
 S \setminus T = S \cap complement(T)
 
-Title: Test
-[['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
-[['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
-Tags: #sets
-\forall X : Set, \forall S : Set(X), \forall T : Set(X)
-------------------------------
-------------------------------
-complement(S \setminus T) \subseteq complement(S) \cup T
-
 Title: Problem : Complement of set difference is complement of first set union second set
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
