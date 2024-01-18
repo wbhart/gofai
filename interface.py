@@ -3,7 +3,7 @@ import curses.ascii # ascii classification
 from enum import Enum
 from curses import wrapper
 
-line_limit = 600 # maximum number of lines in each pane of tableau
+line_limit = 2000 # maximum number of lines in each pane of tableau
 
 EditMode = Enum('EditMode', ['INSERT', 'REPLACE'])
 

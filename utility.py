@@ -1380,14 +1380,24 @@ def append_unique(list, item):
     if item not in list:
         list.append(item)
 
-def get_constants(screen, tl, tree):
+def get_constants_qz(screen, tl, tree):
+    constants = []
+
+    while tree:
+        constants = get_constants(screen, tl, tree.var.constraint, constants)
+        tree = tree.left
+
+    constants.sort()
+    return constants
+
+def get_constants(screen, tl, tree, constants_in=[]):
     """
     Given a parse tree, return a list of all constants used in the statement,
     i.e. excluding all variable names but including function names which are
     meaningful to the system. Each name appears once and the list will be
     sorted.
     """
-    constants = []
+    constants = deepcopy(constants_in)
     
     def process(tree):
         if tree == None:
@@ -1549,7 +1559,7 @@ def type_depth(screen, tl, tree):
     Given a type of a term, determine the maximum depth of the type as measured
     by powerset depth.
     """
-    if isinstance(tree, NumberSort) or isinstance(tree, Universum) or \
+    if tree == None or isinstance(tree, NumberSort) or isinstance(tree, Universum) or \
         isinstance(tree, PredSort):
         return 0
     elif isinstance(tree, VarNode):
@@ -1623,10 +1633,13 @@ def max_type_size(screen, tl, tree):
                function_depth(screen, tl, tree)
     elif isinstance(tree, TupleNode) or \
          isinstance(tree, VarNode) or isinstance(tree, AbsNode) or \
-         isinstance(tree, NegNode) or isinstance(tree, PowerSetNode):
+         isinstance(tree, NegNode):
         return type_depth(screen, tl, tree.sort), \
                type_width(screen, tl, tree.sort), \
                function_depth(screen, tl, tree)
+    elif isinstance(tree, PowerSetNode):
+        d, f, w = max_type_size(screen, tl, tree.left)
+        return d + 1, w, f
     elif isinstance(tree, FnApplNode):
         if isinstance(tree.var, VarNode) and tree.var.name() in system_predicates:
             d, w, f = max_type_size(screen, tl, tree.args[0])
@@ -1835,6 +1848,19 @@ def element_universe(screen, x):
     else: # Universum, NumberSort, TupleSort are their own sorts
         return x
 
+def propagate_sorts_qz(screen, tl, tree):
+
+    while tree:
+        ok, error = propagate_sorts(screen, tl, tree.var.constraint)
+        if not ok:
+            return False, error
+        ok, error = propagate_sorts(screen, tl, tree.var)
+        if not ok:
+            return False, error
+        tree = tree.left
+
+    return True, None
+    
 def propagate_sorts(screen, tl, tree0):
     """
     Given a parse tree where all variables have been annotated with their
@@ -2115,7 +2141,7 @@ def process_sorts(screen, tl):
             data = data.left # skip quantifiers we already typed
             i += 1
         if data:
-            ok, error = propagate_sorts(screen, tl, data)
+            ok, error = propagate_sorts_qz(screen, tl, data)
             if not ok:
                 return False, error
             while data != None:
@@ -2241,20 +2267,47 @@ def skolemize_quantifiers(tree, deps, sk, ex):
     removed from the quantifier zone; they must be added back in again when
     processed).
     """
-    if isinstance(tree, ExistsNode):
-        if not tree.var.is_metavar and not tree.var.skolemized: # check we didn't already deal with this var
-            sk.append((tree.var.name(), len(deps), True))
-            ex.append(tree.var)
-            return skolemize_quantifiers(tree.left, deps, sk, ex)
+    # find first not not skipped
+    while tree and not isinstance(tree, ForallNode) and not tree.var.is_metavar and not tree.var.skolemized:
+        sk.append((tree.var.name(), len(deps), True))
+        ex.append(tree.var)
+        tree = tree.left
+    
+    if not tree:
+        return tree, deps, sk, ex
+        
+    rtree = tree # will be the returned tree
+
+    if isinstance(tree, ForallNode):
+            deps.append(tree.var)
+        
+    while tree.left:
+        if isinstance(tree.left, ForallNode):
+            deps.append(tree.left.var)
+            tree = tree.left
+        elif isinstance(tree.left, ExistsNode) and not tree.left.var.is_metavar and not tree.left.var.skolemized:
+            sk.append((tree.left.var.name(), len(deps), True))
+            ex.append(tree.left.var)
+            tree.left = tree.left.left # skip this node
         else:
-            tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
-            return tree, deps, sk, ex
-    elif isinstance(tree, ForallNode):
-        deps.append(tree.var)
-        tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
-        return tree, deps, sk, ex
-    else:
-        return tree, deps, sk, ex
+            tree = tree.left # nothing to do for this node
+
+    return rtree, deps, sk, ex
+
+#    if isinstance(tree, ExistsNode):
+#        if not tree.var.is_metavar and not tree.var.skolemized: # check we didn't already deal with this var
+#            sk.append((tree.var.name(), len(deps), True))
+#            ex.append(tree.var)
+#            return skolemize_quantifiers(tree.left, deps, sk, ex)
+#        else:
+#            tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
+#            return tree, deps, sk, ex
+#    elif isinstance(tree, ForallNode):
+#        deps.append(tree.var)
+#        tree.left, deps, sk, ex = skolemize_quantifiers(tree.left, deps, sk, ex)
+#        return tree, deps, sk, ex
+#    else:
+#        return tree, deps, sk, ex
 
 def process_constraints(screen, tree, constraints, vars=None):
     """

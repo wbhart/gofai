@@ -86,8 +86,8 @@ Tags: #algebra #\mathbb{R}
 a + b = b + a
 
 Title: Reciprocal of positive value less than 1
-[[], [], (['0', '1', '<', '>'], ['/', '1', '>'])]
-[[], [], (['0', '1', '\\geq', '\\leq'], ['/', '1', '\\leq'])]
+[['Real'], [], (['0', '1', '<', '>'], ['/', '1', '>'])]
+[['Real'], [], (['0', '1', '\\geq', '\\leq'], ['/', '1', '\\leq'])]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -96,8 +96,8 @@ a > 0 \wedge a < 1
 1/a > 1
 
 Title: Reciprocal of value greater than 1
-[[], [], (['1', '>'], ['/', '0', '1', '<', '>'])]
-[[], [], (['1', '\\leq'], ['/', '0', '1', '\\geq', '\\leq'])]
+[['Real'], [], (['1', '>'], ['/', '0', '1', '<', '>'])]
+[['Real'], [], (['1', '\\leq'], ['/', '0', '1', '\\geq', '\\leq'])]
 Tags: #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -333,8 +333,8 @@ Tags: #inequalities #\mathbb{R}
 \neg(a < b \wedge a > b)
 
 Title: Value squared is zero iff value is zero
-[[], [], (['0', '2', '=', '^'], ['0', '='])]
-[[], [], (['0', '2', '\\neq', '^'], ['0', '\\neq'])]
+[['Real'], [], (['0', '2', '=', '^'], ['0', '='])]
+[['Real'], [], (['0', '2', '\\neq', '^'], ['0', '\\neq'])]
 Tags: #inequalities #algebra #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -343,8 +343,8 @@ a^2 = 0
 a = 0
 
 Title: Value squared is positive iff value is nonzero
-[[], [], (['0', '2', '>', '^'], ['0', '\\neq'])]
-[[], [], (['0', '2', '\\leq', '^'], ['0', '='])]
+[['Real'], [], (['0', '2', '>', '^'], ['0', '\\neq'])]
+[['Real'], [], (['0', '2', '\\leq', '^'], ['0', '='])]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -414,8 +414,8 @@ Tags: #inequalities #absolutevalue #\mathbb{R}
 |a| \geq 0
 
 Title: Absolute value is zero iff value is zero
-[[], [], (['0', '=', '||'], ['0', '='])]
-[[], [], (['0', '\\neq', '||'], ['0', '\\neq'])]
+[['Real'], [], (['0', '=', '||'], ['0', '='])]
+[['Real'], [], (['0', '\\neq', '||'], ['0', '\\neq'])]
 Tags: #inequalities #algebra #absolutevalue #\mathbb{R}
 \forall a \in \mathbb{R}
 ------------------------------
@@ -1356,6 +1356,15 @@ Tags: #sets #definition
 ------------------------------
 ------------------------------
 S \setminus T = S \cap complement(T)
+
+Title: Test
+[['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
+[['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
+Tags: #sets
+\forall X : Set, \forall S : Set(X), \forall T : Set(X)
+------------------------------
+------------------------------
+complement(S \setminus T) \subseteq complement(S) \cup T
 
 Title: Problem : Complement of set difference is complement of first set union second set
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
