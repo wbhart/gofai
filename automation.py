@@ -274,7 +274,7 @@ def filter_theorems1(screen, index, type_consts, consts):
                     if set(tc).issubset(consts):
                         if set(tcr).issubset(tc) or not set(tc).issubset(tcr):
                             thms.append((title, c, nc, filepos, i))
-                    elif set(tnc).issubset(consts):
+                    if set(tnc).issubset(consts):
                         if set(tncl).issubset(tnc) or not set(tnc).issubset(tncl):
                             thms.append((title, c, nc, filepos, i))
     return thms
@@ -299,7 +299,7 @@ def filter_theorems2(screen, index, consts, mode):
                 if set(tc).issubset(consts):
                     if set(tcl).issubset(tc) or not set(tc).issubset(tcl):
                         thms.append((title, c, nc, filepos, i))
-                elif set(tnc).issubset(consts):
+                if set(tnc).issubset(consts):
                     if set(tncr).issubset(tnc) or not set(tnc).issubset(tncr):
                         thms.append((title, c, nc, filepos, i))
     return thms
