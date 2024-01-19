@@ -441,9 +441,9 @@ def check_targets_proved(screen, tl, ttree, start1=0, start2=0):
         hydra = hydras_todo.pop()
         heads = find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra)
         gen = generate_pairs(heads, unification_count, len(heads))
-        #gen = filter(lambda x : not all(c < start2 and ((isinstance(unifications[c][d], tuple) and \
-        #             unifications[c][d][0] < start1 and unifications[c][d][1] < start1) or \
-        #            (not isinstance(unifications[c][d], tuple) and unifications[c][d] < start1)) for (c, d) in x), gen)
+        gen = filter(lambda x : not all(c < start2 and ((isinstance(unifications[c][d], tuple) and \
+                     unifications[c][d][0] < start1 and unifications[c][d][1] < start1) or \
+                    (not isinstance(unifications[c][d], tuple) and unifications[c][d] < start1)) for (c, d) in x), gen)
         d1, d2, pl = try_unifications(screen, tl, ttree, unifications, gen)
         dirty1 += d1
         dirty2 += d2
