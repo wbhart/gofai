@@ -432,6 +432,8 @@ def clear_tableau(screen, tl):
     tl.loaded_theorem = None
     tl.focus = tl.tlist0
     tl.moves = []
+    tl.unifications = []
+    tl.unification_count = []
 
 def filter_library(screen, tl, library, tags):
     tags = canonicalise_tags(tags) # deal with constraint shorthands

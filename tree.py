@@ -45,6 +45,8 @@ class TreeList:
         self.moves = [] # moves that were used to prove the theorem
         self.sorts_recording = False # if we are recording new sorts in case of rollback
         self.sorts_record = [] # list of sort records to roll back (pop)
+        self.unification_count = [] # used by incremental completion checking
+        self.unifications = [] # used by incremental completion checking
         
     def switch_list(self):
         if self.focus == self.tlist0:

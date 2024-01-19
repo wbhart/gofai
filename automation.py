@@ -7,7 +7,7 @@ from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
-     SymbolNode, NeqNode, ForallNode, EqNode, NotNode
+     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy
@@ -332,12 +332,13 @@ def filter_theorems2(screen, index, consts, mode):
                 tcl = thm.left
                 tnc = nthm.left
                 tncr = nthm.right
+                iff = isinstance(thm, AutoIffNode)
                 if set(tc).issubset(consts):
                     if set(tcl).issubset(tc) or not set(tc).issubset(tcl):
-                        thms.append((title, c, nc, filepos, i))
+                        thms.append((title, c, nc, filepos, i, iff))
                 if set(tnc).issubset(consts):
                     if set(tncr).issubset(tnc) or not set(tnc).issubset(tncr):
-                        thms.append((title, c, nc, filepos, i))
+                        thms.append((title, c, nc, filepos, i, iff))
     return thms
 
 def filter_theorems3(screen, index, consts1, consts2):
@@ -651,11 +652,15 @@ def automate(screen, tl, ttree, interface='curses'):
     mode = 0 # mode 0 = no adding tar metavars, mode 1 = add tar metavars with iffs
     current_depth = 1 # depth we are currently searching to
     depth_progress = False # whether we've made progress at current depth
+    starting = True
     while True: # keep going until theorem proved or progress stalls
         # get next unproved target
         i = 0
         made_progress = False
         while i < len(tlist2):
+            start1 = 0 if starting else len(tlist1)  # used by incremental completion checking
+            start2 = 0 if starting else len(tlist2)
+            starting = False
             while i < len(tlist2):
                 if not isinstance(tlist2[i], DeadNode):
                     break
@@ -874,7 +879,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 # try to find a theorem that applies to the target
                 if not tprogress:
                     libthms = filter_theorems2(screen, index, tarc, mode)
-                    for (title, c, nc, filepos, line) in libthms:
+                    for (title, c, nc, filepos, line, iff) in libthms:
                         implc = c[2][line].left
                         nimplc = nc[2][line].right
                         pos = set(implc).issubset(hypc)
@@ -961,7 +966,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                     n2 = len(tl.tlist2.data)
                                     var1 = metavars_used(tlist1[line1].left)
                                     var2 = metavars_used(tlist1[line1].right)
-                                    if mode == 1 or set(var1).issubset(var2):
+                                    if (iff and not set(tnode.const2).issubset(tnode.const1)) or \
+                                           mode == 1 or set(var1).issubset(var2):
                                         if unifies1:
                                             success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
                                         elif unifies2:
@@ -987,7 +993,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                                 library.close()
                                                 return True
                                             #wind_skolems(screen, tl, atab)
-            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
+            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
             update_screen(screen, tl, interface, dirty1, dirty2)
             if done:
                 return True
