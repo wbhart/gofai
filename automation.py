@@ -966,8 +966,10 @@ def automate(screen, tl, ttree, interface='curses'):
                                     n2 = len(tl.tlist2.data)
                                     var1 = metavars_used(tlist1[line1].left)
                                     var2 = metavars_used(tlist1[line1].right)
-                                    if (iff and not set(tnode.const2).issubset(tnode.const1)) or \
-                                           mode == 1 or set(var1).issubset(var2):
+                                    if (iff and ((unifies1 and not set(tnode.const2).issubset(tnode.const1)) or \
+                                                 (unifies2 and not set(tnode.const1).issubset(tnode.const2)))) or \
+                                           mode == 1 or (unifies1 and set(var1).issubset(var2)) or \
+                                                        (unifies2 and set(var2).issubset(var1))  or unifies3:
                                         if unifies1:
                                             success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
                                         elif unifies2:
