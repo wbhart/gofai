@@ -43,16 +43,17 @@ def main(stdscr):
             if started:
                 equality_substitution(screen, tl)
         elif c == 's': # start automated cleanup
-            fill_macros(screen, tl)
-            type_vars(screen, tl)
-            initialise_sorts(screen, tl)
-            ok, error = process_sorts(screen, tl)
-            if ok:
-               started = True
-               skip = False
-               ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
-            else:
-               screen.dialog(error)
+            if not started:
+                fill_macros(screen, tl)
+                type_vars(screen, tl)
+                initialise_sorts(screen, tl)
+                ok, error = process_sorts(screen, tl)
+                if ok:
+                    started = True
+                    skip = False
+                    ttree = TargetNode(-1, [TargetNode(i) for i in range(0, len(tl.tlist2.data))])
+                else:
+                    screen.dialog(error)
         elif c == 'a': # automation
             if started:
                 if automate(screen, tl, ttree):
