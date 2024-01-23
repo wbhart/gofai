@@ -9,7 +9,7 @@ from sorts import SetSort, TupleSort, FunctionConstraint, DomainTuple, \
      CartesianConstraint, Universum, NumberSort, PredSort, Sort
 from typeclass import CompleteValuedFieldClass, CompleteOrderedValuedFieldClass, \
      FieldClass, OrderedRingClass, OrderedSemiringClass, PosetClass, MonoidClass, \
-     SemiringClass
+     SemiringClass, ValuedFieldClass
 from copy import deepcopy, copy
 from heapq import merge  
 
