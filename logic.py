@@ -540,7 +540,7 @@ def library_import(screen, tl, library, filepos):
             tree = AndNode(tree, i)
     tlist1 = tl.tlist1.data
     stmt, _ = relabel(screen, tl, [], tree)
-    ok = process_constraints(screen, stmt, tl.constraints)
+    ok = process_constraints(screen, tl, stmt, tl.constraints)
     if ok:
         append_tree(tlist1, stmt, None)
     return ok

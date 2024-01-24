@@ -23,7 +23,7 @@ from utility import unquantify, relabel, append_tree, \
      trim_spaces, find_all, find_start_index, metavars_used, target_metavars, \
      domain, codomain, system_unary_functions, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
-     get_constants, merge_lists, process_constraints, get_terms, get_init_vars, \
+     get_constants, merge_lists, get_terms, get_init_vars, \
      sorts_compatible, coerce_sorts, sorts_equal, vars_used, list_merge, \
      treelist_prune
 import logic
