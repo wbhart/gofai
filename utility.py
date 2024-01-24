@@ -270,6 +270,17 @@ def relabel_varname(name, var_dict):
     var_dict[name] = subscript
     return name+'_'+str(subscript)
 
+def new_variable(screen, tl, string):
+    """
+    Given a string, return a variable name which has not been used, based on
+    that string. At present, it will simply add a subscript to the name and
+    prepend an underscore. These variables are intended to be used internally.
+    """
+    var_dict = tl.vars
+    
+    return relabel_varname('_'+string, var_dict)
+
+    
 def qz_copy_var(screen, tl, extras, name, new_name, copied, assign=None):
     """
     Make a copy, in the quantifier zone of the tableau, of the variable with
@@ -2177,7 +2188,7 @@ def type_vars(screen, tl):
     while qz != None:
         vars.append(qz.var.name())
         constraints[qz.var.name()] = qz.var.constraint
-        ok, error = process_constraints(screen, qz.var.constraint, constraints, vars)
+        ok, error = process_constraints(screen, tl, qz.var.constraint, constraints, vars)
         if not ok:
             screen.dialog(error)
             return
@@ -2186,13 +2197,13 @@ def type_vars(screen, tl):
 
     hyps = tl.tlist1.data
     for tree in hyps:
-        ok, error = process_constraints(screen, tree, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree, constraints, vars)
         if not ok:
             screen.dialog(error)
             return
     tars = tl.tlist2.data
     for tree in tars:
-        ok, error = process_constraints(screen, tree, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree, constraints, vars)
         if not ok:
             screen.dialog(error)
             return
@@ -2224,7 +2235,7 @@ def update_constraints(screen, tl):
 
     while qz != None:
         constraints[qz.var.name()] = qz.var.constraint
-        ok, error = process_constraints(screen, qz.var.constraint, constraints)
+        ok, error = process_constraints(screen, tl, qz.var.constraint, constraints)
         if not ok:
             return False, error
         qz = qz.left
@@ -2232,12 +2243,12 @@ def update_constraints(screen, tl):
 
     hyps = tl.tlist1.data
     for j in range(n1, len(hyps)):
-        ok, error = process_constraints(screen, hyps[j], constraints)
+        ok, error = process_constraints(screen, tl, hyps[j], constraints)
         if not ok:
             return False, error
     tars = tl.tlist2.data
     for k in range(n2, len(tars)):
-        ok, error = process_constraints(screen, tars[k], constraints)
+        ok, error = process_constraints(screen, tl, tars[k], constraints)
         if not ok:
             return False, error
     tl.constraints_processed = (i, len(hyps), len(tars))
@@ -2309,7 +2320,7 @@ def skolemize_quantifiers(tree, deps, sk, ex):
 #    else:
 #        return tree, deps, sk, ex
 
-def process_constraints(screen, tree, constraints, vars=None):
+def process_constraints(screen, tl, tree, constraints, vars=None):
     """
     Given a parse tree and a dictionary of constraints for variables, annotate
     each occurrence of variables in tree with their constraints as stored in
@@ -2330,10 +2341,10 @@ def process_constraints(screen, tree, constraints, vars=None):
         if vars != None:
             vars.append(name)
         constraints[tree.var.name()] = tree.var.constraint
-        ok, error = process_constraints(screen, tree.var.constraint, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.var.constraint, constraints, vars)
         if not ok:
             return False, error
-        ok, error = process_constraints(screen, tree.left, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.left, constraints, vars)
         if vars != None:
             del_last(vars, name)
         if not ok:
@@ -2342,13 +2353,17 @@ def process_constraints(screen, tree, constraints, vars=None):
         name = tree.left.left.name()
         if vars != None:
             vars.append(name)
-        constraints[tree.left.left.name()] = tree.left.left.constraint
-        ok, error = process_constraints(screen, tree.left, constraints, vars)
+        new_varname = new_variable(screen, tl, 'X') # introduce fake universe for inference
+        X = VarNode(new_varname)
+        X.is_metavar = True
+        X.constraint = SetSort(Universum())
+        constraints[tree.left.left.name()] = X
+        ok, error = process_constraints(screen, tl, tree.left, constraints, vars)
         if not ok:
             if vars != None:
                 del_last(vars, name)
             return False, error
-        ok, error = process_constraints(screen, tree.right, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.right, constraints, vars)
         if vars != None:
             del_last(vars, name)
         if not ok:
@@ -2363,39 +2378,39 @@ def process_constraints(screen, tree, constraints, vars=None):
         else:
             tree.constraint = constraints[tree.name()]
     elif isinstance(tree, LRNode):
-        ok, error = process_constraints(screen, tree.left, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.left, constraints, vars)
         if not ok:
             return False, error
-        ok, error = process_constraints(screen, tree.right, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.right, constraints, vars)
         if not ok:
             return False, error
     elif isinstance(tree, FnApplNode):
-        ok, error = process_constraints(screen, tree.var, constraints, vars)
+        ok, error = process_constraints(screen, tl, tree.var, constraints, vars)
         if not ok:
             return False, error
         for v in tree.args:
-            ok, error = process_constraints(screen, v, constraints, vars)
+            ok, error = process_constraints(screen, tl, v, constraints, vars)
             if not ok:
                 return False, error
     elif isinstance(tree, TupleNode):
         for v in tree.args:
-            ok, error = process_constraints(screen, v, constraints, vars)
+            ok, error = process_constraints(screen, tl, v, constraints, vars)
             if not ok:
                 return False, error
     elif isinstance(tree, SymbolNode):
-         ok, error = process_constraints(screen, tree.constraint, constraints, vars)
+         ok, error = process_constraints(screen, tl, tree.constraint, constraints, vars)
          if not ok:
              return False, error
     elif isinstance(tree, FunctionConstraint):
-         ok, error = process_constraints(screen, tree.domain, constraints, vars)
+         ok, error = process_constraints(screen, tl, tree.domain, constraints, vars)
          if not ok:
              return False, error
-         ok, error = process_constraints(screen, tree.codomain, constraints, vars)
+         ok, error = process_constraints(screen, tl, tree.codomain, constraints, vars)
          if not ok:
              return False, error
     elif isinstance(tree, DomainTuple):
          for v in tree.sets:
-             ok, error = process_constraints(screen, v, constraints, vars)
+             ok, error = process_constraints(screen, tl, v, constraints, vars)
          if not ok:
              return False, error
     return True, None
