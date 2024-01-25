@@ -7,7 +7,7 @@ from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
-     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode
+     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, ElemNode, VarNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy

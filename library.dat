@@ -10,7 +10,7 @@ A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 Title: Extensionality of sets
 [['Set'], [], ('\\iff', ['='], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
-Tags: #sets #definition
+Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
@@ -603,7 +603,7 @@ x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 Title: Definition of set universe
 [['Set'], [], (['\\in'], ['\\in'])]
 [['Set'], [], (['\\in'], ['\\in'])]
-Tags: #sets
+Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
