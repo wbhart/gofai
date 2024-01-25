@@ -126,14 +126,14 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), bidirn=forward)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, bidirn=forward)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2, bidirn=forward)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
@@ -220,14 +220,14 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]))
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), bidirn=forward)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, bidirn=forward)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2, bidirn=forward)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
@@ -283,10 +283,10 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
         if str(tree) == string: # we found an occurrence
             occur += 1
             if occur == n: # we found the right occurrence
-                unifies, assign, macros = unify(screen, tl, subst.left, tree)
+                unifies, assign, macros = unify(screen, tl, subst.left, tree, bidirn=is_hyp)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if not unifies:
-                    unifies, assign, macros = unify(screen, tl, subst.right, tree)
+                    unifies, assign, macros = unify(screen, tl, subst.right, tree, bidirn=is_hyp)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if not unifies:
                         return False, tree # does not unify, bogus selection
@@ -356,7 +356,7 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
         if not isinstance(tree.sort, PredSort): # we found a term
             left = subst.left
             right = subst.right
-            unifies, assign, macros = unify(screen, tl, left, tree)
+            unifies, assign, macros = unify(screen, tl, left, tree, bidirn=is_hyp)
             if not check_only:
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
             if not unifies:
