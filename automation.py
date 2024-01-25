@@ -212,7 +212,7 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
 
 def autotab_remove_deadnodes(screen, tl, atab, n1, n2, interface):
     list1 = tl.tlist1.data
-    list2 = tl.tlist1.data
+    list2 = tl.tlist2.data
     dirty1 = []
     dirty2 = []
     for i in range(n1, len(list1)):
