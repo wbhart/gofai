@@ -2,7 +2,7 @@ from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
      add_sibling, vars_used, domain, codomain, universe, metavars_used, \
-     tags_to_list, canonicalise_tags, record_move, duplicate_move
+     tags_to_list, canonicalise_tags, record_move, duplicate_move, metavar_check
 from unification import check_macros, unify, substitute, same_tree
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -155,7 +155,8 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
             record_move(screen, tl, n, ('p', line1, []))
         else:
             append_tree(tlist2.data, stmt, dirty2)
-            add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
+            if ttree:
+                add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
             tl.tars[line2] = True
     return True, dirty1, dirty2
 
@@ -249,7 +250,8 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
             record_move(screen, tl, n, ('t', line1, []))
         else:
             append_tree(tlist2.data, stmt, dirty2)
-            add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
+            if ttree:
+                add_descendant(ttree, line2, len(tlist2.data) - 1, line1)
             tl.tars[line2] = True
     return True, dirty1, dirty2
 
@@ -703,7 +705,7 @@ def library_export(screen, tl, library, title, tags):
         library.write(repr(tar)+"\n")
     library.write("\n")
 
-def cleanup(screen, tl, ttree):
+def cleanup(screen, tl, ttree=None):
     """
     Automated cleanup moves. This applies numerous moves that the user will
     essentially always want to do. This is applied automatically after every
@@ -816,7 +818,7 @@ def cleanup(screen, tl, ttree):
                     tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
                     impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
                     append_tree(tl1, impl, dirty1)
-                    tl.tlist1.dep[len(tl1) - 1] = tl.tlist1.dependency(i)
+                    tl.tlist1.dep[len(tl1) - 1] = deepcopy(tl.tlist1.dependency(i))
                     stmt = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False)
                     replace_tree(tl1, i, stmt, dirty1)
                     rollback()
@@ -828,34 +830,29 @@ def cleanup(screen, tl, ttree):
                         append_tree(tl1, tl1[i].right, dirty1)
                         replace_tree(tl1, i, tl1[i].left, dirty1)
                         n = len(tl1) - 1
-                        tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                        tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                         duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
                     replace_tree(tl1, i, tl1[i].left.left, dirty1)
                     n = len(tl1) - 1
-                    tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                    tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                     duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
-                    var1 = metavars_used(tl1[i].left.left)
-                    var2 = metavars_used(tl1[i].left.right)
-                    var = metavars_used(tl1[i].right)
-                    # make sure no additional metavars are introduced
-                    if set(var).issubset(var1) and set(var).issubset(var2):
-                        P = tl1[i].left.left
-                        Q = tl1[i].left.right
-                        R = tl1[i].right
-                        # first check we don't have P => P
-                        if same_tree(screen, tl, P, R):
-                            replace_tree(tl1, i, ImpliesNode(Q, R), dirty1)
-                        else:
-                            replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
-                            # first check we don't have Q => Q
-                            if not same_tree(screen, tl, Q, R):
-                                append_tree(tl1, ImpliesNode(Q, deepcopy(R)), dirty1)
-                                n = len(tl1) - 1
-                                tl.tlist1.dep[n] = tl.tlist1.dependency(i)
-                                duplicate_move(screen, tl, n, i)
+                    P = tl1[i].left.left
+                    Q = tl1[i].left.right
+                    R = tl1[i].right
+                    # first check we don't have P => P
+                    if same_tree(screen, tl, P, R):
+                        replace_tree(tl1, i, ImpliesNode(Q, R), dirty1)
+                    else:
+                        replace_tree(tl1, i, ImpliesNode(P, R), dirty1)
+                        # first check we don't have Q => Q
+                        if not same_tree(screen, tl, Q, R):
+                            append_tree(tl1, ImpliesNode(Q, deepcopy(R)), dirty1)
+                            n = len(tl1) - 1
+                            tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
+                            duplicate_move(screen, tl, n, i)
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     P = tl1[i].left
                     Q = tl1[i].right.left
@@ -869,7 +866,7 @@ def cleanup(screen, tl, ttree):
                         if not same_tree(screen, tl, P, Q):
                             append_tree(tl1, ImpliesNode(deepcopy(P), Q), dirty1)
                             n = len(tl1) - 1
-                            tl.tlist1.dep[n] = tl.tlist1.dependency(i)
+                            tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                             duplicate_move(screen, tl, n, i)
                 i += 1
                 while len(mv) > m:
@@ -882,11 +879,6 @@ def cleanup(screen, tl, ttree):
                 if str(tl2[j]) != oldtlj and j not in dirty2:
                     dirty2.append(j)
                 rollback()
-                if isinstance(tl2[j], OrNode):
-                    append_tree(tl1, complement_tree(tl2[j].left), dirty1)
-                    hyps_done = False
-                    replace_tree(tl2, j, tl2[j].right, dirty2)
-                    n = tl.tlist1.dep[len(tl1) - 1] = [j]
                 if isinstance(tl2[j], ImpliesNode):
                     # can't relabel or metavar dependencies between existing targets broken
                     # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
@@ -907,11 +899,18 @@ def cleanup(screen, tl, ttree):
                     else:
                         append_tree(tl2, tl2[j].right, dirty2)
                         replace_tree(tl2, j, tl2[j].left, dirty2)
-                        add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                        if not metavar_check(tl2[len(tl2) - 1].left, tl2[j].right):
+                            return False, "Metavariable dependency created. Automation halted."
+                        if ttree:
+                            add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
                     replace_tree(tl2, j, tl2[j].left.left, dirty2)
-                    add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                    if not metavar_check(tl2[len(tl2) - 1], tl2[j]):
+                            return False, "Metavariable dependency created. Automation halted."
+                        
+                    if ttree:
+                        add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
                    and not isinstance(tl2[j], ImpliesNode):
                     j += 1

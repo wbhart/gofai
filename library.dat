@@ -403,7 +403,7 @@ Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
 ------------------------------
-is_pair(x, S, T) \iff x \in S \times T
+x \in S \times T iff is_pair(x, S, T)
 
 Title: Element of cartesian product has components in the sets
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
