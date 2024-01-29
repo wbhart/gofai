@@ -752,7 +752,8 @@ def library_load(screen, tl):
     title = library.readline()
     while title: # check for EOF
         library.readline() # skip constants for now
-        library.readline() # skip terms for now
+        library.readline() # skip nconstants for now
+        library.readline() # skip definitions for now
         libtaglist = tags_to_list(library.readline()[0:-1])
         if all(elem in libtaglist for elem in taglist):
             filtered_titles.append((library.tell(), title[7:-1]))

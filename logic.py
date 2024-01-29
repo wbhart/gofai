@@ -409,6 +409,72 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
     else:
         return found, dirty1, dirty2
 
+def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
+    subst = tl.tlist1.data[defn_idx]
+    subst, univs = unquantify(screen, subst, True)
+    left = subst.left
+    right = subst.right
+    orig_tree = tl.tlist1.data[idx] if is_hyp else tl.tlist2.data[idx]
+    current_level = 0
+    unprocessed = [(orig_tree, None, None)] # unprocessed nodes at this level
+    processed = [] # processed node descendants
+    dirty1 = []
+    dirty2 = []
+                        
+    while unprocessed:
+        while unprocessed:
+            (tree, parent, pos) = unprocessed.pop()
+            
+            if level == None or level == current_level: # check this level       
+                unifies, assign, macros = unify(screen, tl, left, tree, bidirn=is_hyp)
+                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                
+                if unifies:
+                    if level == None:
+                        return current_level
+                    else: # actually make the substitution
+                        tree = substitute(deepcopy(right), assign) # we may have assigned metavars used elsewhere in the expression
+                        
+                        # substitute correct location of parent
+                        if parent == None: # top level
+                            orig_tree = tree
+                        else:
+                            if pos == -1:
+                                parent.left = tree
+                            elif pos == -2:
+                                parent.right == tree
+                            else:
+                                parent.args[pos] = tree
+
+            # insert trees for next level
+            if isinstance(tree, LRNode):
+                if tree.left:
+                    processed.append((tree.left, tree, -1))
+                if tree.right:
+                    processed.append((tree.right, tree, -2))
+            elif isinstance(tree, TupleNode) or isinstance(tree, FnApplNode):
+                for j in range(len(tree.args)):
+                    t = tree.args[j]
+                    processed.append((t, tree, j))
+
+        if level == current_level:
+            if is_hyp:
+                append_tree(tl.tlist1.data, orig_tree, dirty1)
+                n = len(tl.tlist1.data) - 1
+                tl.tlist1.dep[n] = tl.tlist1.dependency(idx)
+                record_move(screen, tl, n, ('e', defn_idx, [idx]))
+            else:
+                append_tree(tl.tlist2.data, orig_tree, dirty2)
+            return dirty1, dirty2
+
+        # nothing at this level or incorrect level, go to next level
+        current_level += 1
+        unprocessed = processed
+        process = []
+
+    return None
+    
+
 def clear_tableau(screen, tl):
     """
     Clear the tableau and reset it ready to prove another theorem.
@@ -705,7 +771,7 @@ def library_export(screen, tl, library, title, tags):
         library.write(repr(tar)+"\n")
     library.write("\n")
 
-def cleanup(screen, tl, ttree=None):
+def cleanup(screen, tl, ttree=None, defn=False):
     """
     Automated cleanup moves. This applies numerous moves that the user will
     essentially always want to do. This is applied automatically after every
@@ -822,7 +888,7 @@ def cleanup(screen, tl, ttree=None):
                     stmt = skolemize_statement(screen, tl1[i], deps, depmin, sk, qz, mv, False)
                     replace_tree(tl1, i, stmt, dirty1)
                     rollback()
-                while isinstance(tl1[i], AndNode):
+                while not defn and isinstance(tl1[i], AndNode):
                     # First check we don't have P \wedge P
                     if same_tree(screen, tl, tl1[i].left, tl1[i].right):
                         replace_tree(tl1, i, tl1[i].left, dirty1)
@@ -832,13 +898,13 @@ def cleanup(screen, tl, ttree=None):
                         n = len(tl1) - 1
                         tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                         duplicate_move(screen, tl, n, i)
-                if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
+                if not defn and isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
                     replace_tree(tl1, i, tl1[i].left.left, dirty1)
                     n = len(tl1) - 1
                     tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                     duplicate_move(screen, tl, n, i)
-                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
+                if not defn and isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     P = tl1[i].left.left
                     Q = tl1[i].left.right
                     R = tl1[i].right
@@ -853,7 +919,7 @@ def cleanup(screen, tl, ttree=None):
                             n = len(tl1) - 1
                             tl.tlist1.dep[n] = deepcopy(tl.tlist1.dependency(i))
                             duplicate_move(screen, tl, n, i)
-                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
+                if not defn and isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     P = tl1[i].left
                     Q = tl1[i].right.left
                     R = tl1[i].right.right
@@ -899,15 +965,19 @@ def cleanup(screen, tl, ttree=None):
                     else:
                         append_tree(tl2, tl2[j].right, dirty2)
                         replace_tree(tl2, j, tl2[j].left, dirty2)
-                        if not metavar_check(tl2[len(tl2) - 1].left, tl2[j].right):
+                        if not metavar_check(screen, tl2[len(tl2) - 1], tl2[j]):
+                            screen.dialog(str(tl2[len(tl2) - 1]))
+                            screen.dialog(str(tl2[j]))
                             return False, "Metavariable dependency created. Automation halted."
                         if ttree:
                             add_sibling(screen, tl, ttree, j, len(tl2) - 1)
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
                     replace_tree(tl2, j, tl2[j].left.left, dirty2)
-                    if not metavar_check(tl2[len(tl2) - 1], tl2[j]):
-                            return False, "Metavariable dependency created. Automation halted."
+                    if not metavar_check(screen, tl2[len(tl2) - 1], tl2[j]):
+                        screen.dialog(str(tl2[len(tl2) - 1]))
+                        screen.dialog(str(tl2[j]))
+                        return False, "Metavariable dependency created. Automation halted."
                         
                     if ttree:
                         add_sibling(screen, tl, ttree, j, len(tl2) - 1)

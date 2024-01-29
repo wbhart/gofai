@@ -1,6 +1,7 @@
 Title: Definition of set inclusion
 [['Set'], [], ('\\iff', ['\\subseteq'], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['\\subseteq'])]
 [['Set'], [], ('\\iff', ['\\subseteq'], ['\\in']), ('\\iff', ['\\in'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subseteq'], ['\\implies', '\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -10,6 +11,7 @@ A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 Title: Extensionality of sets
 [['Set'], [], ('\\iff', ['='], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -19,6 +21,7 @@ S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies 
 Title: Sets are equal iff they include one another
 [['Set'], [], ('\\iff', ['='], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['=']), ('\\iff', ['='], ['\\subseteq'])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\neq']), ('\\iff', ['\\neq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['='], ['\\subseteq'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X) \forall B : Set(X)
 ------------------------------
@@ -28,6 +31,7 @@ A = B \iff A \subseteq B \wedge B \subseteq A
 Title: Definition of strict set inclusion
 [['Set'], [], ('\\iff', ['\\subsetneq'], ['\\neq']), ('\\iff', ['\\neq', '\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
 [['Set'], [], ('\\iff', ['\\subsetneq'], ['=']), ('\\iff', ['=', '\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\neq', '\\subseteq'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -37,6 +41,7 @@ A \subsetneq B \iff A \subseteq B \wedge A \neq B
 Title: Transitivity of set inclusion
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -48,6 +53,7 @@ A \subseteq C
 Title: Mixed transitivity of set inclusion (right strict)
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -59,6 +65,7 @@ A \subsetneq C
 Title: Mixed transitivity of set inclusion (left strict)
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -70,6 +77,7 @@ A \subsetneq C
 Title: Transitivity of strict set inclusion
 [['Set'], [], (['\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subsetneq'], ['\\subsetneq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -81,6 +89,7 @@ A \subsetneq C
 Title: Element of a set is an element of a superset
 [['Set'], [], (['\\in', '\\subseteq'], ['\\in'])]
 [['Set'], [], (['\\in', '\\subseteq'], ['\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -92,6 +101,7 @@ x \in B
 Title: Element of a set is an element of a strict superset
 [['Set'], [], (['\\in', '\\subsetneq'], ['\\in'])]
 [['Set'], [], (['\\in', '\\subsetneq'], ['\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall x \in X
 ------------------------------
@@ -103,6 +113,7 @@ x \in B
 Title: Cycle of set inclusions implies equality of those sets
 [['Set'], [], (['\\subseteq'], ['='])]
 [['Set'], [], (['\\subseteq'], ['\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -115,6 +126,7 @@ A = B
 Title: Definition of empty set
 [['Set'], [], ['\\emptyset', '\\in']]
 [['Set'], [], ['\\emptyset', '\\in']]
+[]
 Tags: #sets
 \forall X : Set, \forall x \in X
 ------------------------------
@@ -124,6 +136,7 @@ Tags: #sets
 Title: Empty set is a subset of every set
 [['Set'], [], ['\\emptyset', '\\subseteq']]
 [['Set'], [], ['\\emptyset', '\\subseteq']]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -133,6 +146,7 @@ Tags: #sets
 Title: Definition of set union
 [['Set'], [], ('\\iff', ['\\cup', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cup', '\\in'])]
 [['Set'], [], ('\\iff', ['\\cup', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cup', '\\in'])]
+[['Set'], [], ('\\iff', ['\\cup', '\\in'], ['\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X) \forall T : Set(X) \forall x \in X
 ------------------------------
@@ -142,6 +156,7 @@ x \in S \cup T \iff x \in S \vee x \in T
 Title: Subset of the empty set is empty
 [['Set'], [], (['\\emptyset', '\\subseteq'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\emptyset', '\\subseteq'], ['\\emptyset', '\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -152,6 +167,7 @@ S = \emptyset(X)
 Title: Empty set strictly included in set implies set has an element
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -162,6 +178,7 @@ Tags: #sets
 Title: Problem : A set containing an element strictly includes the empty set
 [['Set'], [], (['\\in'], ['\\emptyset', '\\subsetneq'])]
 [['Set'], [], (['\\in'], ['\\emptyset', '\\subsetneq'])]
+[]
 Tags: #sets #tests
 \forall X : Set, \forall S : Set(X), \forall s \in X
 ------------------------------
@@ -172,6 +189,7 @@ s \in S
 Title: Commutativity of set union
 [['Set'], [], ('=', ['\\cup'], ['\\cup'])]
 [['Set'], [], ('=', ['\\cup'], ['\\cup'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -181,6 +199,7 @@ S \cup T = T \cup S
 Title: Union of sets includes the sets individually
 [['Set'], [], ['\\cup', '\\subseteq']]
 [['Set'], [], ['\\cup', '\\subseteq']]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -190,6 +209,7 @@ S \subseteq S \cup T
 Title: Union equal to one of the sets implies the other is included in it
 [['Set'], [], (['=', '\\cup'], ['\\subseteq'])]
 [['Set'], [], (['\\cup', '\\neq'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -200,6 +220,7 @@ T \subseteq S
 Title: Subset of one of two sets is subset of their union
 [['Set'], [], (['\\subseteq'], ['\\cup', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\cup', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -210,6 +231,7 @@ C \subseteq S \cup T
 Title: Elements of set contained in two sets implies set is subset of their union
 [['Set'], [], (['\\implies', '\\in'], ['\\cup', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cup', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -220,6 +242,7 @@ C \subseteq S \cup T
 Title: Union of set with the empty set is the original set
 [['Set'], [], ('=', ['\\cup', '\\emptyset'], [])]
 [['Set'], [], ('=', ['\\cup', '\\emptyset'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -229,6 +252,7 @@ S \cup \emptyset(X) = S
 Title: Union of a set with itself is itself
 [['Set'], [], ('=', ['\\cup'], [])]
 [['Set'], [], ('=', ['\\cup'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -238,6 +262,7 @@ S \cup S = S
 Title: Union is nonempty implies one of the sets has an element
 [['Set'], [], (['\\cup', '\\emptyset', '\\neq'], ['\\in'])]
 [['Set'], [], (['=', '\\cup', '\\emptyset'], ['\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -248,6 +273,7 @@ S \cup T \neq \emptyset(X)
 Title: Union is empty implies the sets are empty
 [['Set'], [], (['=', '\\cup', '\\emptyset'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\cup', '\\emptyset', '\\neq'], ['\\emptyset', '\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -258,6 +284,7 @@ S = \emptyset(X) \wedge T = \emptyset(X)
 Title: Definition of set intersection
 [['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in']), ('\\iff', ['\\cap', '\\in'], ['\\in'])]
 [['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in']), ('\\iff', ['\\cap', '\\in'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X
 ------------------------------
@@ -267,6 +294,7 @@ x \in S \cap T \iff x \in S \wedge x \in T
 Title: Commutativity of set intersection
 [['Set'], [], ('=', ['\\cap'], ['\\cap'])]
 [['Set'], [], ('=', ['\\cap'], ['\\cap'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -276,6 +304,7 @@ S \cap T = T \cap S
 Title: Intersection of sets is a subset of the sets
 [['Set'], [], ['\\cap', '\\subseteq']]
 [['Set'], [], ['\\cap', '\\subseteq']]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -285,6 +314,7 @@ S \cap T \subseteq S
 Title: Intersection with the empty set is trivial
 [['Set'], [], ('=', ['\\cap', '\\emptyset'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\cap', '\\emptyset'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -294,6 +324,7 @@ S \cap \emptyset(X) = \emptyset(X)
 Title: Problem : An element in one set of an empty intersection is not in the other
 [['Set'], [], (['=', '\\cap', '\\emptyset', '\\in'], ['\\in'])]
 [['Set'], [], (['\\cap', '\\emptyset', '\\in', '\\neq'], ['\\in'])]
+[]
 Tags: #sets #tests 
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall s \in X
 ------------------------------
@@ -305,6 +336,7 @@ s \in S
 Title: Intersection of a set with itself is itself
 [['Set'], [], ('=', ['\\cap'], [])]
 [['Set'], [], ('=', ['\\cap'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -314,6 +346,7 @@ S \cap S = S
 Title: Subset of intersection is subset of the second set
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -324,6 +357,7 @@ S \subseteq T
 Title: Set included in two others is included in their intersection
 [['Set'], [], (['\\implies', '\\in'], ['\\cap', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cap', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall C : Set(X)
 ------------------------------
@@ -334,6 +368,7 @@ C \subseteq S \cap T
 Title: Set contained in intersection is contained in sets
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -345,6 +380,7 @@ C \subseteq T
 Title: Test
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall U : Set(X)
 ------------------------------
@@ -354,6 +390,7 @@ S \cap T \cup (S \cap U) \subseteq S \cap (T \cup U)
 Title: Intersection distributes over union
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall U : Set(X)
 ------------------------------
@@ -363,6 +400,7 @@ S \cap (T \cup U) = S \cap T \cup (S \cap U)
 Title: Union distributes over intersection
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall U : Set(X)
 ------------------------------
@@ -372,6 +410,7 @@ S \cup (T \cap U) = S \cup T \cap (S \cup U)
 Title: Components of pair
 [['Set'], [], (['=', 'Tuple(2)'], ['0', '1', '=', '[]'])]
 [['Set'], [], (['Tuple(2)', '\\neq'], ['0', '1', '[]', '\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall c \in X, \forall d \in X, \forall x \in X \times X
 ------------------------------
@@ -381,6 +420,7 @@ x = (c, d) \implies x[0] = c \wedge x[1] = d
 Title: Equality of pairs
 [['Set'], [], ('\\iff', ['=', 'Tuple(2)'], ['=']), ('\\iff', ['='], ['=', 'Tuple(2)']), ('\\iff', ['=', 'Tuple(2)'], ['='])]
 [['Set'], [], ('\\iff', ['Tuple(2)', '\\neq'], ['\\neq']), ('\\iff', ['\\neq'], ['Tuple(2)', '\\neq']), ('\\iff', ['Tuple(2)', '\\neq'], ['\\neq'])]
+[['Set'], [], ('\\iff', ['=', 'Tuple(2)'], ['='])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X, \forall c \in X, \forall d \in X
 ------------------------------
@@ -390,6 +430,7 @@ Tags: #sets #definition
 Title: Definition of pair
 [['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['=', 'Tuple(2)'])]
 [['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', 'Tuple(2)', '[]', '\\in', '\\neq'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['Tuple(2)', '\\neq'])]
+[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['0', '1', '[]', '\\in', '=', 'Tuple(2)'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -397,8 +438,9 @@ Tags: #sets #definition
 is_pair(x, S, T) \iff (\exists c \in X, \exists d \in X x = (c , d)) \wedge x[0] \in S \wedge x[1] \in T
 
 Title: Definition of cartesian product
-[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['\\in', '\\times']), ('\\iff', ['\\in', '\\times'], ['is_pair'])]
-[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['\\in', '\\times']), ('\\iff', ['\\in', '\\times'], ['is_pair'])]
+[['Set', '\\times'], [], ('\\iff', ['\\in', '\\times'], ['is_pair']), ('\\iff', ['is_pair'], ['\\in', '\\times'])]
+[['Set', '\\times'], [], ('\\iff', ['\\in', '\\times'], ['is_pair']), ('\\iff', ['is_pair'], ['\\in', '\\times'])]
+[['Set', '\\times'], [], ('\\iff', ['\\in', '\\times'], ['is_pair'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -408,6 +450,7 @@ x \in S \times T iff is_pair(x, S, T)
 Title: Element of cartesian product has components in the sets
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -417,6 +460,7 @@ x \in S \times T \implies x[0] \in S \wedge x[1] \in T
 Title: Pair in a cartesian product if elements in sets
 [['Set'], [], ('\\iff', ['\\in'], ['Tuple(2)', '\\in', '\\times']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in'])]
 [['Set'], [], ('\\iff', ['\\in'], ['Tuple(2)', '\\in', '\\times']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in']), ('\\iff', ['Tuple(2)', '\\in', '\\times'], ['\\in'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X
 ------------------------------
@@ -426,6 +470,7 @@ a \in S \wedge b \in T \iff (a, b) \in S \times T
 Title: Cartesian product with the empty set is empty (right)
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -435,6 +480,7 @@ S \times \emptyset(X) = \emptyset(X \times X)
 Title: Cartesian product with the empty set is empty (left)
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -444,6 +490,7 @@ Tags: #sets
 Title: Cartesian product on the right preserves subset relation
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -454,6 +501,7 @@ A \times C \subseteq B \times C
 Title: Cartesian product on the left preserves subset relation
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -464,6 +512,7 @@ A \times B \subseteq A \times C
 Title: Problem : Subset on left and right of cartesian product gives subset
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
+[]
 Tags: #sets #tests
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -475,6 +524,7 @@ A \times B \subseteq C \times D
 Title: Cartesian product is empty implies one of the sets is empty
 [['Set'], [], (['=', '\\emptyset', '\\times'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\emptyset', '\\neq', '\\times'], ['\\emptyset', '\\neq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -485,6 +535,7 @@ A = \emptyset(X) \vee B = \emptyset(X)
 Title: Cartesian products are contained implies the sets are contained
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subseteq', '\\times'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -498,6 +549,7 @@ B \subseteq D
 Title: Cartesian products are contained implies the sets are contained (left)
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subseteq', '\\times'], ['\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -509,6 +561,7 @@ A \subseteq C
 Title: Strict containment of cartesian product of sets implies containment of sets
 [['Set'], [], (['\\emptyset', '\\neq', '\\subsetneq', '\\times'], ['\\subsetneq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subsetneq', '\\times'], ['\\subsetneq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -521,6 +574,7 @@ A \subsetneq C \vee B \subsetneq D
 Title: Union of cartesian products is contained in product of unions
 [['Set'], [], ['\\cup', '\\subseteq', '\\times']]
 [['Set'], [], ['\\cup', '\\subseteq', '\\times']]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -530,6 +584,7 @@ A \times B \cup C \times D \subseteq (A \cup C) \times (B \cup D)
 Title: Intersection of cartesian products equals cartesian product of intersections
 [['Set'], [], ('=', ['\\cap', '\\times'], ['\\cap', '\\times'])]
 [['Set'], [], ('=', ['\\cap', '\\times'], ['\\cap', '\\times'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall D : Set(X)
 ------------------------------
@@ -539,6 +594,7 @@ A \times B \cap C \times D = (A \cap C) \times (B \cap D)
 Title: Definition of powerset
 [['Set'], [], ('\\iff', ['\\in', '\\mathcal{P}'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\in', '\\mathcal{P}'])]
 [['Set'], [], ('\\iff', ['\\in', '\\mathcal{P}'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\in', '\\mathcal{P}'])]
+[['Set'], [], ('\\iff', ['\\in', '\\mathcal{P}'], ['\\subseteq'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall U : Set(X)
 ------------------------------
@@ -548,6 +604,7 @@ U \in \mathcal{P}(S) \iff U \subseteq S
 Title: A set is an element of the powerset of the empty set iff it is empty
 [['Set'], [], ('\\iff', ['\\emptyset', '\\in', '\\mathcal{P}'], ['=', '\\emptyset']), ('\\iff', ['=', '\\emptyset'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
 [['Set'], [], ('\\iff', ['\\emptyset', '\\in', '\\mathcal{P}'], ['\\emptyset', '\\neq']), ('\\iff', ['\\emptyset', '\\neq'], ['\\emptyset', '\\in', '\\mathcal{P}'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -557,6 +614,7 @@ S \in \mathcal{P}(\emptyset(X)) \iff S = \emptyset(X)
 Title: Power sets are contained if the sets are contained
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -567,6 +625,7 @@ S \subseteq T
 Title: Empty set is an element of the powerset of every set
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -576,6 +635,7 @@ Tags: #sets
 Title: Power set of an intersection is the intersection of the power sets
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -585,6 +645,7 @@ Tags: #sets
 Title: Union of powersets is contained in powerset of the union
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -594,6 +655,7 @@ Tags: #sets
 Title: Definition of complement
 [['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement']), ('\\iff', ['\\in', 'complement'], ['\\in'])]
 [['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement']), ('\\iff', ['\\in', 'complement'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
@@ -603,7 +665,8 @@ x \in complement(S) \iff x \in universe(S) \wedge \neg(x \in S)
 Title: Definition of set universe
 [['Set'], [], (['\\in'], ['\\in'])]
 [['Set'], [], (['\\in'], ['\\in'])]
-Tags: #sets #definition
+[]
+Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
@@ -612,6 +675,7 @@ x \in S \implies x \in universe(S)
 Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]
 [['Set'], [], ('=', ['complement'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -621,6 +685,7 @@ complement(complement(S)) = S
 Title: Union of sets is the complement of the union of their complements
 [['Set'], [], ('=', ['\\cup'], ['\\cap', 'complement'])]
 [['Set'], [], ('=', ['\\cup'], ['\\cap', 'complement'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -630,6 +695,7 @@ S \cup T = complement(complement(S) \cap complement(T))
 Title: Union of set and complement is universe
 [['Set'], [], ('=', ['\\cup', 'complement'], [])]
 [['Set'], [], ('=', ['\\cup', 'complement'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -639,6 +705,7 @@ S \cup complement(S) = universe(S)
 Title: Intersection of a set with its complement is the empty set
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -648,6 +715,7 @@ S \cap complement(S) = \emptyset(X)
 Title: Complement of a set equal to its universe is the empty set
 [['Set'], [], (['='], ['=', '\\emptyset', 'complement'])]
 [['Set'], [], (['\\neq'], ['\\emptyset', '\\neq', 'complement'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X)
 ------------------------------
@@ -658,6 +726,7 @@ complement(S) = \emptyset(X)
 Title: Complement reverses order of inclusion
 [['Set'], [], (['\\subseteq'], ['\\subseteq', 'complement'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', 'complement'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -666,6 +735,7 @@ S \subseteq T
 complement(T) \subseteq complement(S)
 
 Title: Definition of set difference
+[['Set'], [], ('=', ['\\setminus'], ['\\cap', 'complement'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', 'complement'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', 'complement'])]
 Tags: #sets #definition
@@ -677,6 +747,7 @@ S \setminus T = S \cap complement(T)
 Title: Problem : Complement of set difference is complement of first set union second set
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -686,6 +757,7 @@ complement(S \setminus T) = complement(S) \cup T
 Title: Problem : Complement of set diff is complement of set union the intersection
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cap', '\\cup', 'complement'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cap', '\\cup', 'complement'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -695,6 +767,7 @@ complement(S \setminus T) = complement(S) \cup (S \cap T)
 Title: Difference of complements is reverse difference
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\setminus'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -704,6 +777,7 @@ complement(S) \setminus complement(T) = T \setminus S
 Title: Problem : Difference with intersection is union of differences
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cup', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -713,6 +787,7 @@ C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 Title: Problem: Difference with union is intersection of differences
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cap', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -722,6 +797,7 @@ C \setminus (A \cup B) = (C \setminus A) \cap (C \setminus B)
 Title: Problem: Difference with difference is union of intersection and difference
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', '\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', '\\cup', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -731,6 +807,7 @@ C \setminus (B \setminus A) = C \cap A \cup (C \setminus B)
 Title: Problem : Difference with difference from same set is intersection
 [['Set'], [], ('=', ['\\setminus'], ['\\cap'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall C : Set(X)
 ------------------------------
@@ -740,6 +817,7 @@ C \setminus (C \setminus A) = C \cap A
 Title: Problem: Intersection with difference is difference with intersection
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -749,6 +827,7 @@ Tags: #sets
 Title: Problem : Intersection with difference is intersection with other difference
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -758,6 +837,7 @@ Tags: #sets
 Title: Problem : Union with difference is difference of union and difference
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cup', '\\setminus'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -767,6 +847,7 @@ Tags: #sets
 Title: Difference of a set with itself is empty
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -776,6 +857,7 @@ A \setminus A = \emptyset(X)
 Title: Difference of any set with empty set is empty
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -785,6 +867,7 @@ Tags: #sets
 Title: Difference of empty set with any set is that set
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -794,6 +877,7 @@ A \setminus \emptyset(X) = A
 Title: Difference of a set and its universe is the empty set
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X)
 ------------------------------
@@ -803,6 +887,7 @@ A \setminus universe(A) = \emptyset(X)
 Title: Containment of sets is reversed upon taking differences with another set
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -813,6 +898,7 @@ C \setminus B \subseteq C \setminus A
 Title: Problem : Difference is contained if different difference is contained
 [['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
 [['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
+[]
 Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X)
 ------------------------------
@@ -823,6 +909,7 @@ B \setminus A \subseteq C
 Title: Definition of set builder
 [['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}']), ('\\iff', ['\\in', '{|}'], [])]
 [['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}']), ('\\iff', ['\\in', '{|}'], [])]
+[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X, \forall P : Pred
 ------------------------------
@@ -832,6 +919,7 @@ Tags: #sets #definition
 Title: Intersection in terms of set builder
 [['Set'], [], ('=', ['\\in', '{|}'], ['\\cap'])]
 [['Set'], [], ('=', ['\\in', '{|}'], ['\\cap'])]
+[]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
@@ -841,6 +929,7 @@ Tags: #sets
 Title: Definition of function
 [['->', 'Set'], [], ('\\iff', ['is_function'], ['=', 'Tuple(2)', '\\implies', '\\in']), ('\\iff', ['=', 'Tuple(2)', '\\implies', '\\in', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\implies', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
 [['->', 'Set'], [], ('\\iff', ['is_function'], ['Tuple(2)', '\\in', '\\neq']), ('\\iff', ['Tuple(2)', '\\in', '\\neq', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
+[['->', 'Set'], [], ('\\iff', ['is_function'], ['=', 'Tuple(2)', '\\implies', '\\in'], '\\subseteq', '\\times')]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -850,7 +939,8 @@ is_function(f, A, B) \iff (f \subseteq A \times B) \wedge (\forall a \in X a \in
 Title: Definition of function value
 [['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\iff', '\\in'])]
 [['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\iff', '\\in'])]
-Tags: #sets #functions
+[]
+Tags: #sets
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall c \in X, \forall d \in X
 ------------------------------
 ------------------------------
@@ -859,6 +949,7 @@ is_function(f, A, B) \implies (f(c) = d \iff (c, d) \in f)
 Title: Function value in codomain
 [['->', 'Set'], [], (['\\in', 'is_function'], ['\\in'])]
 [['->', 'Set'], [], (['\\in', 'is_function'], ['\\in'])]
+[]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B, \forall a \in X
 ------------------------------
@@ -869,6 +960,7 @@ f(a) \in B
 Title: Pair with function value in function
 [['->', 'Set'], [], (['\\in', 'is_function'], ['Tuple(2)', '\\in'])]
 [['->', 'Set'], [], (['\\in', 'is_function'], ['Tuple(2)', '\\in'])]
+[]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall f : A \to B, \forall a \in A
 ------------------------------
@@ -879,6 +971,7 @@ is_function(f, A, B) \wedge a \in A
 Title: Definition of function composition
 [['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\circ', '\\iff', '\\in'])]
 [['->', 'Set'], [], (['is_function'], ['=', 'Tuple(2)', '\\circ', '\\iff', '\\in'])]
+[]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall x \in A \times C
 ------------------------------
@@ -890,6 +983,7 @@ x \in g \circ f \iff (\exists a \in X, \exists c \in X x = (a, c) \wedge a \in A
 Title: Composition is function
 [['->', 'Set'], [], (['is_function'], ['\\circ', 'is_function'])]
 [['->', 'Set'], [], (['is_function'], ['\\circ', 'is_function'])]
+[]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -901,6 +995,7 @@ is_function(g \circ f, A, C)
 Title: Function values of composition
 [['->', 'Set'], [], (['is_function'], ['=', '\\circ', '\\implies', '\\in'])]
 [['->', 'Set'], [], (['is_function'], ['\\circ', '\\in', '\\neq'])]
+[]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall a \in X
 ------------------------------
@@ -912,6 +1007,7 @@ a \in A \implies (g \circ f)(a) = g(f(a))
 Title: Functions restrict to subsets
 [['Set'], [], (['\\subseteq', 'is_function'], ['->', '=', '\\implies', '\\in', 'is_function'])]
 [['Set'], [], (['\\subseteq', 'is_function'], ['->', '\\in', '\\neq', 'is_function'])]
+[]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : B \to C
 ------------------------------
@@ -923,6 +1019,7 @@ A \subseteq B
 Title: Composition of functions is associative
 [['->', 'Set'], [], (['is_function'], ['=', '\\circ'])]
 [['->', 'Set'], [], (['is_function'], ['\\circ', '\\neq'])]
+[]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall D : Set, \forall f : C \to D, \forall g : B \to C, \forall h : A \to B
 ------------------------------
@@ -935,6 +1032,7 @@ is_function(h, A, B)
 Title: Definition of injective
 [['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_injective'])]
 [['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_injective'])]
+[]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -944,6 +1042,7 @@ is_function(f, A, B) \implies (is_injective(f) \iff (\forall a \in X, \forall b 
 Title: Composition of injective functions is injective
 [['->', 'Set'], [], (['is_function', 'is_injective'], ['\\circ', 'is_injective'])]
 [['->', 'Set'], [], (['is_function', 'is_injective'], ['\\circ', 'is_injective'])]
+[]
 Tags: #functions
 \forall A : Set, \forall B : Set, \forall C : Set, \forall f : A \to B, \forall g : B \to C
 ------------------------------
@@ -957,6 +1056,7 @@ is_injective(g \circ f)
 Title: Definition of surjective
 [['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_surjective'])]
 [['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_surjective'])]
+[]
 Tags: #functions
 \forall X : Set, \forall D : Set(X), \forall C : Set(X), \forall f : D \to C
 ------------------------------
@@ -966,6 +1066,7 @@ is_function(f, D, C) \implies (is_surjective(f) \iff (\forall c \in X c \in C \i
 Title: Composition of surjective functions is surjective
 [['->', 'Set'], [], (['is_function', 'is_surjective'], ['\\circ', 'is_surjective'])]
 [['->', 'Set'], [], (['is_function', 'is_surjective'], ['\\circ', 'is_surjective'])]
+[]
 Tags: #functions
 \forall S : Set, \forall T : Set, \forall U : Set, \forall f : S \to T, \forall g : T \to U
 ------------------------------

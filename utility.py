@@ -826,13 +826,13 @@ def add_descendant(ttree, i, j, hyp=None):
             return True
     return False
 
-def metavar_check(tree1, tree2):
+def metavar_check(screen, tree1, tree2):
     """
     Check if the two trees have metavariables in common.
     """
     var1 = metavars_used(tree1)
     var2 = metavars_used(tree2)
-    return any(t in var1 for t in var2)
+    return not any(t in var1 for t in var2)
     
 def deps_compatible(screen, tl, ttree, i, j):
     """
