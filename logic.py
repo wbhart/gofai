@@ -966,8 +966,6 @@ def cleanup(screen, tl, ttree=None, defn=False):
                         append_tree(tl2, tl2[j].right, dirty2)
                         replace_tree(tl2, j, tl2[j].left, dirty2)
                         if not metavar_check(screen, tl2[len(tl2) - 1], tl2[j]):
-                            screen.dialog(str(tl2[len(tl2) - 1]))
-                            screen.dialog(str(tl2[j]))
                             return False, "Metavariable dependency created. Automation halted."
                         if ttree:
                             add_sibling(screen, tl, ttree, j, len(tl2) - 1)
@@ -975,8 +973,6 @@ def cleanup(screen, tl, ttree=None, defn=False):
                     append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
                     replace_tree(tl2, j, tl2[j].left.left, dirty2)
                     if not metavar_check(screen, tl2[len(tl2) - 1], tl2[j]):
-                        screen.dialog(str(tl2[len(tl2) - 1]))
-                        screen.dialog(str(tl2[j]))
                         return False, "Metavariable dependency created. Automation halted."
                         
                     if ttree:

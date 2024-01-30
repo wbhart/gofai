@@ -124,14 +124,14 @@ C \subseteq A
 A = B
 
 Title: Definition of empty set
-[['Set'], [], ['\\emptyset', '\\in']]
-[['Set'], [], ['\\emptyset', '\\in']]
+[['Set'], [], (['\\emptyset', '\\in'], ['False'])]
+[['Set'], [], (['\\emptyset', '\\in'], ['True'])]
 []
 Tags: #sets
 \forall X : Set, \forall x \in X
 ------------------------------
 ------------------------------
-\neg(x \in \emptyset(X))
+x \in \emptyset(X) \implies False
 
 Title: Empty set is a subset of every set
 [['Set'], [], ['\\emptyset', '\\subseteq']]

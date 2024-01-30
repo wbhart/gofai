@@ -1,20 +1,14 @@
-from utility import is_implication, get_constants, get_init_vars, list_merge, deps_compatible, \
-     TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
-     append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
-     vars_used, max_type_size, complement_tree, sorts_mark, sorts_rollback, is_equality, \
-     target_depends, get_constants_qz
+from utility import is_implication, get_constants, update_constraints, process_sorts, unquantify, \
+     relabel, deps_defunct, vars_used, complement_tree, sorts_mark, sorts_rollback
 from autoparse import parse_consts
-from moves import check_targets_proved
-from unification import unify, substitute
+from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
-     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, ElemNode, VarNode, OrNode
+     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, ElemNode, VarNode, OrNode, \
+     BoolNode
 from tree import TreeList
-from interface import nchars_to_chars, iswide_char, line_limit
+from interface import line_limit
 from copy import deepcopy
-import logic, math
-
-automation_limit     = 1000 # number of lines in hypothesis pane before automation gives up
-automation_increment = 300 # number of lines to add next time automation is called
+import logic
 
 try:
     from flask import Flask, render_template
@@ -82,12 +76,14 @@ def create_constant_graph():
     For now we do this manually.
     """
     top_list = [ConstGraphNode('\\in'), ConstGraphNode('0'), ConstGraphNode('1'), \
-                ConstGraphNode('[]'), ConstGraphNode('\\implies'), ConstGraphNode('\\emptyset')] # start with just the undefined constants
+                ConstGraphNode('[]'), ConstGraphNode('\\implies'), ConstGraphNode('\\emptyset'), \
+                ConstGraphNode('True'), ConstGraphNode('False')] # start with just the undefined constants
 
     insert_constant(top_list, '\\subseteq', ['\\in', '\\implies'])
     insert_constant(top_list, '=', ['\\subseteq'])
     insert_constant(top_list, '\\neq', ['\\subseteq'])
     insert_constant(top_list, '\\subsetneq', ['=', '\\neq', '\\subseteq'])
+    insert_constant(top_list, '\\emptyset', ['True', 'False'])
     insert_constant(top_list, '\\cup', ['\\in'])
     insert_constant(top_list, '\\cap', ['\\in'])
     insert_constant(top_list, 'Tuple(2)', ['=', '\\neq'])
@@ -366,16 +362,10 @@ def modus_ponens(screen, tab, idx1, idx2, forward, library):
     dep = None
     
     if forward:
-        if idx1 not in tab.tl.tlist1.dep: # no dependencies for idx1
-            if idx2 in tab.tl.tlist1.dep: # dependencies for idx2
-                dep = deepcopy(tab.tl.tlist1.dep[idx2])
-            else:
-                dep = [-1]
-        elif idx2 not in tab.tl.tlist1.dep: # no dependencies for idx2
-            if idx1 in tab.tl.tlist1.dep: # dependencies for idx1
-                dep = deepcopy(tab.tl.tlist1.dep[idx1])
-            else:
-                dep = [-1]
+        if -1 in tab.tl.tlist1.dependency(idx1): # no dependencies for idx1
+            dep = deepcopy(tab.tl.tlist1.dependency(idx2))
+        elif -1 in tab.tl.tlist1.dependency(idx2): # no dependencies for idx2
+            dep = deepcopy(tab.tl.tlist1.dependency(idx1))
         else: # dependencies for both idx1 and idx2
             dep = list(filter(lambda x : x in tab.tl.tlist1.dep[idx1], tab.tl.tlist1.dep[idx2]))
 
@@ -410,16 +400,10 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
     dep = None
     
     if forward:
-        if idx1 not in tab.tl.tlist1.dep: # no dependencies for idx1
-            if idx2 in tab.tl.tlist1.dep: # dependencies for idx2
-                dep = deepcopy(tab.tl.tlist1.dep[idx2])
-            else:
-                dep = [-1]
-        elif idx2 not in tab.tl.tlist1.dep: # no dependencies for idx2
-            if idx1 in tab.tl.tlist1.dep: # dependencies for idx1
-                dep = deepcopy(tab.tl.tlist1.dep[idx1])
-            else:
-                dep = [-1]
+        if -1 in tab.tl.tlist1.dependency(idx1): # no dependencies for idx1
+            dep = deepcopy(tab.tl.tlist1.dependency(idx2))
+        elif -1 in tab.tl.tlist1.dependency(idx2): # no dependencies for idx2
+            dep = deepcopy(tab.tl.tlist1.dependency(idx1))
         else: # dependencies for both idx1 and idx2
             dep = list(filter(lambda x : x in tab.tl.tlist1.dep[idx1], tab.tl.tlist1.dep[idx2]))
 
@@ -467,7 +451,7 @@ def expansion(screen, tab, defn_idx, idx, is_hyp, level):
                     dep.remove(idx) # remove old target from dependency list
                     dep += dirty2 # put new target in dependency list
 
-def filter_theorems(index, constant_graph, maximal_constants, forward):
+def filter_theorems(screen, index, constant_graph, maximal_constants, forward):
     """
     Given a library index, filter for theorems which will not introduce a new maximal constant
     that are not definitions.
@@ -482,7 +466,7 @@ def filter_theorems(index, constant_graph, maximal_constants, forward):
             thm = thmlist[line]
             nthm = nthmlist[line]
             if '#definition' not in tag_list and \
-                  isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode):
+                  (isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode)):
                 tcl = thm.left
                 tcr = thm.right
                 tncl = nthm.left
@@ -499,7 +483,7 @@ def filter_theorems(index, constant_graph, maximal_constants, forward):
                         thms.append((title, thm, nthm, filepos, line, True))
     return thms
 
-def filter_definitions(index, constant_graph, tconsts):
+def filter_definitions(index, constant_graph, consts):
     """
     Given a library index, filter for definitions which could potentially apply to a target
     with the given constants.
@@ -512,7 +496,7 @@ def filter_definitions(index, constant_graph, tconsts):
         if '#definition' in tag_list:
             dl = defn.left
             dr = defn.right
-            if set(dl).issubset(tconsts):
+            if set(dl).issubset(consts):
                 defns.append((title, defn, filepos))
                 
     return defns
@@ -627,7 +611,7 @@ def automate(screen, tl):
                 update_screen(screen, qz, hyps, tars) # update the QZ, hyps and tars on the screen
 
                 screen.dialog("Pause")
-
+                
                 if v1 == False: # display any errors from cleanup
                     screen.dialog(v2)
                     return False
@@ -641,7 +625,7 @@ def automate(screen, tl):
 
                 # record hypothesis-target twins
                 for j in tab.hypotheses:
-                    dep_list = tl.tlist1.dependency(j) # targets provable by hypothesis j
+                    dep_list = tab.tl.tlist1.dependency(j) # targets provable by hypothesis j
 
                     for k in twinned_targets:
                         if k in dep_list:
@@ -653,15 +637,22 @@ def automate(screen, tl):
                 get_statement_constants(tab)
 
                 # check if done
-                unifies = False
+                proved = False
                 
-                for hyp in hyps:
-                    unifies, _, _ = unify(screen, tl, hyp, tars[tidx]) # does hypothesis unify with target
+                for j in range(len(hyps)):
+                    hyp = hyps[j]
+                    dep_list = tab.tl.tlist1.dependency(j)
 
-                    if unifies: # target proved
-                        break
+                    if tidx in dep_list or -1 in dep_list: # hypothesis can be used to prove target
+                        proved = isinstance(hyp, BoolNode) and not hyp.value # is hypothesis False                     
+                            
+                        if not proved:
+                            proved, _, _ = unify(screen, tl, hyp, tars[tidx]) # does hypothesis unify with target
+
+                        if proved: # target proved
+                            break
                 
-                if unifies:
+                if proved:
                     break
 
                 # 1) Turn targets disjunctions into implications
@@ -738,7 +729,7 @@ def automate(screen, tl):
                 # 5a) Backwards library reasoning
                 
                 # get all theorems that won't introduce a new maximal constant
-                libthms = filter_theorems(index, constant_graph, tab.maximal_constants, False)
+                libthms = filter_theorems(screen, index, constant_graph, tab.maximal_constants, False)
 
                 for (title, c, nc, filepos, line, neg) in libthms: # iterate over library theorems
                     implc = c.right # constants used in theorem
@@ -807,7 +798,7 @@ def automate(screen, tl):
                 # 5b) Forwards library reasoning
                 
                 # get all theorems that won't introduce a new maximal constant
-                libthms = filter_theorems(index, constant_graph, tab.maximal_constants, True)
+                libthms = filter_theorems(screen, index, constant_graph, tab.maximal_constants, True)
 
                 for (title, c, nc, filepos, line, neg) in libthms: # iterate over library theorems
                     implc = c.left # constants used in theorem
@@ -868,7 +859,7 @@ def automate(screen, tl):
                     continue
 
                 # 6) Expand the target at the highest level
-
+    
                 tar_consts = tab.tconstants[tidx] # constants in the target
                 
                 # get all definitions that could possibly apply to target in theory
@@ -893,6 +884,36 @@ def automate(screen, tl):
 
                 if success:
                     break # must get new target
+
+                # 7) Expand a hypothesis at the highest level
+
+                for hidx in tab.hypotheses:
+                    hyp_consts = tab.hconstants[hidx] # constants in the hypothesis
+                    
+                    # get all definitions that could possibly apply to hypothesis in theory
+                    libdefns = filter_definitions(index, constant_graph, hyp_consts)
+
+                    for (title, defn, filepos) in libdefns:
+                        tl, defn_idx = temp_load_theorem(tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
+                        hyp_idx = append_hypothesis(tab, tl, hidx) # append our hypothesis to tableau if not already in there
+
+                        level = logic.expansion(screen, tl, defn_idx, hyp_idx, True)
+                        
+                        sorts_rollback(None, tab.tl) # reset sorts in our tableau from definition that was temporarily loaded
+
+                        if level != None:
+                            defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
+
+                            # apply result immediately
+                            expansion(screen, tab, defn_idx, hidx, True, level)
+
+                            success = True
+                            break
+                    if success:
+                        break
+
+                if success:
+                    continue
 
                 # no progress, exit automation with failure
                 return False

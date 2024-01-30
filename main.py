@@ -31,17 +31,17 @@ def main(stdscr):
             if response and (response[12:] == "y" or response[12:] == "Y"):
                 break
             skip = True
-        elif c == 'e': # e = edit
-            line = tl.focus.line
-            data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
-            tree = get_text(screen, data) # parse text from user
-            if tree:
-                tl.focus[line] = tree # insert tree in treelist
-                screen.focus[line] = str(tree) # insert unicode string into pad
-            screen.focus.refresh()
-        elif c == 'v': # equivalence
-            if started:
-                equality_substitution(screen, tl)
+        #elif c == 'e': # e = edit
+        #    line = tl.focus.line
+        #    data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
+        #    tree = get_text(screen, data) # parse text from user
+        #    if tree:
+        #        tl.focus[line] = tree # insert tree in treelist
+        #        screen.focus[line] = str(tree) # insert unicode string into pad
+        #    screen.focus.refresh()
+        #elif c == 'v': # equivalence
+        #    if started:
+        #        equality_substitution(screen, tl)
         elif c == 's': # start automated cleanup
             if not started:
                 fill_macros(screen, tl)
@@ -62,21 +62,21 @@ def main(stdscr):
                 else:
                     screen.dialog("Unable to prove theorem.")
                 skip = True
-        elif c == 'p': # modus ponens
-            if started:
-                modus_ponens(screen, tl, ttree)
-        elif c == 't': # modus tollens
-            if started:
-                modus_tollens(screen, tl, ttree)
+        #elif c == 'p': # modus ponens
+        #    if started:
+        #        modus_ponens(screen, tl, ttree)
+        #elif c == 't': # modus tollens
+        #    if started:
+        #        modus_tollens(screen, tl, ttree)
         # elif c == 'n': # negate target
         #    negate_target(screen, tl)
-        elif c == 'w': # write to library
-            skip = True
-            if not started:
-                library_export(screen, tl)
-        elif c == 'r': # read from library
-            if started:
-                library_import(screen, tl)
+        #elif c == 'w': # write to library
+        #    skip = True
+        #    if not started:
+        #        library_export(screen, tl)
+        #elif c == 'r': # read from library
+        #    if started:
+        #        library_import(screen, tl)
         elif c == 'l': # load from library as tableau
             reset = True
             # check tableau is currently empty
@@ -84,6 +84,7 @@ def main(stdscr):
                 library_load(screen, tl)
             else:
                 screen.dialog("Tableau must be empty before loading problem")
+                skip = True
         elif c == 'c': # clear_tableau
             clear_tableau(screen, tl)
             started = False
@@ -92,17 +93,17 @@ def main(stdscr):
         elif c == 'd': # debug
             skip = True
             screen.debug_on = not screen.debug_on
-        elif c == 'z': # rewrite library
-            convert(screen, tl)
-        elif c == 'n': # prune proof
-            if done:
-                (hyps, tars) = prune_move_list(screen, tl, ttree)
-                new_tl = TreeList()
-                show_prune(screen, tl, new_tl, hyps, tars)
-                ttree = None
-                tl = new_tl
-                done = False
-                skip = True
+        #elif c == 'z': # rewrite library
+        #    convert(screen, tl)
+        #elif c == 'n': # prune proof
+        #    if done:
+        #        (hyps, tars) = prune_move_list(screen, tl, ttree)
+        #        new_tl = TreeList()
+        #        show_prune(screen, tl, new_tl, hyps, tars)
+        #        ttree = None
+        #        tl = new_tl
+        #        done = False
+        #        skip = True
         elif c == 'KEY_RIGHT':
             skip = True
             pad = screen.focus
