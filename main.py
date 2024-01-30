@@ -31,14 +31,14 @@ def main(stdscr):
             if response and (response[12:] == "y" or response[12:] == "Y"):
                 break
             skip = True
-        #elif c == 'e': # e = edit
-        #    line = tl.focus.line
-        #    data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
-        #    tree = get_text(screen, data) # parse text from user
-        #    if tree:
-        #        tl.focus[line] = tree # insert tree in treelist
-        #        screen.focus[line] = str(tree) # insert unicode string into pad
-        #    screen.focus.refresh()
+        elif c == 'e': # e = edit
+            line = tl.focus.line
+            data = '' if line == tl.focus.len() else repr(tl.focus.data[line])
+            tree = get_text(screen, data) # parse text from user
+            if tree:
+                tl.focus[line] = tree # insert tree in treelist
+                screen.focus[line] = str(tree) # insert unicode string into pad
+            screen.focus.refresh()
         #elif c == 'v': # equivalence
         #    if started:
         #        equality_substitution(screen, tl)
