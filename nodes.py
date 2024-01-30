@@ -120,6 +120,7 @@ class SetOfNode(LRNode):
     def __init__(self, var):
        self.left = var
        self.right = None
+       self.sort = None
 
     def __str__(self):
        return str(self.left)

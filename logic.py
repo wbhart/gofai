@@ -412,6 +412,10 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
 def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
     subst = tl.tlist1.data[defn_idx]
     subst, univs = unquantify(screen, subst, True)
+
+    if not is_hyp:
+        subst, copied = relabel(screen, tl, univs, deepcopy(subst), True)
+    
     left = subst.left
     right = subst.right
     orig_tree = tl.tlist1.data[idx] if is_hyp else tl.tlist2.data[idx]
@@ -433,8 +437,11 @@ def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
                     if level == None:
                         return current_level
                     else: # actually make the substitution
+                        if not is_hyp:
+                            substitute(copied[0], assign)
+
                         tree = substitute(deepcopy(right), assign) # we may have assigned metavars used elsewhere in the expression
-                        
+                             
                         # substitute correct location of parent
                         if parent == None: # top level
                             orig_tree = tree

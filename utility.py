@@ -1166,6 +1166,10 @@ def coerce_sorts(screen, tl, s1, s2, assign=None):
     return None # not coercible
     
 def sorts_compatible(screen, tl, s1, s2, assign=None, both_dirs=True):
+    if isinstance(s1, SetOfNode) and isinstance(s2, SetOfNode):
+        return sorts_compatible(s1.left), sorts_compatible(s2.left)
+    if isinstance(s1, SetOfNode) or isinstance(s2, SetOfNode):
+        return False
     if isinstance(s1, Universum) and isinstance(s2, Universum):
         return True
     if isinstance(s1, VarNode) and s1.is_metavar:
@@ -1427,7 +1431,8 @@ def get_constants(screen, tl, tree, constants_in=[]):
           or isinstance(tree, DeadNode) or isinstance(tree, LambdaNode) \
           or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
           or isinstance(tree, Universum) or isinstance(tree, AndNode) \
-          or isinstance(tree, OrNode) or isinstance(tree, NotNode):
+          or isinstance(tree, OrNode) or isinstance(tree, NotNode)  \
+          or isinstance(tree, SetSort):
             pass
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):
@@ -1444,6 +1449,11 @@ def get_constants(screen, tl, tree, constants_in=[]):
             append_unique(constants, tree.name())
         elif isinstance(tree, TupleSort):
             append_unique(constants, 'Tuple('+str(len(tree.sorts))+')')
+        elif isinstance(tree, BoolNode):
+            if tree.value:
+                append_unique(constants, "True")
+            else:
+                append_unique(constants, "False")
         else:
             append_unique(constants, constant_dict[type(tree)])
         

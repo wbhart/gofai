@@ -171,9 +171,9 @@ def get_statement_constants(tab):
         tab.tnconstants.append(get_constants(None, None, complement_tree(tars[i]))) # get negated constants of target
 
 class Tableau:
-    def __init__(self, tl, maximal_constants):
+    def __init__(self, tl):
         self.tl = tl # data structure containing tl.tlist0 (QZ), tl.tlist1 (hypotheses), tl.tlist2 (targets)
-        self.maximal_constants = maximal_constants # list of maximal constants in tableau
+        self.maximal_constants = None # list of maximal constants in tableau
         self.libthms_loaded = dict() # keeps track of which library theorems we already loaded
         self.hypotheses = [i for i in range(len(tl.tlist1.data))] # list of hypotheses which have not been used or deleted
         self.targets = [i for i in range(len(tl.tlist2.data))] # list of targets which have not been proved or discarded
@@ -483,12 +483,16 @@ def filter_theorems(screen, index, constant_graph, maximal_constants, forward):
                         thms.append((title, thm, nthm, filepos, line, True))
     return thms
 
-def filter_definitions(index, constant_graph, consts):
+def filter_definitions(index, constant_graph, consts, maximal_constants=None):
     """
     Given a library index, filter for definitions which could potentially apply to a target
     with the given constants.
     """
-    defns = [] # list of definitions
+    if maximal_constants == None:
+        defns = [] # list of definitions
+    else:
+        defns1 = [] # definitions which remove a maximal constant
+        defns2 = [] # the rest
     
     for (title, tags, c, nc, defs, filepos) in index:
         defn = defs[2][0]
@@ -497,8 +501,18 @@ def filter_definitions(index, constant_graph, consts):
             dl = defn.left
             dr = defn.right
             if set(dl).issubset(consts):
-                defns.append((title, defn, filepos))
+                if maximal_constants != None:
+                    removes_maximal = any(const in dl and const not in dr for const in maximal_constants)
+                    if removes_maximal:
+                        defns1.append((title, defn, filepos))
+                    else:
+                        defns2.append((title, defn, filepos))
+                else:
+                    defns.append((title, defn, filepos))
                 
+    if maximal_constants != None:
+        defns = defns1 + defns2
+
     return defns
 
 def autocleanup(tl, defn=False):
@@ -512,7 +526,7 @@ def autocleanup(tl, defn=False):
     else:
         raise Exception(error)
 
-def temp_load_theorem(tab, library, filepos, line, defn=False):
+def temp_load_theorem(screen, tab, library, filepos, line, defn=False):
     """
     Takes a filepos and line of a theorem to load and checks to see if we already loaded the theorem and
     if so returns a pair (tl, idx) where tl is the current tableau and idx is the index of the given line
@@ -522,14 +536,12 @@ def temp_load_theorem(tab, library, filepos, line, defn=False):
     if filepos in tab.libthms_loaded: # we have already loaded the theorem
         return tab.tl, tab.libthms_loaded[filepos] + line
     else: # we haven't loaded it, so create temporary tableau
-        temp_tl = TreeList()
-        temp_tl.vars = deepcopy(tab.tl.vars) # copy variable subscript record from tl
-        temp_tl.stree = tab.tl.stree # copy sort tree from tl
-        sorts_mark(None, tab.tl) # allow for rollback of sort graph
-        logic.library_import(None, temp_tl, library, filepos)
+        temp_tl = deepcopy(tab.tl)
+        n = len(tab.tl.tlist1.data)
+        logic.library_import(screen, temp_tl, library, filepos)
         autocleanup(temp_tl, defn) # do cleanup moves on theorem (skolemize, metavars, expand iff, etc.)
         
-        return temp_tl, line
+        return temp_tl, line + n
 
 def load_theorem(screen, tab, library, filepos, line, defn=False):
     """
@@ -555,7 +567,7 @@ def append_target(tab, tl, tidx):
         return tidx
     else:
         n = len(tl.tlist2.data)
-        tl.tlist2.data.append(tab.tl.tlist2.data[tidx])
+        tl.tlist2.data.append(deepcopy(tab.tl.tlist2.data[tidx]))
         return n
 
 def append_hypothesis(tab, tl, hidx):
@@ -567,7 +579,7 @@ def append_hypothesis(tab, tl, hidx):
         return hidx
     else:
         n = len(tl.tlist1.data)
-        tl.tlist1.data.append(tab.tl.tlist1.data[hidx])
+        tl.tlist1.data.append(deepcopy(tab.tl.tlist1.data[hidx]))
         return n
 
 def automate(screen, tl):
@@ -577,8 +589,7 @@ def automate(screen, tl):
     """
     # initial program setup
     constant_graph = create_constant_graph() # create the graph of constants
-    maximal_constants = get_maximal_constants(constant_graph, tl) # compute the maximal constants in the tableau
-    initial_tableau = Tableau(tl, maximal_constants) # create the initial tableau object
+    initial_tableau = Tableau(tl) # create the initial tableau object
     tableau_list = [initial_tableau] # initial list of tableaus (each can be split by disjunctive hypotheses)
     get_statement_constants(initial_tableau) # compute the initial constants for the statements in the tableau
     library = open("library.dat", "r") # open the library file so it can be read
@@ -610,7 +621,8 @@ def automate(screen, tl):
 
                 update_screen(screen, qz, hyps, tars) # update the QZ, hyps and tars on the screen
 
-                screen.dialog("Pause")
+                if screen.debug_on:
+                    screen.dialog("Pause")
                 
                 if v1 == False: # display any errors from cleanup
                     screen.dialog(v2)
@@ -635,6 +647,9 @@ def automate(screen, tl):
 
                 # update constants cache for any new hypotheses or targets
                 get_statement_constants(tab)
+
+                # update maximal_constants
+                tab.maximal_constants = get_maximal_constants(constant_graph, tab.tl)
 
                 # check if done
                 proved = False
@@ -752,30 +767,25 @@ def automate(screen, tl):
                         
                         if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
                             # first check if the selected theorem could even in theory unify with our target
-                            tl, thm_idx = temp_load_theorem(tab, library, filepos, line) # temp. load thm in same tableau as our target
-                            tar_idx = append_target(tab, tl, tidx) # append our target to tableau if not already in there
-
+                            tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
+                            
                             temp_hyps = tl.tlist1.data # hypothesis list from tl
                             temp_tars = tl.tlist2.data # target list from tl
 
-                            mp, mt = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, tar_idx) # selected theorem unifies
+                            mp, mt = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, tidx) # selected theorem unifies
 
                             if (not neg and mp) or (neg and mt):
                                 # now check how many unifications we have in total
                                 unification_count = 0 # count of unifications
 
                                 for idx in matches:
-                                    tar_idx = append_target(tab, tl, idx) # append target to tableau
-
                                     # update counts
-                                    mpi, mti = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, tar_idx)
+                                    mpi, mti = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, idx)
                                     
                                     if (not neg and mpi) or (neg and mti):
                                         unification_count += 1
                                     elif (not neg and not mpi) or (neg and not mti):
                                         nomatch_count += 1
-
-                                sorts_rollback(None, tab.tl) # reset sorts in our tableau from theorem that was temporarily loaded
 
                                 if unification_count > nomatch_count: # only continue if more matches than not
                                     # everything checks out, load the theorem into main tableau if not already there
@@ -786,8 +796,6 @@ def automate(screen, tl):
                                         success = modus_ponens(screen, tab, thm_idx, tidx, False, True) # backwards modus ponens
                                     elif (neg and mt):
                                         success = modus_tollens(screen, tab, thm_idx, tidx, False, True) # backwards modus tollens
-                            else:
-                                sorts_rollback(None, tab.tl) # reset sorts in our tableau 
 
                             if success:
                                 break
@@ -818,7 +826,7 @@ def automate(screen, tl):
                                 nomatch_count += 1 # increment count of non-matches
                     
                     if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
-                        tl, thm_idx = temp_load_theorem(tab, library, filepos, line) # temp. load thm in same tableau as our target
+                        tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
                         
                         temp_hyps = tl.tlist1.data # hypothesis list from tl
                             
@@ -826,17 +834,13 @@ def automate(screen, tl):
                         unifications = [] # hypotheses that unify
 
                         for idx in matches:
-                            hyp_idx = append_hypothesis(tab, tl, idx) # append hypothesis to tableau
-
                             # update counts
-                            mpi, mti = forwards_reasoning_possible(tl, temp_hyps, thm_idx, hyp_idx)
+                            mpi, mti = forwards_reasoning_possible(tl, temp_hyps, thm_idx, idx)
                             
                             if (not neg and mpi) or (neg and mti):
                                 unifications.append((idx, mpi, mti))
                             elif (not neg and not mpi) or (neg and not mti):
                                 nomatch_count += 1
-
-                        sorts_rollback(None, tab.tl) # reset sorts in our tableau from theorem that was temporarily loaded
 
                         if len(unifications) > nomatch_count: # only continue if more matches than not
                             # everything checks out, load the theorem into main tableau if not already there
@@ -848,9 +852,6 @@ def automate(screen, tl):
                                 success = modus_ponens(screen, tab, thm_idx, hidx, True, True) # forwards modus ponens
                             elif (neg and mt):
                                 success = modus_tollens(screen, tab, thm_idx, hidx, True, True) # forwards modus tollens
-
-                    else:
-                        sorts_rollback(None, tab.tl) # reset sorts in our tableau 
 
                     if success:
                         break
@@ -866,13 +867,10 @@ def automate(screen, tl):
                 libdefns = filter_definitions(index, constant_graph, tar_consts)
 
                 for (title, defn, filepos) in libdefns:
-                    tl, defn_idx = temp_load_theorem(tab, library, filepos, 0, True) # temp. load definition in same tableau as our target
-                    tar_idx = append_target(tab, tl, tidx) # append our target to tableau if not already in there
-
-                    level = logic.expansion(screen, tl, defn_idx, tar_idx, False)
+                    tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our target
                     
-                    sorts_rollback(None, tab.tl) # reset sorts in our tableau from definition that was temporarily loaded
-
+                    level = logic.expansion(screen, tl, defn_idx, tidx, False)
+                    
                     if level != None:
                         defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
 
@@ -891,16 +889,13 @@ def automate(screen, tl):
                     hyp_consts = tab.hconstants[hidx] # constants in the hypothesis
                     
                     # get all definitions that could possibly apply to hypothesis in theory
-                    libdefns = filter_definitions(index, constant_graph, hyp_consts)
+                    libdefns = filter_definitions(index, constant_graph, hyp_consts, tab.maximal_constants)
 
                     for (title, defn, filepos) in libdefns:
-                        tl, defn_idx = temp_load_theorem(tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
-                        hyp_idx = append_hypothesis(tab, tl, hidx) # append our hypothesis to tableau if not already in there
-
-                        level = logic.expansion(screen, tl, defn_idx, hyp_idx, True)
+                        tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
                         
-                        sorts_rollback(None, tab.tl) # reset sorts in our tableau from definition that was temporarily loaded
-
+                        level = logic.expansion(screen, tl, defn_idx, hidx, True)
+                        
                         if level != None:
                             defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
 

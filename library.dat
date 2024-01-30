@@ -377,16 +377,6 @@ C \subseteq S \cap T
 C \subseteq S
 C \subseteq T
 
-Title: Test
-[['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
-[['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
-[]
-Tags: #sets
-\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall U : Set(X)
-------------------------------
-------------------------------
-S \cap T \cup (S \cap U) \subseteq S \cap (T \cup U)
-
 Title: Intersection distributes over union
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
@@ -445,7 +435,7 @@ Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
 ------------------------------
-x \in S \times T iff is_pair(x, S, T)
+x \in S \times T \iff is_pair(x, S, T)
 
 Title: Element of cartesian product has components in the sets
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
