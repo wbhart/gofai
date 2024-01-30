@@ -39,6 +39,7 @@ def main(stdscr):
                 tl.focus[line] = tree # insert tree in treelist
                 screen.focus[line] = str(tree) # insert unicode string into pad
             screen.focus.refresh()
+            skip = True
         #elif c == 'v': # equivalence
         #    if started:
         #        equality_substitution(screen, tl)
