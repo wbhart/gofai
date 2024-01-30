@@ -870,7 +870,7 @@ def automate(screen, tl):
                     tar_idx = append_target(tab, tl, tidx) # append our target to tableau if not already in there
 
                     level = logic.expansion(screen, tl, defn_idx, tar_idx, False)
-                      
+                    
                     sorts_rollback(None, tab.tl) # reset sorts in our tableau from definition that was temporarily loaded
 
                     if level != None:

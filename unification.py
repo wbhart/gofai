@@ -234,7 +234,7 @@ def unify(screen, tl, tree1, tree2, assigned=[], bidirn=True):
             j = i + 1
             while j < len(assign):
                 if assign[i][0].name() == assign[j][0].name():
-                    unified, assign, macros = trees_unify(screen, tl, assign[i][1], assign[j][1], assign, macros, bidirn)
+                    unified, assign, macros = trees_unify(screen, tl, assign[i][1], assign[j][1], assign, macros)
                     if not unified:
                         return False, [], []
                     del assign[j]
