@@ -7,7 +7,7 @@ from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
-     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode
+     SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, SubsetneqNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy
@@ -31,13 +31,13 @@ class SkolemNode:
         self.lines = lines
 
 class AutoData:
-    def __init__(self, line, version, const1, const2, nconst1, nconst2):
+    def __init__(self, line, const1, const2, nconst1, nconst2):
         self.line = line # line in the hypothesis or target pane
-        self.version = version # how many times has this line been changed
         self.const1 = const1 # constants on left side of implication or constants in predicate
         self.const2 = const2 # constants on right side of implication
         self.nconst1 = nconst1 # negated constants on left side of implication or constants in predicate
         self.nconst2 = nconst2 # negated constants on right side of implication
+        self.deducts = 0 # number of times a deduction has been made from this head
         self.applied = [] # list of heads that have been applied to this
         self.num_mv = 0 # number of metavariables impl will increase or head has been increased
         self.score = 0.0 # score used for heuristic search (lower is better)
@@ -47,6 +47,9 @@ class AutoData:
         self.depth = 0 # depth of this head
         self.mv_inc = 0 # number of metavars this implication adds going left to right
         self.nmv_inc = 0 # number of metavars this implication adds going right to left
+        self.ltor = True # whether the theorem can be applied left to right
+        self.rtol = True # whether the theorem can be applied right to left
+        self.defn = False # whether the theorem is a definition
 
     def __str__(self):
         return str(self.line)
@@ -63,7 +66,8 @@ class AutoTab:
         self.nhyps = len(tlist1)
         self.ntars = len(tlist2)
         self.vars = get_init_vars(screen, tl, tlist0[0]) if tlist0 else [] # vars in initial tableau
-        qz_data = [AutoData(0, 0, get_constants_qz(screen, tl, tlist0[0]), None, None, None)] if tlist0 else []
+        self.type_consts = get_constants_qz(screen, tl, tlist0[0])
+        self.constants = None
         hyp_heads = []
         hyp_impls = []
         tar_heads = []
@@ -82,11 +86,12 @@ class AutoTab:
                 c2 = get_constants(screen, tl, v.right)
                 nc1 = get_constants(screen, tl, complement_tree(v.left))
                 nc2 = get_constants(screen, tl, complement_tree(v.right))
-                dat = AutoData(i, 0, c1, c2, nc1, nc2)
+                dat = AutoData(i, c1, c2, nc1, nc2)
                 m1 = metavars_used(v.left)
                 m2 = metavars_used(v.right)
                 mv = filter(lambda x : x not in m1, m2)
                 nmv = filter(lambda x : x not in m2, m1)
+                dat.score = math.log(d+1)+math.log(w+1)+math.log(f+1)+math.log(len(str(v))+1)+math.log(len(metavars_used(v))+1)
                 dat.mv_inc = len(list(mv))
                 dat.nmv_inv = len(list(nmv))
                 hyp_impls.append(dat)
@@ -94,10 +99,10 @@ class AutoTab:
             else:
                 c = get_constants(screen, tl, v)
                 nc = get_constants(screen, tl, complement_tree(v))
-                ad = AutoData(i, 0, c, None, nc, None)
+                ad = AutoData(i, c, None, nc, None)
                 ad.score = math.log(d+1)+math.log(w+1)+math.log(f+1)+math.log(len(str(v))+1)+math.log(len(metavars_used(v))+1)
                 ad.depth = 0
-                insert_sort(hyp_heads, ad)
+                insert_sort(screen, hyp_heads, ad)
         for j in range(len(tlist2)):
            v = tlist2[j]
            d, w, f = max_type_size(screen, tl, v)
@@ -106,7 +111,7 @@ class AutoTab:
            function_depth = max(function_depth, f)
            c = get_constants(screen, tl, v)
            nc = get_constants(screen, tl, complement_tree(v))
-           tar_heads.append(AutoData(j, 0, c, None, nc, None))
+           tar_heads.append(AutoData(j, c, None, nc, None))
         self.hyp_heads = hyp_heads
         self.hyp_impls = hyp_impls
         self.tar_heads = tar_heads
@@ -115,7 +120,80 @@ class AutoTab:
         self.max_width = max_width
         self.function_depth = function_depth
 
-def insert_sort(L, dat):
+def compute_direction(atab, dat):
+    max_l = -1
+    max_r = -1
+    for i in range(len(atab.constants)):
+        c = atab.constants[i]
+        if c in dat.const1:
+            max_l = i
+        if c in dat.const2:
+            max_r = i
+    dat.ltor = max_l >= max_r
+    max_l = -1
+    max_r = -1
+    for i in range(len(atab.constants)):
+        c = atab.constants[i]
+        if c in dat.nconst2:
+            max_l = i
+        if c in dat.nconst1:
+            max_r = i
+    dat.rtol = max_l >= max_r
+    
+def compute_score(screen, tl, dat, is_hyp):
+    v = tl.tlist1.data[dat.line] if is_hyp else tl.tlist2.data[dat.line]
+    d, w, f = max_type_size(screen, tl, v)
+    dat.score = 0
+    dat.score += math.log(d+1)
+    dat.score += math.log(w+1)
+    dat.score += math.log(f+1)
+    dat.score += math.log(len(str(v))+1)
+    dat.score += math.log(len(metavars_used(v))+1)
+    dat.score += math.log(dat.deducts+1)
+    dat.score += math.log(dat.depth+1)
+    dat.score += math.log(dat.defn+1)
+
+def adjust_score(screen, tl, atab, line, is_hyp):
+    is_impl = False
+    depth = 0
+    if is_hyp:
+        found = False
+        for k in range(len(atab.hyp_heads)):
+            dat = atab.hyp_heads[k]
+            if dat.line == line:
+                found = True
+                depth = dat.depth
+                del atab.hyp_heads[k]
+                break
+        if not found:
+            for k in range(len(atab.hyp_impls)):
+                dat = atab.hyp_impls[k]
+                if dat.line == line:
+                    depth = dat.depth
+                    is_impl = True
+                    del atab.hyp_impls[k]
+                    break
+    else:
+        depth = 0
+        for k in range(len(atab.tar_heads)):
+            dat = atab.tar_heads[k]
+            if dat.line == line:
+                del atab.tar_heads[k]
+                break
+
+    # add new details
+    compute_score(screen, tl, dat, is_hyp)
+
+    if is_hyp:
+        if is_impl:
+           insert_sort(screen, atab.hyp_impls, dat)
+           compute_direction(atab, dat)
+        else:
+           insert_sort(screen, atab.hyp_heads, dat)
+    else:
+        insert_sort(screen, atab.tar_heads, dat)
+
+def insert_sort(screen, L, dat):
     """
     Insert an AutoDat node in a list according to score.
     """
@@ -127,7 +205,7 @@ def insert_sort(L, dat):
         # Binary search to find the correct insertion point
         while lo < hi:
             mid = (lo + hi) // 2
-            # Lower scored objectes go earlier in the list
+            # Lower scored objects go earlier in the list
             if L[mid].score < dat.score:
                 lo = mid + 1
             else:
@@ -135,7 +213,7 @@ def insert_sort(L, dat):
 
         L.insert(lo, dat)
      
-def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
+def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth, defn=False):
     """
     Given an AutoTab data structure and a list of modified/added hypotheses
     (dirty1) and a list of modified/added targets (dirty2), update the data
@@ -147,13 +225,13 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
     for i in dirty1:
-        version = -1
+        deducts = 0
         if i < atab.nhyps: # delete old hypothesis
             j = 0
             while j < len(atab.hyp_heads):
                 t = atab.hyp_heads[j]
                 if t.line == i:
-                    version = atab.hyp_heads[j].version
+                    deducts = atab.hyp_heads[j].deducts
                     del atab.hyp_heads[j]
                 else:
                     j += 1
@@ -161,7 +239,6 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
             while j < len(atab.hyp_impls):
                 t = atab.hyp_impls[j]
                 if t.line == i:
-                    version = atab.hyp_impls[j].version
                     del atab.hyp_impls[j]
                 else:
                     j += 1
@@ -177,26 +254,29 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
             m2 = metavars_used(v.right)
             mv = filter(lambda x : x not in m1, m2)
             nmv = filter(lambda x : x not in m2, m1)
-            dat = AutoData(i, version + 1, c1, c2, nc1, nc2)
+            dat = AutoData(i, c1, c2, nc1, nc2)
+            compute_score(screen, tl, dat, True)
             dat.mv_inc = len(list(mv))
             dat.nmv_inv = len(list(nmv))
-            atab.hyp_impls.append(dat)
+            dat.defn = defn
+            compute_direction(atab, dat)
+            insert_sort(screen, atab.hyp_impls, dat)
         else:
             c = get_constants(screen, tl, v)
             nc = get_constants(screen, tl, complement_tree(v))
-            dat = AutoData(i, version + 1, c, None, nc, None)
-            d, w, f = max_type_size(screen, tl, v)
-            dat.score = math.log(d+1)+math.log(w+1)+math.log(f+1)+math.log(len(str(v))+1)+math.log(len(metavars_used(v))+1)
+            dat = AutoData(i, c, None, nc, None)
+            dat.deducts = deducts
             dat.depth = depth
-            insert_sort(atab.hyp_heads, dat)
+            compute_score(screen, tl, dat, True)
+            insert_sort(screen, atab.hyp_heads, dat)
     for j in dirty2:
-        version = -1
+        deducts = 0
         if j < atab.ntars: # delete old target
             k = 0
             while k < len(atab.tar_heads):
                 t = atab.tar_heads[k]
                 if t.line == j:
-                    version = atab.tar_heads[k].version
+                    deducts = atab.tar_heads[k].deducts
                     del atab.tar_heads[k]
                 else:
                     k += 1
@@ -204,55 +284,133 @@ def update_autotab(screen, tl, atab, dirty1, dirty2, interface, depth):
         v = tlist2[j]
         c = get_constants(screen, tl, v)
         nc = get_constants(screen, tl, complement_tree(v))
-        atab.tar_heads.append(AutoData(j, version + 1, c, None, nc, None))
+        dat = AutoData(j, c, None, nc, None)
+        dat.deducts = deducts
+        compute_score(screen, tl, dat, False)
+        insert_sort(screen, atab.tar_heads, dat)
 
     atab.nhyps = len(tlist1)
     atab.ntars = len(tlist2)
     update_screen(screen, tl, interface, dirty1, dirty2)
 
-def autotab_remove_deadnodes(screen, tl, atab, n1, n2, interface):
+def autotab_remove_deadnodes(screen, tl, atab, heads, impls, interface):
     list1 = tl.tlist1.data
     list2 = tl.tlist2.data
     dirty1 = []
     dirty2 = []
-    for i in range(n1, len(list1)):
-        if isinstance(list1[i], DeadNode):
-            found = False
-            j = 0
-            while j < len(atab.hyp_heads):
-                if atab.hyp_heads[j].line == i:
-                    dirty1.append(i)
-                    del atab.hyp_heads[j]
-                    found = True
-                    break
-                else:
-                    j += 1
-            if not found:
-                j = 0
-                while j < len(atab.hyp_impls):
-                    if atab.hyp_impls[j].line == i:
-                        dirty1.append(i)
-                        del atab.hyp_impls[j]
-                        break
-                    else:
-                        j += 1
-    for i in range(n2, len(list2)):
-        if isinstance(list2[i], DeadNode):
-            j = 0
-            while j < len(atab.tar_heads):
-                if atab.tar_heads[j].line == i:
-                    dirty2.append(i)
-                    del atab.tar_heads[j]
-                    break
-                else:
-                    j += 1
-    return update_screen(screen, tl, interface, dirty1, dirty2)
+    j = 0
+    while j < len(atab.hyp_heads):
+        if isinstance(list1[atab.hyp_heads[j].line], DeadNode):
+            dirty1.append(atab.hyp_heads[j].line)
+            del atab.hyp_heads[j]
+        else:
+            j += 1
+    j = 0
+    while j < len(atab.hyp_impls):
+        if isinstance(list1[atab.hyp_impls[j].line], DeadNode):
+            dirty1.append(atab.hyp_impls[j].line)
+            del atab.hyp_impls[j]
+        else:
+            j += 1
+    j = 0
+    while j < len(atab.tar_heads):
+        if isinstance(list2[atab.tar_heads[j].line], DeadNode):
+            dirty2.append(atab.tar_heads[j].line)
+            del atab.tar_heads[j]
+        else:
+            j += 1
+    if heads:
+        j = 0
+        while j < len(heads):
+            if isinstance(list1[heads[j].line], DeadNode):
+                del heads[j]
+            else:
+                j += 1
+    if impls:
+        j = 0
+        while j < len(impls):
+            if isinstance(list1[impls[j].line], DeadNode):
+                del impls[j]
+            else:
+                j += 1
 
-def create_index(screen, tl, library):
+    return update_screen(screen, tl, interface, sorted(dirty1), sorted(dirty2))
+
+def is_definition(screen, constants, undefined, consts, nconsts):
+    """
+    Determine whether the theorems listed in consts define new symbols and if
+    so append them to the constants list. If the symbols are used for the first
+    time but undefined put them in the undefined list. Return True if the
+    given theorems form a definition.
+    """
+    t_heads = consts[1]
+    thmlist = consts[2]
+    nthmlist = nconsts[2]
+    # check if the t_head defines a new symbol
+    is_defn = False
+    for c in t_heads:
+        if c not in constants and c not in undefined:
+            is_defined = True
+            for thm in thmlist:
+                if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
+                   isinstance(thm, AutoImplNode):
+                    if c in thm.left or c in thm.right:
+                        is_defined = False
+                else:
+                    if c in thm:
+                        is_defined = False
+            if is_defined:
+                constants.append(c)
+                is_defn = True
+            else:
+                undefined.append(c)
+    for thm in thmlist:
+        if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
+            isinstance(thm, AutoImplNode):
+                for c in thm.left:
+                    if c not in constants and c not in undefined and \
+                                 c not in thm.right:
+                        constants.append(c)
+                        is_defn = True
+                    elif c not in constants and c not in undefined:
+                        undefined.append(c)
+                for c in thm.right:
+                    if c not in constants and c not in undefined:
+                        undefined.append(c)
+        else:
+            for c in thm:
+                if c not in constants and c not in undefined:
+                    is_defn = True
+                    constants.append(c)
+
+    for thm in nthmlist:
+        if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
+            isinstance(thm, AutoImplNode):
+                for c in thm.left:
+                    if c not in constants and c not in undefined and \
+                                 c not in thm.right:
+                        constants.append(c)
+                        is_defn = True
+                    elif c not in constants and c not in undefined:
+                        undefined.append(c)
+                for c in thm.right:
+                    if c not in constants and c not in undefined:
+                        undefined.append(c)
+        else:
+            for c in thm:
+                if c not in constants and c not in undefined:
+                    is_defn = True
+                    constants.append(c)
+
+    return is_defn
+  
+def create_index(screen, tl, atab, library):
     """
     Read the library in and create an index of all theorems and definitions up
     to but not including the theorem we are trying to prove.
     """
+    constants = [] # an ordered list of constants in the order they appear
+    undefined = [] # list of undefined symbols
     index = []
     title = library.readline()
     while title: # check for EOF
@@ -261,29 +419,24 @@ def create_index(screen, tl, library):
         success, consts = parse_consts(screen, const_str)
         nconst_str = library.readline()[0:-1]
         success, nconsts = parse_consts(screen, nconst_str)
-        #term_str = library.readline()[0:-1]
-        tags = library.readline() # skip tags
+        tags = library.readline()[6:-1]
+        tag_list = tags.split(' ')
         filepos = library.tell()
         if filepos == tl.loaded_theorem:
             break
-        index.append((title, consts, nconsts, filepos))
+        # check type constants belong to this problem
+        if '#sets' in tag_list:
+            defn = is_definition(screen, constants, undefined, consts, nconsts)
+            index.append((title, consts, nconsts, filepos, defn))
         while title != '\n':
             title = library.readline()
         title = library.readline()
-    return index
+    return index, constants, undefined
 
 def get_autonode(screen, alist, line):
-    low = 0
-    high = len(alist) - 1
-
-    while low <= high:
-        mid = (low + high) // 2
-        if alist[mid].line < line:
-            low = mid + 1
-        elif alist[mid].line > line:
-            high = mid - 1
-        else:
-            return alist[mid]
+    for node in alist:
+        if node.line == line:
+            return node
 
     return None
 
@@ -294,7 +447,7 @@ def filter_theorems1(screen, index, type_consts, consts, extra=False):
     are all contained in the given list.
     """
     thms = []
-    for (title, c, nc, filepos) in index:
+    for (title, c, nc, filepos, defn) in index:
         thmlist = c[2]
         nthmlist = nc[2]
         tconst = c[0]
@@ -309,36 +462,35 @@ def filter_theorems1(screen, index, type_consts, consts, extra=False):
                 if set(tconst).issubset(type_consts):
                     if set(tc).issubset(consts):
                         if set(tcr).issubset(tc) or not set(tc).issubset(tcr):
-                            thms.append((title, c, nc, filepos, i))
+                            thms.append((title, c, nc, filepos, i, defn))
                     if set(tnc).issubset(consts):
                         if set(tncl).issubset(tnc) or not set(tnc).issubset(tncl):
-                            thms.append((title, c, nc, filepos, i))
+                            thms.append((title, c, nc, filepos, i, defn))
     return thms
 
-def filter_theorems2(screen, index, consts, mode):
+def filter_theorems2(screen, index, consts):
     """
     Given a library index, filter out theorems all of whose consequents
     contain only constants in the given list.
     """
     thms = []
-    for (title, c, nc, filepos) in index:
+    for (title, c, nc, filepos, defn) in index:
         thmlist = c[2]
         nthmlist = nc[2]
         for i in range(len(thmlist)):
             thm = thmlist[i]
             nthm = nthmlist[i]
-            if (mode > 0 and isinstance(thm, AutoImplNode)) or isinstance(thm, AutoIffNode) or isinstance(thm, AutoEqNode):
+            if isinstance(thm, AutoIffNode) or isinstance(thm, AutoEqNode):
                 tc = thm.right
                 tcl = thm.left
                 tnc = nthm.left
                 tncr = nthm.right
-                iff = isinstance(thm, AutoIffNode)
                 if set(tc).issubset(consts):
                     if set(tcl).issubset(tc) or not set(tc).issubset(tcl):
-                        thms.append((title, c, nc, filepos, i, iff))
+                        thms.append((title, c, nc, filepos, i, defn))
                 if set(tnc).issubset(consts):
                     if set(tncr).issubset(tnc) or not set(tnc).issubset(tncr):
-                        thms.append((title, c, nc, filepos, i, iff))
+                        thms.append((title, c, nc, filepos, i, defn))
     return thms
 
 def filter_theorems3(screen, index, consts1, consts2):
@@ -347,7 +499,7 @@ def filter_theorems3(screen, index, consts1, consts2):
     contain only constants in the given list.
     """
     thms = []
-    for (title, c, nc, filepos) in index:
+    for (title, c, nc, filepos, defn) in index:
         thmlist = c[2]
         for i in range(len(thmlist)):
             thm = thmlist[i]
@@ -439,8 +591,9 @@ def check_duplicates(screen, tl, ttree, n1, n2, tar, interface):
         for i in range(n1, len(tlist1)):
             nodup = True
             for j in range(n1):
+                is_line = isinstance(tlist1[i], SubsetneqNode) and isinstance(tlist1[i].left, SymbolNode) and tlist1[i].left.name() == '\\emptyset'
                 if is_duplicate_upto_metavars(tlist1[i], tlist1[j]):
-                    if deps_compatible(screen, tl, ttree, tar, j):
+                    if tl.tlist1.dependency(i) == tl.tlist1.dependency(j): # same dependency information
                         tlist1[i] = DeadNode(tlist1[i])
                         dirty1.append(i)
                         nodup = False
@@ -467,108 +620,6 @@ def check_duplicates(screen, tl, ttree, n1, n2, tar, interface):
         nodup_found = True
     update_screen(screen, tl, interface, dirty1, dirty2)
     return nodup_found
-
-def contains_skolems(screen, tl, tree, sk):
-    """
-    Given a list of skolem variable names, return True if any of them appear in
-    the given tree.
-    """
-    var = vars_used(screen, tl, tree)
-    for n in sk:
-        if n in var:
-            return True
-    return False
-
-def is_sk_duplicate(screen, tl, node, sn, sk):
-    """
-    Return True if the deductions listed in node are duplicates (up to renaming
-    skolems and metavars).
-    """
-    tlist1 = tl.tlist1.data
-    if len(sn.lines) != len(node.lines): # check same number of deducts
-        return False
-    from_vars = [] # names vars are renamed from
-    to_vars = [] # names vars are renamed to
-    trees = [tlist1[i] for i in node.lines]
-    for i in sn.lines:
-        tree2 = tlist1[i]
-        found = False # if the given line is duplicated
-        for j in range(len(trees)):
-            tree1 = trees[j]
-            if is_duplicate_upto_metavars(tree1, tree2, sk, from_vars, to_vars):
-                found = True
-                del trees[j]
-                break
-        if not found:
-            return False
-    return True
-
-def wind_skolems(screen, tl, atab):
-    """
-    Move skolem reference to end of qz
-    """
-    tlist0 = tl.tlist0.data
-    if atab.sk_ref == None:
-        if tlist0:
-            tree = tlist0[0]
-        else:
-            return # no skolems
-    else:
-        tree = atab.sk_ref
-        if not tree.left:
-            return # no skolems
-        tree = tree.left
-    while tree.left:
-        tree = tree.left
-    atab.sk_ref = tree
-    
-def check_skolems(screen, tl, atab, n1, interface):
-    """
-    Deduplicate new deductions that are the same as prior ones up to names of
-    skolem variables.
-    """
-    dirty1 = []
-    tlist0 = tl.tlist0.data
-    tlist1 = tl.tlist1.data
-    # get a list of new skolem vars
-    sk = [] # new skolem vars
-    if atab.sk_ref == None:
-        if tlist0:
-            tree = tlist0[0]
-        else:
-            return True # no skolems
-    else:
-        tree = atab.sk_ref
-        if not tree.left:
-            return True # no skolems
-        tree = tree.left
-    while tree.left:
-        if isinstance(tree, ForallNode):
-            sk.append(tree.var.name())
-        tree = tree.left
-    atab.sk_ref = tree
-    if isinstance(tree, ForallNode):
-        sk.append(tree.var.name())
-    if not sk:
-        return True # no skolems
-    # create new skolem struct
-    new_deducts = []
-    for i in range(n1, len(tlist1)):
-        if contains_skolems(screen, tl, tlist1[i], sk):
-            new_deducts.append(i)
-    if new_deducts:
-        sn = SkolemNode(new_deducts)
-        # check for duplicates
-        for node in atab.sk_nodes:
-            if is_sk_duplicate(screen, tl, node, sn, sk):
-                for i in new_deducts:
-                    tlist1[i] = DeadNode(tlist1[i])
-                    dirty1.append(i)
-                update_screen(screen, tl, interface, dirty1, [])
-                return False
-        # save new skolem node
-        atab.sk_nodes.append(sn)
-    return True
     
 def check_trivial(screen, tl, atab, n1, interface):
     tlist1 = tl.tlist1.data
@@ -647,51 +698,220 @@ def automate(screen, tl, ttree, interface='curses'):
     tlist2 = tl.tlist2.data
     atab = AutoTab(screen, tl) # initialise automation data structure
     library = open("library.dat", "r")
-    index = create_index(screen, tl, library)
+    index, constants, undefined = create_index(screen, tl, atab, library)
+    atab.constants = constants
     done = False # whether all targets are proved
-    mode = 0 # mode 0 = no adding tar metavars, mode 1 = add tar metavars with iffs
     current_depth = 1 # depth we are currently searching to
     depth_progress = False # whether we've made progress at current depth
-    starting = True
+    start1 = 0
+    start2 = 0
+    tar_heads_exhausted = [] # heads for which we've already tried everything
+    count = 0
     while True: # keep going until theorem proved or progress stalls
-        # get next unproved target
-        i = 0
-        made_progress = False
-        while i < len(tlist2):
-            start1 = 0 if starting else len(tlist1)  # used by incremental completion checking
-            start2 = 0 if starting else len(tlist2)
-            starting = False
-            while i < len(tlist2):
-                if not isinstance(tlist2[i], DeadNode):
-                    break
-                i += 1
-            if i >= len(tlist2):
-                break
-            # find all target compatible hypotheses
-            hyps = []
-            for v in atab.hyp_heads:
-                if deps_compatible(screen, tl, ttree, i, v.line):
-                    hyps.append(v)
-            # find all consequences of individual hypotheses (Fredy's ball)
+        progress = False
+        hyp_heads_exhausted = [] # heads for which we've already tried everything
+        screen.debug("Getting new target")
+        for tar in atab.tar_heads:
+            if tar in tar_heads_exhausted:
+                continue
+            screen.debug("Got new target")
             hprogress = False # whether some progress is made on the hypothesis side
             tprogress = False # whether some progress is made on the target side
-            count1 = 0
-            for hyp in hyps:
-                if count1 > 7:
-                    break
-                count2 = 0
+            # get next unproved target
+            i = tar.line
+            # find all target compatible hypotheses
+            heads = [] # list of autonodes for target compatible hyp_heads
+            impls = [] # list of autonodes for target compatible hyp_impls
+            hypc = []
+            tarc = tar.const1
+            for v in atab.hyp_heads:
+                if deps_compatible(screen, tl, ttree, i, v.line):
+                    insert_sort(screen, heads, v)
+                    hypc = list_merge(hypc, v.const1)
+            for v in atab.hyp_impls:
+                if deps_compatible(screen, tl, ttree, i, v.line):
+                    insert_sort(screen, impls, v)
+                    c = list_merge(v.const1, v.const2)
+                    hypc = list_merge(hypc, c)
+            # first see if there are any theorems/defns to load which are not implications
+            libthms = filter_theorems3(screen, index, hypc, tarc)
+            for (title, c, nc, filepos, line) in libthms:
+                headc = c[2][line]
+                # check to see if constants of libthm are among the hyp constants hypc
+                if set(headc).issubset(hypc):
+                    # check to see if thm already loaded, if not, load it
+                    if filepos not in libthms_loaded:
+                        progress = True
+                        screen.debug(title)
+                        logic.library_import(screen, tl, library, filepos)
+                        n1 = len(tl.tlist1.data)
+                        n2 = len(tl.tlist1.data)       
+                        j = len(tl.tlist1.data) - 1
+                        update_autotab(screen, tl, atab, [j], [], interface, 0)
+                        libthms_loaded[filepos] = j
+                        dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                        update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
+                        update_screen(screen, tl, interface, dirty1, dirty2)
+                        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
+                        start1 = len(tlist1)
+                        start2 = len(tlist2)
+                        update_screen(screen, tl, interface, dirty1, dirty2)
+                        if autotab_remove_deadnodes(screen, tl, atab, heads, impls, interface):
+                            library.close()
+                            automation_limit += automation_increment
+                            return False
+                        if done:
+                            library.close()
+                            return True
+                        screen.debug("New non-implication thm loaded")
+            if isinstance(tlist2[tar.line], DeadNode):
+                break
+            # try to find a theorem that applies to the target
+            libthms = filter_theorems2(screen, index, tarc)
+            for (title, c, nc, filepos, line, defn) in libthms:
+                implc = c[2][line].left
+                nimplc = nc[2][line].right
+                pos = set(implc).issubset(hypc)
+                neg = set(nimplc).issubset(hypc)
+                # check to see if constants of libthm are among the hyp constants hypc
+                if (pos or neg or \
+                    not hypc or not atab.hyp_impls or not atab.hyp_heads):
+                    # check to see if thm already loaded
+                    line2 = tar.line
+                    unifies1 = False
+                    unifies2 = False
+                    unifies3 = False
+                    if filepos in libthms_loaded:
+                        j = libthms_loaded[filepos] # get position loaded in tableau
+                        tnode = get_autonode(screen, atab.hyp_impls, j + line)
+                        if tnode and tar.line not in tnode.applied:
+                            tnode.applied.append(tar.line)
+                            thm = tlist1[j + line]
+                            thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+                            if isinstance(thm, ImpliesNode):
+                                thm, _ = relabel(screen, tl, univs, thm, True)
+                                prec, u = unquantify(screen, thm.right, False)
+                                if not isinstance(prec, AndNode):
+                                    # check if precedent unifies with hyp
+                                    unifies1, assign, macros = unify(screen, tl, prec, tlist2[line2])
+                                if not unifies1:
+                                    prec, u = unquantify(screen, thm.left, True)
+                                    if not isinstance(prec, AndNode):
+                                        # check if precedent unifies with hyp
+                                        unifies2, assign, macros = unify(screen, tl, complement_tree(prec), tlist2[line2])
+                            elif isinstance(thm, EqNode):
+                                unifies3, _, _ = logic.limited_equality_substitution(screen, tl, ttree, None, \
+                                                                            j + line, line2, False, True)
+                    else: # library theorem not yet loaded
+                        fake_tl = TreeList()
+                        fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
+                        fake_tl.stree = tl.stree # copy sort tree from tl
+                        sorts_mark(screen, tl)
+                        logic.library_import(screen, fake_tl, library, filepos)
+                        autocleanup(screen, fake_tl, fake_ttree)
+                        thm = fake_tl.tlist1.data[line]
+                        thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+                        thm, _ = relabel(screen, fake_tl, univs, thm, True)
+                        if isinstance(thm, ImpliesNode):
+                            prec, u = unquantify(screen, thm.right, False)
+                            # check theorem has only one precedent
+                            if not isinstance(prec, AndNode):
+                                # check if precedent unifies with hyp
+                                unifies1, assign, macros = unify(screen, fake_tl, prec, tlist2[line2])
+                            if not unifies1:
+                                prec, u = unquantify(screen, thm.left, True)
+                                unifies2, assign, macros = unify(screen, fake_tl, complement_tree(prec), tlist2[line2])
+                        elif isinstance(thm, EqNode):
+                            fake_tl.tlist2.data.append(tlist2[line2])
+                            if isinstance(tlist2[line2], DeadNode):
+                                screen.dialog(str(line2))
+                            unifies3, _, _ = logic.limited_equality_substitution(screen, fake_tl, ttree, None, \
+                                                                            line, len(fake_tl.tlist2.data) - 1, False, True)
+                            del fake_tl.tlist2.data[len(fake_tl.tlist2.data) - 1]
+                        if unifies1 or unifies2 or unifies3:
+                            # transfer library result to tableau
+                            dirty1 = []
+                            dirty2 = []
+                            j = len(tlist1)
+                            fake_tlist0 = fake_tl.tlist0.data
+                            if fake_tlist0:
+                                append_quantifiers(tl.tlist0.data, fake_tlist0[0])
+                            fake_list1 = fake_tl.tlist1.data
+                            for k in range(len(fake_list1)):
+                                append_tree(tlist1, fake_list1[k], dirty1)
+                            libthms_loaded[filepos] = j
+                            tl.vars = fake_tl.vars
+                            tl.stree = fake_tl.stree
+                            update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0, defn)
+                            tnode = get_autonode(screen, atab.hyp_impls, j + line)
+                            tnode.applied.append(tar.line)
+                        else:
+                            sorts_rollback(screen, tl)
+                    if unifies1 or unifies2 or unifies3:
+                        line1 = j + line
+                        # apply modus ponens
+                        dep = tl.tlist1.dependency(line1)
+                        dep = target_compatible(screen, tl, ttree, dep, line2, False)
+                        if dep:
+                            n1 = len(tl.tlist1.data)
+                            n2 = len(tl.tlist2.data)
+                            var1 = metavars_used(tlist1[line1].left)
+                            var2 = metavars_used(tlist1[line1].right)
+                            if (defn and ((unifies1 and not set(tnode.const2).issubset(tnode.const1)) or \
+                                            (unifies2 and not set(tnode.const1).issubset(tnode.const2)))) or \
+                                                (unifies1 and set(var1).issubset(var2)) or \
+                                                (unifies2 and set(var2).issubset(var1))  or unifies3:
+                                if unifies1:
+                                    success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
+                                elif unifies2:
+                                    success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, [line2], False)
+                                elif unifies3:
+                                    success, dirty1, dirty2 = logic.limited_equality_substitution(screen, tl, ttree, dep, line1, line2, False, False)
+                                if success:
+                                    tar.deducts += 1
+                                    adjust_score(screen, tl, atab, tar.line, False)
+                                    update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0, defn)
+                                    dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                                    update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0, defn)
+                                    update_screen(screen, tl, interface, dirty1, dirty2)
+                                    c1 = check_duplicates(screen, tl, ttree, n1, n2, i, interface)
+                                    c2 = check_sizes(screen, tl, atab, n1, n2, interface)
+                                    if c1 and c2:
+                                        tprogress = True
+                                        progress = True
+                                        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
+                                        start1 = len(tlist1)
+                                        start2 = len(tlist2)
+                                        update_screen(screen, tl, interface, dirty1, dirty2)
+                                        if done:
+                                            library.close()
+                                            return True
+                                        tar_heads_exhausted = []
+                                        screen.debug("New target created")
+                                    if autotab_remove_deadnodes(screen, tl, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False
+                                    if c1 and c2:
+                                        break
+            if tprogress:
+                break
+            # find all consequences of individual hypotheses (Fredy's ball)
+            for hyp in heads:
+                if hyp in hyp_heads_exhausted:
+                    continue
                 progress = False
                 line2 = hyp.line
                 hc = hyp.const1
                 ht = get_constants_qz(screen, tl, tl.tlist0.data[0]) if tl.tlist0.data else []
                 # first check if any hyp_impls can be applied to head
-                for imp in atab.hyp_impls:
-                    line1 = imp.line
-                    if line1 < hyp.impls_done:
+                for imp in impls:
+                    if imp.line in hyp.applied:
                         continue
-                    hyp.impls_done = line1 + 1
-                    pos = set(imp.const1).issubset(hc) and imp.mv_inc == 0
-                    neg = set(imp.nconst2).issubset(hc) and imp.nmv_inc == 0
+                    hyp.applied.append(imp.line)
+                    line1 = imp.line
+                    pos = set(imp.const1).issubset(hc) and imp.mv_inc == 0 and imp.ltor
+                    neg = set(imp.nconst2).issubset(hc) and imp.nmv_inc == 0 and imp.rtol
                     if pos or neg:
                         unifies1 = False
                         unifies2 = False
@@ -736,10 +956,13 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if unifies3:
                                     success, dirty1, dirty2 = logic.limited_equality_substitution(screen, tl, ttree, dep, line1, line2, True, False)
                                 if success:
+                                    hyp.deducts += 1
+                                    adjust_score(screen, tl, atab, hyp.line, True)
+                                    imp.deducts += 1
+                                    adjust_score(screen, tl, atab, imp.line, True)
                                     update_autotab(screen, tl, atab, dirty1, dirty2, interface, hyp.depth+1)
                                     dirty1, dirty2 = autocleanup(screen, tl, ttree)
                                     update_autotab(screen, tl, atab, dirty1, dirty2, interface, hyp.depth+1)
-                                    #dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
                                     update_screen(screen, tl, interface, dirty1, dirty2)
                                     c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), i, interface)
                                     c2 = check_sizes(screen, tl, atab, n1, len(tlist2), interface)
@@ -747,274 +970,112 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if c1 and c2 and c3:
                                         hprogress = True
                                         progress = True
-                                    if autotab_remove_deadnodes(screen, tl, atab, n1, len(tlist2), interface):
+                                        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
+                                        start1 = len(tlist1)
+                                        start2 = len(tlist2)
+                                        update_screen(screen, tl, interface, dirty1, dirty2)
+                                        if done:
+                                            library.close()
+                                            return True
+                                        hyp_heads_exhausted = []
+                                        tar_heads_exhausted = []
+                                        screen.debug("New hypothesis deduced")
+                                    if autotab_remove_deadnodes(screen, tl, atab, heads, impls, interface):
                                         library.close()
-                                        automation_limit += automation_increment   
+                                        automation_limit += automation_increment
                                         return False
-                                    if done:
-                                        update_screen(screen, tl, interface, None, None)
-                                        library.close()
-                                        return True
-                                    count2 += 1
-                                    if count2 > 3:
-                                        count1 += 1
+                                    if c1 and c2 and c3:
                                         break
+                if hprogress:
+                    break
                 # if no progress, look for library result that can be applied to head
-                if not progress:
-                    libthms = filter_theorems1(screen, index, ht, hc, hyp.line == 2)
-                    for (title, c, nc, filepos, line) in libthms:
-                        if filepos < hyp.filepos_done or (filepos == hyp.filepos_done and line < hyp.line_done):
-                            continue
-                        hyp.filepos_done = filepos
-                        hyp.line_done = line + 1
-                        # check to see if thm already loaded
-                        unifies1 = False
-                        unifies2 = False
-                        unifies3 = False
-                        if filepos not in libthms_loaded: # theorem not already loaded
-                            fake_tl = TreeList()
-                            fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
-                            fake_tl.stree = tl.stree # copy sort tree from tl
-                            sorts_mark(screen, tl)
-                            logic.library_import(screen, fake_tl, library, filepos)
-                            autocleanup(screen, fake_tl, fake_ttree)
-                            thm = fake_tl.tlist1.data[line]
-                            # check theorem has only one precedent
-                            thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
-                            if isinstance(thm, ImpliesNode):
-                                m1 = metavars_used(thm.left)
-                                m2 = metavars_used(thm.right)
-                                mv = filter(lambda x : x not in m1, m2)
-                                nmv = filter(lambda x : x not in m2, m1)
-                                mv_inc = len(list(mv))
-                                nmv_inc = len(list(nmv))
-                                prec, u = unquantify(screen, thm.left, True)
-                                if not isinstance(prec, AndNode) and mv_inc == 0:
+                libthms = filter_theorems1(screen, index, ht, hc, hyp.line == 2)
+                for (title, c, nc, filepos, line, defn) in libthms:
+                    if filepos < hyp.filepos_done or (filepos == hyp.filepos_done and line < hyp.line_done):
+                        continue
+                    hyp.filepos_done = filepos
+                    hyp.line_done = line + 1
+                    # check to see if thm already loaded
+                    unifies1 = False
+                    unifies2 = False
+                    unifies3 = False
+                    if filepos not in libthms_loaded: # theorem not already loaded
+                        fake_tl = TreeList()
+                        fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
+                        fake_tl.stree = tl.stree # copy sort tree from tl
+                        sorts_mark(screen, tl)
+                        logic.library_import(screen, fake_tl, library, filepos)
+                        autocleanup(screen, fake_tl, fake_ttree)
+                        thm = fake_tl.tlist1.data[line]
+                        # check theorem has only one precedent
+                        thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+                        if isinstance(thm, ImpliesNode):
+                            m1 = metavars_used(thm.left)
+                            m2 = metavars_used(thm.right)
+                            mv = filter(lambda x : x not in m1, m2)
+                            nmv = filter(lambda x : x not in m2, m1)
+                            mv_inc = len(list(mv))
+                            nmv_inc = len(list(nmv))
+                            prec, u = unquantify(screen, thm.left, True)
+                            if not isinstance(prec, AndNode) and mv_inc == 0:
+                                # check if precedent unifies with hyp
+                                v1 = vars_used(screen, tl, prec)
+                                v2 = vars_used(screen, tl, tlist1[line2])
+                                if v1 or v2: # ensure not applying metavar thm to metavar head
+                                    unifies1, assign, macros = unify(screen, fake_tl, prec, tlist1[line2])
+                            if not unifies1:
+                                prec, u = unquantify(screen, thm.right, False)
+                                if not isinstance(prec, AndNode) and nmv_inc == 0:
                                     # check if precedent unifies with hyp
                                     v1 = vars_used(screen, tl, prec)
                                     v2 = vars_used(screen, tl, tlist1[line2])
                                     if v1 or v2: # ensure not applying metavar thm to metavar head
-                                        unifies1, assign, macros = unify(screen, fake_tl, prec, tlist1[line2])
-                                if not unifies1:
-                                    prec, u = unquantify(screen, thm.right, False)
-                                    if not isinstance(prec, AndNode) and nmv_inc == 0:
-                                        # check if precedent unifies with hyp
-                                        v1 = vars_used(screen, tl, prec)
-                                        v2 = vars_used(screen, tl, tlist1[line2])
-                                        if v1 or v2: # ensure not applying metavar thm to metavar head
-                                            unifies2, assign, macros = unify(screen, fake_tl, complement_tree(prec), tlist1[line2])
-                            elif isinstance(thm, EqNode):
-                                fake_tl.tlist1.data.append(tlist1[line2])
-                                unifies3, _, _ = logic.limited_equality_substitution(screen, fake_tl, ttree, None, \
-                                                                                line, len(fake_tl.tlist1.data) - 1, True, True)
-                                del fake_tl.tlist1.data[len(fake_tl.tlist1.data) - 1]
-                            if unifies1 or unifies2 or unifies3:
-                                # transfer library result to tableau
-                                dirty1 = []
-                                dirty2 = []
-                                j = len(tlist1)
-                                fake_tlist0 = fake_tl.tlist0.data
-                                if fake_tlist0:
-                                    append_quantifiers(tl.tlist0.data, fake_tlist0[0])
-                                #wind_skolems(screen, tl, atab)
-                                fake_list1 = fake_tl.tlist1.data
-                                for k in range(len(fake_list1)):
-                                    append_tree(tlist1, fake_list1[k], dirty1)
-                                libthms_loaded[filepos] = j
-                                tl.vars = fake_tl.vars
-                                tl.stree = fake_tl.stree
-                                update_autotab(screen, tl, atab, dirty1, dirty2, interface, hyp.depth+1)
-                                tnode = get_autonode(screen, atab.hyp_impls, j + line)
-                                tnode.applied.append((hyp.line, hyp.version, True))
-                            else:
-                                sorts_rollback(screen, tl)
-            tar = get_autonode(screen, atab.tar_heads, i)
-            if not done and tar:
-                # check if constants in target are all in hypotheses
-                tarc = tar.const1
-                hypc = []
-                heads = [] # list of autonodes for target compatible hyp_heads
-                impls = [] # list of autonodes for target compatible hyp_impls
-                c = []
-                for hnode in hyps:
-                    k = hnode.line
-                    node = get_autonode(screen, atab.hyp_heads, k)
-                    if node:
-                        heads.append(node)
-                        c = node.const1
-                    else:
-                        node = get_autonode(screen, atab.hyp_impls, k)
-                        if node:
-                            impls.append(node)
-                            c = list_merge(node.const1, node.const2)
-                    hypc = list_merge(hypc, c)
-                hypc = list_merge(hypc, tar.const1)
-                tprogress = False # whether or not some progress is made on the target side
-                # first see if there are any theorems/defns to load which are not implications
-                libthms = filter_theorems3(screen, index, hypc, tarc)
-                for (title, c, nc, filepos, line) in libthms:
-                    headc = c[2][line]
-                    # check to see if constants of libthm are among the hyp constants hypc
-                    if set(headc).issubset(hypc):
-                        # check to see if thm already loaded, if not, load it
-                        if filepos not in libthms_loaded:
-                            logic.library_import(screen, tl, library, filepos)
-                            n1 = len(tl.tlist1.data)
-                            n2 = len(tl.tlist1.data)       
-                            j = len(tl.tlist1.data) - 1
-                            update_autotab(screen, tl, atab, [j], [], interface, 0)
+                                        unifies2, assign, macros = unify(screen, fake_tl, complement_tree(prec), tlist1[line2])
+                        elif isinstance(thm, EqNode):
+                            fake_tl.tlist1.data.append(tlist1[line2])
+                            unifies3, _, _ = logic.limited_equality_substitution(screen, fake_tl, ttree, None, \
+                                                                            line, len(fake_tl.tlist1.data) - 1, True, True)
+                            del fake_tl.tlist1.data[len(fake_tl.tlist1.data) - 1]
+                        if unifies1 or unifies2 or unifies3:
+                            # transfer library result to tableau
+                            hprogress = True
+                            progress = True
+                            dirty1 = []
+                            dirty2 = []
+                            j = len(tlist1)
+                            fake_tlist0 = fake_tl.tlist0.data
+                            if fake_tlist0:
+                                append_quantifiers(tl.tlist0.data, fake_tlist0[0])
+                            fake_list1 = fake_tl.tlist1.data
+                            for k in range(len(fake_list1)):
+                                append_tree(tlist1, fake_list1[k], dirty1)
                             libthms_loaded[filepos] = j
-                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
-                            update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
-                            #dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
-                            update_screen(screen, tl, interface, dirty1, dirty2)
-                            if autotab_remove_deadnodes(screen, tl, atab, n1, n2, interface):
-                                library.close()
-                                automation_limit += automation_increment
-                                return False
-                            if done:
-                                update_screen(screen, tl, interface, None, None)
-                                library.close()
-                                return True
-                # try to find a theorem that applies to the target
-                if not tprogress:
-                    libthms = filter_theorems2(screen, index, tarc, mode)
-                    for (title, c, nc, filepos, line, iff) in libthms:
-                        implc = c[2][line].left
-                        nimplc = nc[2][line].right
-                        pos = set(implc).issubset(hypc)
-                        neg = set(nimplc).issubset(hypc)
-                        # check to see if constants of libthm are among the hyp constants hypc
-                        if (pos or neg or \
-                           not hypc or not atab.hyp_impls or not atab.hyp_heads):
-                            # check to see if thm already loaded
-                            line2 = tar.line
-                            unifies1 = False
-                            unifies2 = False
-                            unifies3 = False
-                            if filepos in libthms_loaded:
-                                j = libthms_loaded[filepos] # get position loaded in tableau
-                                tnode = get_autonode(screen, atab.hyp_impls, j + line)
-                                if tnode and tar.line not in tnode.applied:
-                                    tnode.applied.append(tar.line)
-                                    thm = tlist1[j + line]
-                                    thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
-                                    if isinstance(thm, ImpliesNode):
-                                        thm, _ = relabel(screen, tl, univs, thm, True)
-                                        prec, u = unquantify(screen, thm.right, False)
-                                        if not isinstance(prec, AndNode):
-                                            # check if precedent unifies with hyp
-                                            unifies1, assign, macros = unify(screen, tl, prec, tlist2[line2])
-                                        if not unifies1:
-                                            prec, u = unquantify(screen, thm.left, True)
-                                            if not isinstance(prec, AndNode):
-                                                # check if precedent unifies with hyp
-                                                unifies2, assign, macros = unify(screen, tl, complement_tree(prec), tlist2[line2])
-                                    elif isinstance(thm, EqNode):
-                                        unifies3, _, _ = logic.limited_equality_substitution(screen, tl, ttree, None, \
-                                                                                 j + line, line2, False, True)
-                            else: # library theorem not yet loaded
-                                fake_tl = TreeList()
-                                fake_tl.vars = deepcopy(tl.vars) # copy variable subscript record from tl
-                                fake_tl.stree = tl.stree # copy sort tree from tl
-                                sorts_mark(screen, tl)
-                                logic.library_import(screen, fake_tl, library, filepos)
-                                autocleanup(screen, fake_tl, fake_ttree)
-                                thm = fake_tl.tlist1.data[line]
-                                thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
-                                thm, _ = relabel(screen, fake_tl, univs, thm, True)
-                                if isinstance(thm, ImpliesNode):
-                                    prec, u = unquantify(screen, thm.right, False)
-                                    # check theorem has only one precedent
-                                    if not isinstance(prec, AndNode):
-                                        # check if precedent unifies with hyp
-                                        unifies1, assign, macros = unify(screen, fake_tl, prec, tlist2[line2])
-                                    if not unifies1:
-                                        prec, u = unquantify(screen, thm.left, True)
-                                        unifies2, assign, macros = unify(screen, fake_tl, complement_tree(prec), tlist2[line2])
-                                elif isinstance(thm, EqNode):
-                                    fake_tl.tlist2.data.append(tlist2[line2])
-                                    unifies3, _, _ = logic.limited_equality_substitution(screen, fake_tl, ttree, None, \
-                                                                                 line, len(fake_tl.tlist2.data) - 1, False, True)
-                                    del fake_tl.tlist2.data[len(fake_tl.tlist2.data) - 1]
-                                if unifies1 or unifies2 or unifies3:
-                                    # transfer library result to tableau
-                                    dirty1 = []
-                                    dirty2 = []
-                                    j = len(tlist1)
-                                    fake_tlist0 = fake_tl.tlist0.data
-                                    if fake_tlist0:
-                                        append_quantifiers(tl.tlist0.data, fake_tlist0[0])
-                                    fake_list1 = fake_tl.tlist1.data
-                                    for k in range(len(fake_list1)):
-                                        append_tree(tlist1, fake_list1[k], dirty1)
-                                    libthms_loaded[filepos] = j
-                                    tl.vars = fake_tl.vars
-                                    tl.stree = fake_tl.stree
-                                    update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
-                                    tnode = get_autonode(screen, atab.hyp_impls, j + line)
-                                    tnode.applied.append(tar.line)
-                                else:
-                                    sorts_rollback(screen, tl)
-                            if unifies1 or unifies2 or unifies3:
-                                line1 = j + line
-                                # apply modus ponens
-                                dep = tl.tlist1.dependency(line1)
-                                dep = target_compatible(screen, tl, ttree, dep, line2, False)
-                                if dep:
-                                    n1 = len(tl.tlist1.data)
-                                    n2 = len(tl.tlist2.data)
-                                    var1 = metavars_used(tlist1[line1].left)
-                                    var2 = metavars_used(tlist1[line1].right)
-                                    if (iff and ((unifies1 and not set(tnode.const2).issubset(tnode.const1)) or \
-                                                 (unifies2 and not set(tnode.const1).issubset(tnode.const2)))) or \
-                                           mode == 1 or (unifies1 and set(var1).issubset(var2)) or \
-                                                        (unifies2 and set(var2).issubset(var1))  or unifies3:
-                                        if unifies1:
-                                            success, dirty1, dirty2 = logic.modus_ponens(screen, tl, ttree, dep, line1, [line2], False)
-                                        elif unifies2:
-                                            success, dirty1, dirty2 = logic.modus_tollens(screen, tl, ttree, dep, line1, [line2], False)
-                                        elif unifies3:
-                                            success, dirty1, dirty2 = logic.limited_equality_substitution(screen, tl, ttree, dep, line1, line2, False, False)
-                                        if success:
-                                            update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
-                                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
-                                            update_autotab(screen, tl, atab, dirty1, dirty2, interface, 0)
-                                            #dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree)
-                                            update_screen(screen, tl, interface, dirty1, dirty2)
-                                            c1 = check_duplicates(screen, tl, ttree, n1, n2, i, interface)
-                                            c2 = check_sizes(screen, tl, atab, n1, n2, interface)
-                                            if c1 and c2:
-                                                tprogress = True
-                                            if autotab_remove_deadnodes(screen, tl, atab, n1, n2, interface):
-                                                library.close()
-                                                automation_limit += automation_increment
-                                                return False
-                                            if done:
-                                                update_screen(screen, tl, interface, None, None)
-                                                library.close()
-                                                return True
-                                            #wind_skolems(screen, tl, atab)
+                            tl.vars = fake_tl.vars
+                            tl.stree = fake_tl.stree
+                            update_autotab(screen, tl, atab, dirty1, dirty2, interface, hyp.depth+1, defn)
+                            screen.debug("New library result loaded")
+                            break
+                        else:
+                            sorts_rollback(screen, tl)
+                if hprogress:
+                    break
+                hyp_heads_exhausted.append(hyp)
+            if hprogress:
+                break
+        if not progress:
             dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
+            start1 = len(tlist1)
+            start2 = len(tlist2)
             update_screen(screen, tl, interface, dirty1, dirty2)
+            if autotab_remove_deadnodes(screen, tl, atab, None, None, interface):
+                library.close()
+                automation_limit += automation_increment
+                return False
             if done:
+                library.close()
                 return True
-            if tprogress or not hprogress: # must move on if theorem reasoned back from
-                i += 1
-            if hprogress or tprogress:
-                made_progress = True
-                depth_progress = True
-        if not made_progress: # we aren't getting anywhere
-            if depth_progress:
-                current_depth += 1 # search to higher depth
-                depth_progress = False
-            else:
-                if mode < 1: # try more extreme things
-                    mode += 1
-                else:
-                    update_screen(screen, tl, interface, None, None)
-                    library.close()
-                    automation_limit += 150
-                    return False
+            screen.debug("Final fail")
+            return False
+
 
         
