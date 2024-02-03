@@ -59,7 +59,7 @@ class AutoData:
         return repr(self.line)
 
 class AutoTab:
-    def __init__(self, screen, tl, ttree, library):
+    def __init__(self, screen, tl, ttree, library, constants):
         tlist0 = tl.tlist0.data
         tlist1 = tl.tlist1.data
         tlist2 = tl.tlist2.data
@@ -75,6 +75,7 @@ class AutoTab:
         self.library = library
         self.start1 = 0 # for incremental completion checking
         self.start2 = 0
+        self.constants = constants
 
         hyp_heads = []
         hyp_impls = []
@@ -88,38 +89,53 @@ class AutoTab:
             max_depth = max(max_depth, d)
             max_width = max(max_width, w)
             function_depth = max(function_depth, f)
+
             if is_implication(v):
                 v, univs = unquantify(screen, v, False)
                 c1 = get_constants(screen, tl, v.left)
                 c2 = get_constants(screen, tl, v.right)
                 nc1 = get_constants(screen, tl, complement_tree(v.left))
                 nc2 = get_constants(screen, tl, complement_tree(v.right))
+
                 dat = AutoData(i, c1, c2, nc1, nc2)
+
+                compute_direction(self, dat)
+                compute_score(screen, tl, dat, True)
+
                 m1 = metavars_used(v.left)
                 m2 = metavars_used(v.right)
                 mv = filter(lambda x : x not in m1, m2)
                 nmv = filter(lambda x : x not in m2, m1)
-                dat.score = math.log(d+1)+math.log(w+1)+math.log(f+1)+math.log(len(str(v))+1)+math.log(len(metavars_used(v))+1)
+
                 dat.mv_inc = len(list(mv))
                 dat.nmv_inv = len(list(nmv))
+
                 hyp_impls.append(dat)
                 dat.num_mv = len(metavars_used(v.right)) - len(metavars_used(v.left))
             else:
                 c = get_constants(screen, tl, v)
                 nc = get_constants(screen, tl, complement_tree(v))
-                ad = AutoData(i, c, None, nc, None)
-                ad.score = math.log(d+1)+math.log(w+1)+math.log(f+1)+math.log(len(str(v))+1)+math.log(len(metavars_used(v))+1)
-                ad.depth = 0
-                insert_sort(screen, hyp_heads, ad)
+                
+                dat = AutoData(i, c, None, nc, None)
+
+                compute_score(screen, tl, dat, True)
+               
+                insert_sort(screen, hyp_heads, dat)
+
         for j in range(len(tlist2)):
            v = tlist2[j]
+
            d, w, f = max_type_size(screen, tl, v)
            max_depth = max(max_depth, d)
            max_width = max(max_width, w)
            function_depth = max(function_depth, f)
+
            c = get_constants(screen, tl, v)
            nc = get_constants(screen, tl, complement_tree(v))
-           tar_heads.append(AutoData(j, c, None, nc, None))
+
+           dat = AutoData(j, c, None, nc, None)
+           tar_heads.append(dat)
+
         self.hyp_heads = hyp_heads
         self.hyp_impls = hyp_impls
         self.tar_heads = tar_heads
@@ -272,29 +288,41 @@ def update_autotab(screen, atab, dirty1, dirty2, interface, depth, defn=False):
         v = tlist1[i]
         if is_implication(v) or is_equality(v):
             v, univs = unquantify(screen, v, False)
+
             c1 = get_constants(screen, atab.tl, v.left)
             c2 = get_constants(screen, atab.tl, v.right)
             nc1 = get_constants(screen, atab.tl, complement_tree(v.left))
             nc2 = get_constants(screen, atab.tl, complement_tree(v.right))
+
+            dat = AutoData(i, c1, c2, nc1, nc2)
+
+            compute_direction(atab, dat)
+            compute_score(screen, atab.tl, dat, True)
+
             m1 = metavars_used(v.left)
             m2 = metavars_used(v.right)
             mv = filter(lambda x : x not in m1, m2)
             nmv = filter(lambda x : x not in m2, m1)
-            dat = AutoData(i, c1, c2, nc1, nc2)
-            compute_direction(atab, dat)
-            compute_score(screen, atab.tl, dat, True)
+
             dat.mv_inc = len(list(mv))
             dat.nmv_inv = len(list(nmv))
+
             dat.defn = defn
+
             insert_sort(screen, atab.hyp_impls, dat)
         else:
             c = get_constants(screen, atab.tl, v)
             nc = get_constants(screen, atab.tl, complement_tree(v))
+
             dat = AutoData(i, c, None, nc, None)
+
             dat.deducts = deducts
             dat.depth = depth
+
             compute_score(screen, atab.tl, dat, True)
+
             insert_sort(screen, atab.hyp_heads, dat)
+
     for j in dirty2:
         deducts = 0
         if j < atab.ntars: # delete old target
@@ -306,17 +334,23 @@ def update_autotab(screen, atab, dirty1, dirty2, interface, depth, defn=False):
                     del atab.tar_heads[k]
                 else:
                     k += 1
+
         # add new details
         v = tlist2[j]
+
         c = get_constants(screen, atab.tl, v)
         nc = get_constants(screen, atab.tl, complement_tree(v))
+
         dat = AutoData(j, c, None, nc, None)
+
         dat.deducts = deducts
+
         compute_score(screen, atab.tl, dat, False)
         insert_sort(screen, atab.tar_heads, dat)
 
     atab.nhyps = len(tlist1)
     atab.ntars = len(tlist2)
+
     update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
 def autotab_remove_deadnodes(screen, atab, heads, impls, interface):
@@ -430,7 +464,7 @@ def is_definition(screen, constants, undefined, consts, nconsts):
 
     return is_defn
   
-def create_index(screen, tl, atab, library):
+def create_index(screen, tl, library):
     """
     Read the library in and create an index of all theorems and definitions up
     to but not including the theorem we are trying to prove.
@@ -963,10 +997,9 @@ def automate(screen, tl, ttree, interface='curses'):
     tlist2 = tl.tlist2.data
 
     library = open("library.dat", "r")
-    atab = AutoTab(screen, tl, ttree, library) # initialise automation data structure
-
-    index, constants, undefined = create_index(screen, tl, atab, library)
-    atab.constants = constants
+    index, constants, undefined = create_index(screen, tl, library)
+    
+    atab = AutoTab(screen, tl, ttree, library, constants) # initialise automation data structure
 
     done = False # whether all targets are proved
     
@@ -1010,7 +1043,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     if deps_compatible(screen, tl, ttree, i, v.line):
                         insert_sort(screen, impls, v)
 
-                # first see if there are any theorems/defns to load which are not implications
+                # 1) first see if there are any theorems/defns to load which are not implications
                 libthms = filter_theorems3(screen, index, hypc, tarc)
                 for (title, c, nc, filepos, line) in libthms:
                     headc = c[2][line] # constants for this head
@@ -1050,7 +1083,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 if isinstance(tlist2[tar.line], DeadNode):
                     break
 
-                # try to find a theorem that applies to the target
+                # 2) try to find a theorem that applies to the target
                 if tar not in tar_heads_exhausted:
                     libthms = filter_theorems2(screen, index, tarc)
                     for (title, c, nc, filepos, line, defn) in libthms:
@@ -1125,7 +1158,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 if tprogress:
                     break
                 tar_heads_exhausted.append(tar)
-                # find all consequences of individual hypotheses (Fredy's ball)
+                # 3) find all consequences of individual hypotheses (Fredy's ball)
                 for hyp in heads:
                     if hyp in hyp_heads_exhausted:
                         continue
@@ -1193,7 +1226,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     if hprogress:
                         break
 
-                    # no progress, look for library result that can be applied to head
+                    # 4) no progress, look for library result that can be applied to head
                     libthms = filter_theorems1(screen, index, ht, hyp.const1, hyp.line == 2)
                     for (title, c, nc, filepos, line, defn) in libthms:
                         if filepos < hyp.filepos_done or (filepos == hyp.filepos_done and line < hyp.line_done):
