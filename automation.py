@@ -500,7 +500,7 @@ def get_autonode(screen, alist, line):
 
     return None
 
-def filter_theorems1(screen, index, type_consts, consts, extra=False):
+def filter_theorems1(screen, index, type_consts, consts):
     """
     Given a library index, filter out theorems all of whose precedents
     contain only constants in the given list and whose type constants
