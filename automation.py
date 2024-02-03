@@ -63,6 +63,7 @@ class AutoTab:
         tlist0 = tl.tlist0.data
         tlist1 = tl.tlist1.data
         tlist2 = tl.tlist2.data
+
         self.tl = tl
         self.ttree = ttree
         self.nhyps = len(tlist1)
@@ -72,6 +73,9 @@ class AutoTab:
         self.constants = None
         self.libthms_loaded = dict() # keep track of which library theorems we loaded, and where
         self.library = library
+        self.start1 = 0 # for incremental completion checking
+        self.start2 = 0
+
         hyp_heads = []
         hyp_impls = []
         tar_heads = []
@@ -942,17 +946,30 @@ def apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, is_h
         elif unifies3: # rewriting
             return logic.limited_equality_substitution(screen, atab.tl, atab.ttree, dep, line1, line2, is_hyp, False)
                                         
+def check_done(screen, atab, interface):
+    dirty1, dirty2, done, plist = check_targets_proved(screen, atab.tl, atab.ttree, atab.start1, atab.start2)
+
+    atab.start1 = len(atab.tl.tlist1.data)
+    atab.start2 = len(atab.tl.tlist2.data)
+    
+    update_screen(screen, atab.tl, interface, dirty1, dirty2)
+
+    return done
+
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
+
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
+
     library = open("library.dat", "r")
     atab = AutoTab(screen, tl, ttree, library) # initialise automation data structure
+
     index, constants, undefined = create_index(screen, tl, atab, library)
     atab.constants = constants
+
     done = False # whether all targets are proved
-    start1 = 0
-    start2 = 0
+    
     tar_heads_exhausted = [] # heads for which we've already tried everything
     hypc = []
     old_hypc = []
@@ -1017,35 +1034,40 @@ def automate(screen, tl, ttree, interface='curses'):
                             update_autotab(screen, atab, dirty1, dirty2, interface, 0)
                             update_screen(screen, tl, interface, dirty1, dirty2)
 
-                            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
-                            start1 = len(tlist1)
-                            start2 = len(tlist2)
-                            update_screen(screen, tl, interface, dirty1, dirty2)
-
+                            done = check_done(screen, atab, interface)
+                                            
                             if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                 library.close()
                                 automation_limit += automation_increment
                                 return False
+
                             if done:
                                 library.close()
                                 return True
+
                             screen.debug("New non-implication thm loaded")
+
                 if isinstance(tlist2[tar.line], DeadNode):
                     break
+
                 # try to find a theorem that applies to the target
                 if tar not in tar_heads_exhausted:
                     libthms = filter_theorems2(screen, index, tarc)
                     for (title, c, nc, filepos, line, defn) in libthms:
                         implc = c[2][line].left
                         nimplc = nc[2][line].right
+
                         # check to see if constants of libthm are among the hyp constants hypc
                         pos = set(implc).issubset(hypc)
                         neg = set(nimplc).issubset(hypc)
+
                         if (pos or neg or not hypc or not atab.hyp_impls or not atab.hyp_heads):
                             # check to see if thm already loaded
                             line2 = tar.line
+
                             unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
                                                                                            atab, line2, filepos, line)
+
                             if unifies1 or unifies2 or unifies3:
                                 dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
@@ -1085,11 +1107,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                             tprogress = True # we made progress that affected the tableau
                                             progress = True
 
-                                            dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
-                                            start1 = len(tlist1)
-                                            start2 = len(tlist2)
-                                            update_screen(screen, tl, interface, dirty1, dirty2)
-
+                                            done = check_done(screen, atab, interface)
+                                            
                                             if done:
                                                 library.close()
                                                 return True
@@ -1154,11 +1173,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                     hprogress = True # we have made progress affecting the tableau
                                     progress = True
 
-                                    dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
-                                    start1 = len(tlist1)
-                                    start2 = len(tlist2)
-                                    update_screen(screen, tl, interface, dirty1, dirty2)
-
+                                    done = check_done(screen, atab, interface)
+                                            
                                     if done:
                                         library.close()
                                         return True
@@ -1213,18 +1229,19 @@ def automate(screen, tl, ttree, interface='curses'):
                 break
 
     if not progress:
-        dirty1, dirty2, done, plist = check_targets_proved(screen, tl, ttree, start1, start2)
-        start1 = len(tlist1)
-        start2 = len(tlist2)
-        update_screen(screen, tl, interface, dirty1, dirty2)
+        # one final check that we are not done
+        done = check_done(screen, atab, interface)
+                                            
         if autotab_remove_deadnodes(screen, atab, None, None, interface):
             library.close()
             automation_limit += automation_increment
             return False
+        
         if done:
             library.close()
             return True
-        screen.debug("Final fail")
+        
+        screen.debug("Final failure")
         return False
 
 
