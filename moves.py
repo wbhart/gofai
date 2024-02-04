@@ -25,7 +25,7 @@ from utility import unquantify, relabel, append_tree, \
      system_binary_functions, system_predicates, list_merge, get_constraint, \
      get_constants, merge_lists, get_terms, get_init_vars, \
      sorts_compatible, coerce_sorts, sorts_equal, vars_used, list_merge, \
-     treelist_prune
+     treelist_prune, find_dangling_vars
 import logic
 
 from editor import edit
@@ -1079,6 +1079,10 @@ def cleanup(screen, tl, ttree):
     Apply automated cleanup moves. See the corresponding function in the logic
     module for details.
     """
+    tlist1 = tl.tlist1.data
+    tlist2 = tl.tlist2.data
+
+    dangling = find_dangling_vars(tlist1, range(len(tlist1)), tlist2, range(len(tlist2)))
     dirty1, dirty2 = logic.cleanup(screen, tl, ttree)
     
     if tl.tlist0.data:
@@ -1086,9 +1090,9 @@ def cleanup(screen, tl, ttree):
     else:
         screen.pad0[0] = ''
     for i in dirty1:
-        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+        screen.pad1.pad[i] = str(tlist1[i])
     for i in dirty2:
-        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+        screen.pad2.pad[i] = str(tlist2[i])
     
     screen.focus.cursor_adjust()
     screen.pad0.refresh()

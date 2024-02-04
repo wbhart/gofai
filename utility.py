@@ -232,6 +232,49 @@ def complement_tree(tree):
 
     return complement(deepcopy(tree))
 
+def dangling_to_left(tree, dangling):
+    """
+    If there are only dangling variables on the right of the tree, switch the
+    left and right sides of the tree so dangling vars are on the left.
+    """
+    var1 = vars_used(None, None, tree.left, True)
+
+    if not any(v in dangling for v in var1):
+        var2 = vars_used(None, None, tree.right, True)
+    
+        if any(v in dangling for v in var2):
+            t = tree.left
+            tree.left = tree.right
+            tree.right = t
+
+def find_dangling_vars(hyps, hyplist, tars, tarlist):
+    duplicates = [] # variables that are duplicated
+    dangling = [] # variables that only occur once
+
+    for i in hyplist:
+        var_list = vars_used(None, None, hyps[i], True)
+        
+        for var in var_list:
+            if var not in duplicates:
+                if var in dangling:
+                    dangling.remove(var)
+                    duplicates.append(var)
+                else:
+                    dangling.append(var)
+
+    for i in tarlist:
+        var_list = vars_used(None, None, tars[i], True)
+        
+        for var in var_list:
+            if var not in duplicates:
+                if var in dangling:
+                    dangling.remove(var)
+                    duplicates.append(var)
+                else:
+                    dangling.append(var)
+
+    return dangling
+    
 def unquantify(screen, tree, positive):
     """
     Remove forall quantifiers from a statement, returning a deepcopy of the

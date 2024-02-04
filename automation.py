@@ -1,5 +1,6 @@
 from utility import is_implication, get_constants, update_constraints, process_sorts, unquantify, \
-     relabel, deps_defunct, vars_used, complement_tree, sorts_mark, sorts_rollback
+     relabel, deps_defunct, vars_used, complement_tree, sorts_mark, sorts_rollback, find_dangling_vars, \
+     target_compatible
 from autoparse import parse_consts
 from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
@@ -171,8 +172,9 @@ def get_statement_constants(tab):
         tab.tnconstants.append(get_constants(None, None, complement_tree(tars[i]))) # get negated constants of target
 
 class Tableau:
-    def __init__(self, tl):
+    def __init__(self, tl, ttree):
         self.tl = tl # data structure containing tl.tlist0 (QZ), tl.tlist1 (hypotheses), tl.tlist2 (targets)
+        self.ttree = ttree
         self.maximal_constants = None # list of maximal constants in tableau
         self.libthms_loaded = dict() # keeps track of which library theorems we already loaded
         self.hypotheses = [i for i in range(len(tl.tlist1.data))] # list of hypotheses which have not been used or deleted
@@ -246,59 +248,7 @@ def update_screen(screen, qz, hyps, tars):
     screen.pad2.refresh() # update target zone on screen
 
 def is_disjunction(tree):
-    """
-    Return True if given statement is a disjunction
-    """
     return isinstance(tree, OrNode)
-
-def find_dangling_vars(hyps, hyplist, tars, tarlist):
-    duplicates = [] # variables that are duplicated
-    dangling = [] # variables that only occur once
-
-    for i in hyplist:
-        var_list = vars_used(None, None, hyps[i], True)
-        
-        for var in var_list:
-            if var not in duplicates:
-                if var in dangling:
-                    dangling.remove(var)
-                    duplicates.append(var)
-                else:
-                    dangling.append(var)
-
-    for i in tarlist:
-        var_list = vars_used(None, None, tars[i], True)
-        
-        for var in var_list:
-            if var not in duplicates:
-                if var in dangling:
-                    dangling.remove(var)
-                    duplicates.append(var)
-                else:
-                    dangling.append(var)
-
-    return dangling
-    
-def dangling_to_left(tree, dangling):
-    """
-    If there are only dangling variables on the right of the tree, switch the
-    left and right sides of the tree so dangling vars are on the left.
-    """
-    var1 = vars_used(None, None, tree.left, True)
-
-    if not any(v in dangling for v in var1):
-        var2 = vars_used(None, None, tree.right, True)
-    
-        if any(v in dangling for v in var2):
-            t = tree.left
-            tree.left = tree.right
-            tree.right = t
-
-def disjunction_to_implication(tlist, idx):
-    """
-    Turn P \vee Q into ¬P => Q
-    """
-    tlist[idx] = ImpliesNode(complement_tree(tlist[idx].left), tlist[idx].right)
 
 def get_twinned_targets(tars, tarlist):
     twinned = [] # list of targets that are disjunctive
@@ -359,37 +309,24 @@ def modus_ponens(screen, tab, idx1, idx2, forward, library):
     hyps = tab.tl.tlist1.data
 
     # get dependency information
-    dep = None
+    dep = tab.tl.tlist1.dependency(idx1)
+    dep = target_compatible(screen, tab.tl, tab.ttree, dep, idx2, forward)
     
-    if forward:
-        if -1 in tab.tl.tlist1.dependency(idx1): # no dependencies for idx1
-            dep = deepcopy(tab.tl.tlist1.dependency(idx2))
-        elif -1 in tab.tl.tlist1.dependency(idx2): # no dependencies for idx2
-            dep = deepcopy(tab.tl.tlist1.dependency(idx1))
-        else: # dependencies for both idx1 and idx2
-            dep = list(filter(lambda x : x in tab.tl.tlist1.dep[idx1], tab.tl.tlist1.dep[idx2]))
-
-    success, dirty1, dirty2 = logic.modus_ponens(None, tab.tl, None, dep, idx1, [idx2], forward)
+    if not dep: # not target compatible
+        return False
+    
+    success, dirty1, dirty2 = logic.modus_ponens(None, tab.tl, tab.ttree, dep, idx1, [idx2], forward)
     
     if success:
         if not library:
             tab.hypotheses.remove(idx1)
             
-        # update hypothesis and target lists and dependency information
+        # update hypothesis and target lists
         if forward:
             tab.hypotheses.remove(idx2)
             tab.hypotheses.append(dirty1[0])
         else:
             tab.targets.append(dirty2[0])
-
-            # update dependency information
-            for i in range(len(hyps)):
-                if i in tab.tl.tlist1.dep: # we have dependency information for this hypothesis
-                    dep = tab.tl.tlist1.dep[i]
-
-                    if idx2 in dep: 
-                        dep.remove(idx2) # remove old target from dependency list
-                        dep += dirty2 # put new target in dependency list
 
     return success
 
@@ -397,42 +334,29 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
     hyps = tab.tl.tlist1.data
 
     # get dependency information
-    dep = None
+    dep = tab.tl.tlist1.dependency(idx1)
+    dep = target_compatible(screen, tab.tl, tab.ttree, dep, idx2, forward)
     
-    if forward:
-        if -1 in tab.tl.tlist1.dependency(idx1): # no dependencies for idx1
-            dep = deepcopy(tab.tl.tlist1.dependency(idx2))
-        elif -1 in tab.tl.tlist1.dependency(idx2): # no dependencies for idx2
-            dep = deepcopy(tab.tl.tlist1.dependency(idx1))
-        else: # dependencies for both idx1 and idx2
-            dep = list(filter(lambda x : x in tab.tl.tlist1.dep[idx1], tab.tl.tlist1.dep[idx2]))
-
+    if not dep: # not target compatible
+        return False
+    
     success, dirty1, dirty2 = logic.modus_tollens(None, tab.tl, None, dep, idx1, [idx2], forward)
     
     if success:
         if not library:
             tab.hypotheses.remove(idx1)
             
-        # update hypothesis and target lists and dependency information
+        # update hypothesis and target lists
         if forward:
             tab.hypotheses.remove(idx2)
             tab.hypotheses.append(dirty1[0])
         else:
             tab.targets.append(dirty2[0])
 
-            # update dependency information
-            for i in range(len(hyps)):
-                if i in tab.tl.tlist1.dep: # we have dependency information for this hypothesis
-                    dep = tab.tl.tlist1.dep[i]
-
-                    if idx2 in dep: 
-                        dep.remove(idx2) # remove old target from dependency list
-                        dep += dirty2 # put new target in dependency list
-
     return success
 
 def expansion(screen, tab, defn_idx, idx, is_hyp, level):
-    dirty1, dirty2 = logic.expansion(None, tab.tl, defn_idx, idx, is_hyp, level)
+    dirty1, dirty2 = logic.expansion(None, tab.tl, tab.ttree, defn_idx, idx, is_hyp, level)
     hyps = tab.tl.tlist1.data
 
     # update hypothesis and target lists and dependency information
@@ -441,15 +365,6 @@ def expansion(screen, tab, defn_idx, idx, is_hyp, level):
         tab.hypotheses.append(dirty1[0])
     else:
         tab.targets.append(dirty2[0])
-
-        # update dependency information
-        for i in range(len(hyps)):
-            if i in tab.tl.tlist1.dep: # we have dependency information for this hypothesis
-                dep = tab.tl.tlist1.dep[i]
-
-                if idx in dep: 
-                    dep.remove(idx) # remove old target from dependency list
-                    dep += dirty2 # put new target in dependency list
 
 def filter_theorems(screen, index, constant_graph, maximal_constants, forward):
     """
@@ -515,17 +430,6 @@ def filter_definitions(index, constant_graph, consts, maximal_constants=None):
 
     return defns
 
-def autocleanup(tl, defn=False):
-    dirty1, dirty2 = logic.cleanup(None, tl, None, defn)
-    logic.fill_macros(None, tl)
-    ok, error = update_constraints(None, tl)
-    if ok:
-        ok, error = process_sorts(None, tl)
-        if not ok:
-            raise Exception(error)
-    else:
-        raise Exception(error)
-
 def temp_load_theorem(screen, tab, library, filepos, line, defn=False):
     """
     Takes a filepos and line of a theorem to load and checks to see if we already loaded the theorem and
@@ -539,7 +443,7 @@ def temp_load_theorem(screen, tab, library, filepos, line, defn=False):
         temp_tl = deepcopy(tab.tl)
         n = len(tab.tl.tlist1.data)
         logic.library_import(screen, temp_tl, library, filepos)
-        autocleanup(temp_tl, defn) # do cleanup moves on theorem (skolemize, metavars, expand iff, etc.)
+        autocleanup(screen, temp_tl, tab.ttree, defn) # do cleanup moves on theorem (skolemize, metavars, expand iff, etc.)
         
         return temp_tl, line + n
 
@@ -551,7 +455,7 @@ def load_theorem(screen, tab, library, filepos, line, defn=False):
     if filepos not in tab.libthms_loaded:
         n = len(tab.tl.tlist1.data)
         logic.library_import(None, tab.tl, library, filepos)
-        autocleanup(tab.tl, defn) # do cleanup moves on theorem (skolemize, metavars, expand iff, etc.)
+        autocleanup(screen, tab.tl, tab.ttree, defn) # do cleanup moves on theorem (skolemize, metavars, expand iff, etc.)
         tab.libthms_loaded[filepos] = n
     else:
         n = tab.libthms_loaded[filepos]
@@ -582,14 +486,29 @@ def append_hypothesis(tab, tl, hidx):
         tl.tlist1.data.append(deepcopy(tab.tl.tlist1.data[hidx]))
         return n
 
-def automate(screen, tl):
+def autocleanup(screen, tl, ttree, defn):
+    """
+    Apply automatic cleanup moves from base system, skolemize and create metavariables.
+    """
+    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn)
+    logic.fill_macros(screen, tl)
+    ok, error = update_constraints(screen, tl)
+    if ok:
+        ok, error = process_sorts(screen, tl)
+        if not ok:
+            screen.dialog(error)
+    else:
+        screen.dialog(error)
+    return dirty1, dirty2
+
+def automate(screen, tl, ttree):
     """
     The main automation function. Screen is where we are going to display the current tableau and tl is the
     data structure containing the initial quantifier zone, hypotheses and target.
     """
     # initial program setup
     constant_graph = create_constant_graph() # create the graph of constants
-    initial_tableau = Tableau(tl) # create the initial tableau object
+    initial_tableau = Tableau(tl, ttree) # create the initial tableau object
     tableau_list = [initial_tableau] # initial list of tableaus (each can be split by disjunctive hypotheses)
     get_statement_constants(initial_tableau) # compute the initial constants for the statements in the tableau
     library = open("library.dat", "r") # open the library file so it can be read
@@ -614,10 +533,11 @@ def automate(screen, tl):
                 
                 twinned_targets = get_twinned_targets(tars, tab.targets) # make a list of all disjunctive targets
 
-                # 0) Automated cleanup moves
+                # 0) Automated cleanup moves (moving dangling variables to left)
                 n1 = len(hyps)
                 n2 = len(tars)
-                v1, v2 = logic.cleanup(screen, tab.tl)
+                dangling = find_dangling_vars(hyps, tab.hypotheses, tars, tab.targets)
+                v1, v2 = logic.cleanup(screen, tab.tl, tab.ttree, dangling)
 
                 update_screen(screen, qz, hyps, tars) # update the QZ, hyps and tars on the screen
 
@@ -671,33 +591,12 @@ def automate(screen, tl):
                     break
 
                 # 1) Turn targets disjunctions into implications
-                if is_disjunction(tars[tidx]):
-                    dangling = find_dangling_vars(hyps, tab.hypotheses, tars, tab.targets)
-                    dangling_to_left(tars[tidx], dangling) # move any dangling variables to left of conjunction
-                    disjunction_to_implication(tars, tidx) # turn disjunction into implication
 
-                    continue
+                    # Handled by cleanup above
 
                 # 2) Split tableau if hypothesis is disjunction
-                found_hyp_disjunct = False # whether we found a disjunction
                 
-                for hidx in tab.hypotheses:
-                    if is_disjunction(hyps[hidx]):
-                        new_tab = deepcopy(tab)
-                        tableau_list.append(new_tab)
-
-                        # replace P \vee Q with P, ¬P \wedge Q
-                        hyps[hidx] = hyps[hidx].left # P
-
-                        hyps2 = new_tab.tl.tlist1.data
-                        hyps2[hidx] = AndNode(complement_tree(hyps2[hidx].left), hyps2[hidx].right) # ¬P \wedge Q
-                    
-                        found_hyp_disjunct = True
-
-                        break
-                
-                if found_hyp_disjunct:
-                    continue
+                    # not supported
 
                 # 3a) Backwards non-library reasoning
                             
@@ -869,7 +768,7 @@ def automate(screen, tl):
                 for (title, defn, filepos) in libdefns:
                     tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our target
                     
-                    level = logic.expansion(screen, tl, defn_idx, tidx, False)
+                    level = logic.expansion(screen, tl, None, defn_idx, tidx, False)
                     
                     if level != None:
                         defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
@@ -894,7 +793,7 @@ def automate(screen, tl):
                     for (title, defn, filepos) in libdefns:
                         tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
                         
-                        level = logic.expansion(screen, tl, defn_idx, hidx, True)
+                        level = logic.expansion(screen, tl, None, defn_idx, hidx, True)
                         
                         if level != None:
                             defn_idx = load_theorem(screen, tab, library, filepos, 0, True)

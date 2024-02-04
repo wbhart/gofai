@@ -57,7 +57,7 @@ def main(stdscr):
                     screen.dialog(error)
         elif c == 'a': # automation
             if started:
-                if automate(screen, tl):
+                if automate(screen, tl, ttree):
                     screen.dialog("All targets proved!")
                     done = True
                 else:
