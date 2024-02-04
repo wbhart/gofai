@@ -6,6 +6,7 @@ from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
      SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, ElemNode, VarNode, OrNode, \
      BoolNode
+from moves import targets_proved
 from tree import TreeList
 from interface import line_limit
 from copy import deepcopy
@@ -340,7 +341,7 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
     if not dep: # not target compatible
         return False
     
-    success, dirty1, dirty2 = logic.modus_tollens(None, tab.tl, None, dep, idx1, [idx2], forward)
+    success, dirty1, dirty2 = logic.modus_tollens(None, tab.tl, tab.ttree, dep, idx1, [idx2], forward)
     
     if success:
         if not library:
@@ -486,11 +487,21 @@ def append_hypothesis(tab, tl, hidx):
         tl.tlist1.data.append(deepcopy(tab.tl.tlist1.data[hidx]))
         return n
 
-def autocleanup(screen, tl, ttree, defn):
+def load_spurious(screen, tab, index, library):
+    special = []
+    for (title, tags, c, nc, defns, filepos) in index:
+        if title == 'Definition of empty set':
+            load_theorem(screen, tab, library, filepos, 0)
+            n = len(tab.tl.tlist1.data) - 1
+            tab.hypotheses.append(n)
+            special.append(n)
+    return special
+
+def autocleanup(screen, tl, ttree, defn, dangling=None):
     """
     Apply automatic cleanup moves from base system, skolemize and create metavariables.
     """
-    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn)
+    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn, dangling)
     logic.fill_macros(screen, tl)
     ok, error = update_constraints(screen, tl)
     if ok:
@@ -513,7 +524,8 @@ def automate(screen, tl, ttree):
     get_statement_constants(initial_tableau) # compute the initial constants for the statements in the tableau
     library = open("library.dat", "r") # open the library file so it can be read
     index = create_index(library, tl.loaded_theorem) # create index of library entries up to but not including theorem being proved
-    
+    special = load_spurious(screen, initial_tableau, index, library) # load spurious theorems that wouldn't otherwise be loaded
+
     while tableau_list: # iterate while there are still tableaus that need proving
         tab = tableau_list.pop() # get next tableau from tableau list
         
@@ -537,7 +549,11 @@ def automate(screen, tl, ttree):
                 n1 = len(hyps)
                 n2 = len(tars)
                 dangling = find_dangling_vars(hyps, tab.hypotheses, tars, tab.targets)
-                v1, v2 = logic.cleanup(screen, tab.tl, tab.ttree, dangling)
+                v1, v2 = autocleanup(screen, tab.tl, tab.ttree, False, dangling)
+
+                # check current target is still alive
+                if isinstance(tars[tidx], DeadNode):
+                    break # must get new target
 
                 update_screen(screen, qz, hyps, tars) # update the QZ, hyps and tars on the screen
 
@@ -550,10 +566,12 @@ def automate(screen, tl, ttree):
                 else: # update targets and hypotheses
                     for k in v1:
                         if k >= n1:
-                            tab.hypotheses.append(k)
+                            if not isinstance(hyps[k], DeadNode):
+                                tab.hypotheses.append(k)
                     for k in v2:
                         if k >= n2:
-                            tab.targets.append(k)
+                            if not isinstance(tars[k], DeadNode):
+                                tab.targets.append(k)
 
                 # record hypothesis-target twins
                 for j in tab.hypotheses:
@@ -572,20 +590,7 @@ def automate(screen, tl, ttree):
                 tab.maximal_constants = get_maximal_constants(constant_graph, tab.tl)
 
                 # check if done
-                proved = False
-                
-                for j in range(len(hyps)):
-                    hyp = hyps[j]
-                    dep_list = tab.tl.tlist1.dependency(j)
-
-                    if tidx in dep_list or -1 in dep_list: # hypothesis can be used to prove target
-                        proved = isinstance(hyp, BoolNode) and not hyp.value # is hypothesis False                     
-                            
-                        if not proved:
-                            proved, _, _ = unify(screen, tl, hyp, tars[tidx]) # does hypothesis unify with target
-
-                        if proved: # target proved
-                            break
+                proved, plist = targets_proved(screen, tab.tl, tab.ttree)
                 
                 if proved:
                     break
@@ -721,7 +726,8 @@ def automate(screen, tl, ttree):
 
                             if (not neg and set(implc).issubset(hyp_constants)) or (neg and set(nimplc).issubset(hyp_constants)):
                                 matches.append(idx) # store match
-                            elif (not neg and not set(implc).issubset(hyp_constants)) or (neg and not set(nimplc).issubset(hyp_constants)):
+                            elif ((not neg and not set(implc).issubset(hyp_constants)) or (neg and not set(nimplc).issubset(hyp_constants))) \
+                                 and idx not in special:
                                 nomatch_count += 1 # increment count of non-matches
                     
                     if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
@@ -793,8 +799,8 @@ def automate(screen, tl, ttree):
                     for (title, defn, filepos) in libdefns:
                         tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
                         
-                        level = logic.expansion(screen, tl, None, defn_idx, hidx, True)
-                        
+                        level = logic.expansion(screen, tl, None, defn_idx, hidx, True, None)
+
                         if level != None:
                             defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
 
