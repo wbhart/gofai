@@ -377,3 +377,15 @@ class Screen:
         pad.pad[0] = ''.join(edit_text)
         pad.cursor_right()
         pad.refresh() # update display
+
+def clear_screen(screen):
+    """
+    Clear the QZ, hypothesis zone and target zone on the screen
+    """
+    screen.pad0.pad[0] = '' # clear QZ buffer
+    screen.pad1.pad = ['' for i in range(0, line_limit)] # clear hypotheses buffer
+    screen.pad2.pad = ['' for i in range(0, line_limit)] # clear targets buffer
+
+    screen.pad0.refresh() # update QZ on screen
+    screen.pad1.refresh() # update hypothesis zone on screen
+    screen.pad2.refresh() # update target zone on screen

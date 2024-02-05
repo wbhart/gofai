@@ -1,6 +1,6 @@
 from utility import is_implication, get_constants, update_constraints, process_sorts, unquantify, \
      relabel, deps_defunct, vars_used, complement_tree, sorts_mark, sorts_rollback, find_dangling_vars, \
-     target_compatible
+     target_compatible, metavars_used
 from autoparse import parse_consts
 from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
@@ -8,7 +8,7 @@ from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, 
      BoolNode
 from moves import targets_proved
 from tree import TreeList
-from interface import line_limit
+from interface import clear_screen
 from copy import deepcopy
 import logic
 
@@ -185,6 +185,7 @@ class Tableau:
         self.hnconstants = [] # list of negated constants for each hypothesis
         self.tconstants = [] # list of constants for each target
         self.tnconstants = [] # list of negated constants for each target
+        self.start_lines = 0 # number of lines in tableau when it was created
 
 def create_index(library, loaded_theorem):
     """
@@ -210,18 +211,6 @@ def create_index(library, loaded_theorem):
             title = library.readline()
         title = library.readline()
     return index
-
-def clear_screen(screen):
-    """
-    Clear the QZ, hypothesis zone and target zone on the screen
-    """
-    screen.pad0.pad[0] = '' # clear QZ buffer
-    screen.pad1.pad = ['' for i in range(0, line_limit)] # clear hypotheses buffer
-    screen.pad2.pad = ['' for i in range(0, line_limit)] # clear targets buffer
-
-    screen.pad0.refresh() # update QZ on screen
-    screen.pad1.refresh() # update hypothesis zone on screen
-    screen.pad2.refresh() # update target zone on screen
 
 def update_screen(screen, qz, hyps, tars):
     """
@@ -525,10 +514,12 @@ def automate(screen, tl, ttree):
     library = open("library.dat", "r") # open the library file so it can be read
     index = create_index(library, tl.loaded_theorem) # create index of library entries up to but not including theorem being proved
     special = load_spurious(screen, initial_tableau, index, library) # load spurious theorems that wouldn't otherwise be loaded
+    lines = 0
 
     while tableau_list: # iterate while there are still tableaus that need proving
         tab = tableau_list.pop() # get next tableau from tableau list
-        
+        screen.debug("Loading tableau")
+            
         while tab.targets: # iterate while there are still unproven targets in this tableau
             tidx = tab.targets.pop() # get index of next unproven target
             
@@ -538,7 +529,7 @@ def automate(screen, tl, ttree):
 
             clear_screen(screen) # clear whatever tableau was being displayed
             update_screen(screen, qz, hyps, tars) # put the QZ, hyps and tars on the screen
-
+            
             # main waterfall loop
             while True: # keep going until we get stuck or target is proved
                 success = False # whether we successfully found a move to do
@@ -557,8 +548,7 @@ def automate(screen, tl, ttree):
 
                 update_screen(screen, qz, hyps, tars) # update the QZ, hyps and tars on the screen
 
-                if screen.debug_on:
-                    screen.dialog("Pause")
+                screen.debug("Pause")
                 
                 if v1 == False: # display any errors from cleanup
                     screen.dialog(v2)
@@ -599,9 +589,41 @@ def automate(screen, tl, ttree):
 
                     # Handled by cleanup above
 
-                # 2) Split tableau if hypothesis is disjunction
+                # 2) Split tableau if hypothesis is disjunction and no shared metavariables
                 
-                    # not supported
+                found_hyp_disjunct = False # whether we found a disjunction
+                
+                for hidx in tab.hypotheses:
+                    if is_disjunction(hyps[hidx]):
+                        # check there are no metavariables shared between the two sides of the split
+                        left = hyps[hidx].left
+                        right = hyps[hidx].right
+                        v1 = metavars_used(left)
+                        v2 = metavars_used(right)
+                        if any(v in v2 for v in v1):
+                            screen.dialog("Tableau split in the presence of shared metavariables is not currently supported")
+                            return False, None # Failure
+
+                        new_tab = deepcopy(tab)
+                        tableau_list.append(new_tab)
+
+                        new_tab.start_lines = len(tab.tl.tlist1.data)
+
+                        # replace P \vee Q with P, ¬P \wedge Q
+                        hyps[hidx] = hyps[hidx].left # P
+
+                        hyps2 = new_tab.tl.tlist1.data
+                        hyps2[hidx] = AndNode(complement_tree(hyps2[hidx].left), hyps2[hidx].right) # ¬P \wedge Q
+                    
+                        found_hyp_disjunct = True
+
+                        # reinsert current target
+                        new_tab.targets.append(tidx)
+
+                        break
+                
+                if found_hyp_disjunct:
+                    continue
 
                 # 3a) Backwards non-library reasoning
                             
@@ -671,12 +693,12 @@ def automate(screen, tl, ttree):
                         
                         if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
                             # first check if the selected theorem could even in theory unify with our target
-                            tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
+                            new_tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
                             
-                            temp_hyps = tl.tlist1.data # hypothesis list from tl
-                            temp_tars = tl.tlist2.data # target list from tl
+                            temp_hyps = new_tl.tlist1.data # hypothesis list from tl
+                            temp_tars = new_tl.tlist2.data # target list from tl
 
-                            mp, mt = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, tidx) # selected theorem unifies
+                            mp, mt = backwards_reasoning_possible(new_tl, temp_hyps, temp_tars, thm_idx, tidx) # selected theorem unifies
 
                             if (not neg and mp) or (neg and mt):
                                 # now check how many unifications we have in total
@@ -684,7 +706,7 @@ def automate(screen, tl, ttree):
 
                                 for idx in matches:
                                     # update counts
-                                    mpi, mti = backwards_reasoning_possible(tl, temp_hyps, temp_tars, thm_idx, idx)
+                                    mpi, mti = backwards_reasoning_possible(new_tl, temp_hyps, temp_tars, thm_idx, idx)
                                     
                                     if (not neg and mpi) or (neg and mti):
                                         unification_count += 1
@@ -724,23 +746,24 @@ def automate(screen, tl, ttree):
                         if not is_implication(tab.tl.tlist1.data[idx]): # if hypothesis is not an implication
                             hyp_constants = tab.hconstants[idx] # constants of target
 
-                            if (not neg and set(implc).issubset(hyp_constants)) or (neg and set(nimplc).issubset(hyp_constants)):
+                            if (not neg and set(implc).issubset(hyp_constants)) or (neg and set(nimplc).issubset(hyp_constants)) \
+                                 and idx not in special:
                                 matches.append(idx) # store match
                             elif ((not neg and not set(implc).issubset(hyp_constants)) or (neg and not set(nimplc).issubset(hyp_constants))) \
                                  and idx not in special:
                                 nomatch_count += 1 # increment count of non-matches
                     
                     if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
-                        tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
+                        new_tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
                         
-                        temp_hyps = tl.tlist1.data # hypothesis list from tl
+                        temp_hyps = new_tl.tlist1.data # hypothesis list from tl
                             
                         # check how many unifications we have in total
                         unifications = [] # hypotheses that unify
 
                         for idx in matches:
                             # update counts
-                            mpi, mti = forwards_reasoning_possible(tl, temp_hyps, thm_idx, idx)
+                            mpi, mti = forwards_reasoning_possible(new_tl, temp_hyps, thm_idx, idx)
                             
                             if (not neg and mpi) or (neg and mti):
                                 unifications.append((idx, mpi, mti))
@@ -772,9 +795,9 @@ def automate(screen, tl, ttree):
                 libdefns = filter_definitions(index, constant_graph, tar_consts)
 
                 for (title, defn, filepos) in libdefns:
-                    tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our target
+                    new_tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our target
                     
-                    level = logic.expansion(screen, tl, None, defn_idx, tidx, False)
+                    level = logic.expansion(screen, new_tl, None, defn_idx, tidx, False)
                     
                     if level != None:
                         defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
@@ -797,9 +820,9 @@ def automate(screen, tl, ttree):
                     libdefns = filter_definitions(index, constant_graph, hyp_consts, tab.maximal_constants)
 
                     for (title, defn, filepos) in libdefns:
-                        tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
+                        new_tl, defn_idx = temp_load_theorem(screen, tab, library, filepos, 0, True) # temp. load definition in same tableau as our hypothesis
                         
-                        level = logic.expansion(screen, tl, None, defn_idx, hidx, True, None)
+                        level = logic.expansion(screen, new_tl, None, defn_idx, hidx, True, None)
 
                         if level != None:
                             defn_idx = load_theorem(screen, tab, library, filepos, 0, True)
@@ -816,6 +839,8 @@ def automate(screen, tl, ttree):
                     continue
 
                 # no progress, exit automation with failure
-                return False
+                return False, 0
+        lines += len(tab.tl.tlist1.data) - tab.start_lines
+        screen.debug("adding lines "+str(lines))
 
-    return True # all targets proved in all tableau
+    return True, lines # all targets proved in all tableau

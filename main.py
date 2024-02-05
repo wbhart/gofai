@@ -1,6 +1,6 @@
 import curses # console library
 import curses.ascii # ascii classification
-from interface import Screen, iswide_char, nchars_to_chars
+from interface import Screen, iswide_char, nchars_to_chars, clear_screen
 from curses import wrapper
 from editor import get_text, edit
 from tree import TreeList
@@ -57,8 +57,10 @@ def main(stdscr):
                     screen.dialog(error)
         elif c == 'a': # automation
             if started:
-                if automate(screen, tl, ttree):
+                success, lines = automate(screen, tl, ttree)
+                if success:
                     screen.dialog("All targets proved!")
+                    screen.dialog(str(lines)+" lines")
                     done = True
                 else:
                     screen.dialog("Unable to prove theorem.")
@@ -88,6 +90,7 @@ def main(stdscr):
                 skip = True
         elif c == 'c': # clear_tableau
             clear_tableau(screen, tl)
+            clear_screen(screen)
             started = False
             done = False
             ttree = None
