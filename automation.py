@@ -27,9 +27,113 @@ try:
 except:
     pass
 
-class SkolemNode:
-    def __init__(self, lines):
-        self.lines = lines
+class ConstGraphNode:
+    def __init__(self, name):
+        self.name = name
+        self.descendants = [] # list of constants that are smaller than the current constant
+
+def find_constant(top_list, name):
+    """
+    Find and return the node in the constant graph with the given name.
+    """
+    # first define a function to search one of the graphs using depth first search
+    def find(node, name):
+        if node.name == name: # we found the node
+            return node
+        
+        for n in node.descendants:
+            v = find(n, name) # depth first search
+            if v:
+                return v
+
+        return None
+
+    for n in top_list:
+        v = find(n, name)
+        if v:
+            return v
+    
+    return None
+
+def insert_constant(top_list, hiname, loname_list):
+    """
+    Given a list (top_list) of constant graphs, search for loname in the list and insert hiname
+    above it in the list.
+    """
+    new_node = ConstGraphNode(hiname) # create a new node for the new constant
+    removal_list = [] # list of nodes to remove
+
+    # first find loname in the graph list
+    for loname in loname_list:
+        node = find_constant(top_list, loname)
+    
+        if not node:
+            raise Exception("Node name not found in constant graph : "+loname)
+
+        if node in top_list: # if it is at the top level, remove it
+            removal_list.append(node)
+
+        new_node.descendants.append(node)
+    
+    for node in removal_list: # remove all nodes we now dominate
+        top_list.remove(node)
+
+    top_list.append(new_node) # put the new node in the list
+
+def constant_greater(constant_graph, c1, c2):
+    """
+    Return True if constant c1 is greater than c2. Note that incomparable constants
+    will return False
+    """
+    node = find_constant(constant_graph, c1) # find c1 node
+
+    if not node:
+        raise Exception("Constant not found : "+c1)
+
+    return find_constant(node.descendants, c2) != None # try to find c2 starting at c1
+
+def check_maximal_constants(constant_graph, maximal_constants, constants):
+    """
+    Return True if none of the given constants is bigger than the current maximal constants.
+    """
+    for c in constants:
+        for cmax in maximal_constants:
+            if constant_greater(constant_graph, c, cmax):
+                return False
+
+    return True
+
+def get_maximal_constants(constant_graph, tl):
+    hyps = tl.tlist1.data # hypothesis list
+    tars = tl.tlist2.data # target list
+
+    constants = [] # list of all constants
+    maximal_constants = [] # list of maximal constants we will compute
+
+    for tree in hyps:
+        constants = get_constants(None, None, tree, constants, False)
+
+    for tree in tars:
+        constants = get_constants(None, None, tree, constants, False)
+
+    while constants: # iterate through all the constants
+        c = constants.pop() # get next constant
+        
+        # first check if c is dominated by some existing maximal constant
+        maximal = True
+        for cmax in maximal_constants:
+            if constant_greater(constant_graph, cmax, c):
+                maximal = False # constant c is not maximal
+                
+        if maximal: # c is a new maximal constant
+            # remove maximal constants dominated by c
+            for m in maximal_constants:
+                if constant_greater(constant_graph, c, m):
+                    maximal_constants.remove(m)
+
+            maximal_constants.append(c) # add the new maximal constant
+
+    return maximal_constants
 
 class AutoData:
     def __init__(self, line, const1, const2, nconst1, nconst2):
@@ -59,7 +163,7 @@ class AutoData:
         return repr(self.line)
 
 class AutoTab:
-    def __init__(self, screen, tl, ttree, library, constants):
+    def __init__(self, screen, tl, ttree, library, constants, maximal_constants):
         tlist0 = tl.tlist0.data
         tlist1 = tl.tlist1.data
         tlist2 = tl.tlist2.data
@@ -70,12 +174,12 @@ class AutoTab:
         self.ntars = len(tlist2)
         self.vars = get_init_vars(screen, tl, tlist0[0]) if tlist0 else [] # vars in initial tableau
         self.type_consts = get_constants_qz(screen, tl, tlist0[0])
-        self.constants = None
         self.libthms_loaded = dict() # keep track of which library theorems we loaded, and where
         self.library = library
         self.start1 = 0 # for incremental completion checking
         self.start2 = 0
         self.constants = constants
+        self.maximal_constants = maximal_constants
 
         hyp_heads = []
         hyp_impls = []
@@ -145,24 +249,8 @@ class AutoTab:
         self.function_depth = function_depth
 
 def compute_direction(atab, dat):
-    max_l = -1
-    max_r = -1
-    for i in range(len(atab.constants)):
-        c = atab.constants[i]
-        if c in dat.const1:
-            max_l = i
-        if c in dat.const2:
-            max_r = i
-    dat.ltor = max_l >= max_r
-    max_l = -1
-    max_r = -1
-    for i in range(len(atab.constants)):
-        c = atab.constants[i]
-        if c in dat.nconst2:
-            max_l = i
-        if c in dat.nconst1:
-            max_r = i
-    dat.rtol = max_l >= max_r
+    dat.ltor = check_maximal_constants(atab.constants, atab.maximal_constants, dat.const2)
+    dat.rtol = check_maximal_constants(atab.constants, atab.maximal_constants, dat.nconst1)
 
 def tree_size(tree):
     if tree == None:
@@ -396,20 +484,22 @@ def autotab_remove_deadnodes(screen, atab, heads, impls, interface):
 
     return update_screen(screen, atab.tl, interface, sorted(dirty1), sorted(dirty2))
 
-def is_definition(screen, constants, undefined, consts, nconsts):
+def is_definition(screen, constants, consts, nconsts):
     """
     Determine whether the theorems listed in consts define new symbols and if
-    so append them to the constants list. If the symbols are used for the first
-    time but undefined put them in the undefined list. Return True if the
-    given theorems form a definition.
+    so add them to the constants graph. If the symbols are used for the first
+    time but undefined also insert them in the constant graph list. Return True
+    if the given theorems form a definition.
     """
+    defined = [] # list of constants being defined
+    const_list = [] # list of constants occurring that are not being defined
     t_heads = consts[1]
     thmlist = consts[2]
     nthmlist = nconsts[2]
     # check if the t_head defines a new symbol
     is_defn = False
     for c in t_heads:
-        if c not in constants and c not in undefined:
+        if not find_constant(constants, c):
             is_defined = True
             for thm in thmlist:
                 if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
@@ -420,47 +510,81 @@ def is_definition(screen, constants, undefined, consts, nconsts):
                     if c in thm:
                         is_defined = False
             if is_defined:
-                constants.append(c)
+                if c not in defined:
+                    defined.append(c) # this constant is new and is being defined
                 is_defn = True
             else:
-                undefined.append(c)
+                constants.append(ConstGraphNode(c)) # insert as undefined constant
+
     for thm in thmlist:
         if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
             isinstance(thm, AutoImplNode):
                 for c in thm.left:
-                    if c not in constants and c not in undefined and \
-                                 c not in thm.right:
-                        constants.append(c)
-                        is_defn = True
-                    elif c not in constants and c not in undefined:
-                        undefined.append(c)
+                    if not find_constant(constants, c):
+                        if c not in thm.right:
+                            if c not in defined:
+                                defined.append(c)
+                            is_defn = True
+                        else:
+                            if c not in const_list:
+                                constants.append(ConstGraphNode(c)) # insert as undefined constant
+                                const_list.append(c)
+                    else:
+                        if c not in const_list:
+                            const_list.append(c)
                 for c in thm.right:
-                    if c not in constants and c not in undefined:
-                        undefined.append(c)
+                    if c not in const_list:
+                        const_list.append(c)
+                    if not find_constant(constants, c):
+                        constants.append(ConstGraphNode(c)) # insert as undefined constant
         else:
             for c in thm:
-                if c not in constants and c not in undefined:
+                if not find_constant(constants, c):
                     is_defn = True
-                    constants.append(c)
+                    if c not in defined:
+                        defined.append(c)
+                else:
+                    if c not in const_list:
+                         const_list.append(c)
+                        
 
     for thm in nthmlist:
         if isinstance(thm, AutoEqNode) or isinstance(thm, AutoIffNode) or \
             isinstance(thm, AutoImplNode):
                 for c in thm.left:
-                    if c not in constants and c not in undefined and \
-                                 c not in thm.right:
-                        constants.append(c)
-                        is_defn = True
-                    elif c not in constants and c not in undefined:
-                        undefined.append(c)
+                    if not find_constant(constants, c):
+                        if c not in thm.right:
+                            if c not in defined:
+                                defined.append(c)
+                            is_defn = True
+                        else:
+                            if c not in const_list:
+                                constants.append(ConstGraphNode(c)) # insert as undefined constant
+                                const_list.append(c)
+                    else:
+                        if c not in const_list:
+                            const_list.append(c)
                 for c in thm.right:
-                    if c not in constants and c not in undefined:
-                        undefined.append(c)
+                    if c not in const_list:
+                        const_list.append(c)
+                    if not find_constant(constants, c):
+                        constants.append(ConstGraphNode(c)) # insert as undefined constant
         else:
             for c in thm:
-                if c not in constants and c not in undefined:
+                if not find_constant(constants, c):
                     is_defn = True
-                    constants.append(c)
+                    if c not in defined:
+                        defined.append(c)
+                else:
+                    if c not in const_list:
+                         const_list.append(c)
+
+    for c in defined: # removed newly defined constants from list of undefined constants
+        if c in const_list:
+            const_list.remove(c)
+
+    for c in defined:
+        insert_constant(constants, c, const_list)
 
     return is_defn
   
@@ -469,8 +593,7 @@ def create_index(screen, tl, library):
     Read the library in and create an index of all theorems and definitions up
     to but not including the theorem we are trying to prove.
     """
-    constants = [] # an ordered list of constants in the order they appear
-    undefined = [] # list of undefined symbols
+    constants = [] # a list of root nodes of constant graphs
     index = []
     title = library.readline()
     while title: # check for EOF
@@ -486,12 +609,12 @@ def create_index(screen, tl, library):
             break
         # check type constants belong to this problem
         if '#sets' in tag_list:
-            defn = is_definition(screen, constants, undefined, consts, nconsts)
+            defn = is_definition(screen, constants, consts, nconsts)
             index.append((title, consts, nconsts, filepos, defn))
         while title != '\n':
             title = library.readline()
         title = library.readline()
-    return index, constants, undefined
+    return index, constants
 
 def get_autonode(screen, alist, line):
     for node in alist:
@@ -997,9 +1120,10 @@ def automate(screen, tl, ttree, interface='curses'):
     tlist2 = tl.tlist2.data
 
     library = open("library.dat", "r")
-    index, constants, undefined = create_index(screen, tl, library)
-    
-    atab = AutoTab(screen, tl, ttree, library, constants) # initialise automation data structure
+    index, constants = create_index(screen, tl, library)
+    maximal_constants = get_maximal_constants(constants, tl)
+
+    atab = AutoTab(screen, tl, ttree, library, constants, maximal_constants) # initialise automation data structure
 
     done = False # whether all targets are proved
     
@@ -1009,6 +1133,8 @@ def automate(screen, tl, ttree, interface='curses'):
     for allow_ltor_violation in range(2):
         while True: # keep going until theorem proved or progress stalls
             progress = False
+
+            atab.maximal_constants = get_maximal_constants(atab.constants, atab.tl)
 
             hyp_heads_exhausted = [] # heads for which we've already tried everything
             old_hypc = hypc
@@ -1227,7 +1353,7 @@ def automate(screen, tl, ttree, interface='curses'):
                         break
 
                     # 4) no progress, look for library result that can be applied to head
-                    libthms = filter_theorems1(screen, index, ht, hyp.const1, hyp.line == 2)
+                    libthms = filter_theorems1(screen, index, ht, hyp.const1)
                     for (title, c, nc, filepos, line, defn) in libthms:
                         if filepos < hyp.filepos_done or (filepos == hyp.filepos_done and line < hyp.line_done):
                             continue

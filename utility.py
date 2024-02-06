@@ -1399,7 +1399,7 @@ def get_constants_qz(screen, tl, tree):
     constants.sort()
     return constants
 
-def get_constants(screen, tl, tree, constants_in=[]):
+def get_constants(screen, tl, tree, constants_in=[], include_types=True):
     """
     Given a parse tree, return a list of all constants used in the statement,
     i.e. excluding all variable names but including function names which are
@@ -1445,7 +1445,7 @@ def get_constants(screen, tl, tree, constants_in=[]):
                 process(v)
         if isinstance(tree, FnApplNode):
             process(tree.var) # for composite functions
-        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode):
+        if isinstance(tree, ExistsNode) or isinstance(tree, ForallNode) and include_types:
             process(tree.var.constraint)
         if isinstance(tree, CartesianConstraint) or isinstance(tree, TupleSort):
             for v in tree.sorts:

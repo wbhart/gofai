@@ -58,6 +58,7 @@ def main(stdscr):
             if started:
                 if automate(screen, tl, ttree):
                     screen.dialog("All targets proved!")
+                    screen.dialog(str(len(tl.tlist1.data))+" lines")
                     done = True
                 else:
                     screen.dialog("Unable to prove theorem.")
