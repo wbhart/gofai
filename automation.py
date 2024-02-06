@@ -1227,7 +1227,7 @@ def automate(screen, tl, ttree, interface='curses'):
                         break
 
                     # 4) no progress, look for library result that can be applied to head
-                    libthms = filter_theorems1(screen, index, ht, hyp.const1, hyp.line == 2)
+                    libthms = filter_theorems1(screen, index, ht, hyp.const1)
                     for (title, c, nc, filepos, line, defn) in libthms:
                         if filepos < hyp.filepos_done or (filepos == hyp.filepos_done and line < hyp.line_done):
                             continue
