@@ -163,7 +163,7 @@ class AutoData:
         return repr(self.line)
 
 class AutoTab:
-    def __init__(self, screen, tl, ttree, library, constants, maximal_constants):
+    def __init__(self, screen, tl, ttree, library, constants, constant_order, maximal_constants):
         tlist0 = tl.tlist0.data
         tlist1 = tl.tlist1.data
         tlist2 = tl.tlist2.data
@@ -179,6 +179,7 @@ class AutoTab:
         self.start1 = 0 # for incremental completion checking
         self.start2 = 0
         self.constants = constants
+        self.constant_order = constant_order
         self.maximal_constants = maximal_constants
 
         hyp_heads = []
@@ -248,9 +249,22 @@ class AutoTab:
         self.max_width = max_width
         self.function_depth = function_depth
 
+def check_constant_direction(atab, const1, const2):
+    max_l = -1
+    max_r = -1
+    for i in range(len(atab.constant_order)):
+        c = atab.constant_order[i]
+        if c in const1:
+            max_l = i
+        if c in const2:
+            max_r = i
+    return max_l >= max_r
+
 def compute_direction(atab, dat):
-    dat.ltor = check_maximal_constants(atab.constants, atab.maximal_constants, dat.const2)
-    dat.rtol = check_maximal_constants(atab.constants, atab.maximal_constants, dat.nconst1)
+    dat.ltor = check_maximal_constants(atab.constants, atab.maximal_constants, dat.const2) and \
+               check_constant_direction(atab, dat.const1, dat.const2)
+    dat.rtol = check_maximal_constants(atab.constants, atab.maximal_constants, dat.nconst1) and \
+               check_constant_direction(atab, dat.nconst2, dat.nconst1)
 
 def tree_size(tree):
     if tree == None:
@@ -484,14 +498,13 @@ def autotab_remove_deadnodes(screen, atab, heads, impls, interface):
 
     return update_screen(screen, atab.tl, interface, sorted(dirty1), sorted(dirty2))
 
-def is_definition(screen, constants, consts, nconsts):
+def is_definition(screen, constants, defined, consts, nconsts):
     """
     Determine whether the theorems listed in consts define new symbols and if
     so add them to the constants graph. If the symbols are used for the first
     time but undefined also insert them in the constant graph list. Return True
     if the given theorems form a definition.
     """
-    defined = [] # list of constants being defined
     const_list = [] # list of constants occurring that are not being defined
     t_heads = consts[1]
     thmlist = consts[2]
@@ -593,7 +606,8 @@ def create_index(screen, tl, library):
     Read the library in and create an index of all theorems and definitions up
     to but not including the theorem we are trying to prove.
     """
-    constants = [] # a list of root nodes of constant graphs
+    constant_graph = [] # a list of root nodes of constant graphs
+    constant_order = [] # a list of constants in the order they are defined
     index = []
     title = library.readline()
     while title: # check for EOF
@@ -609,12 +623,12 @@ def create_index(screen, tl, library):
             break
         # check type constants belong to this problem
         if '#sets' in tag_list:
-            defn = is_definition(screen, constants, consts, nconsts)
+            defn = is_definition(screen, constant_graph, constant_order, consts, nconsts)
             index.append((title, consts, nconsts, filepos, defn))
         while title != '\n':
             title = library.readline()
         title = library.readline()
-    return index, constants
+    return index, constant_graph, constant_order
 
 def get_autonode(screen, alist, line):
     for node in alist:
@@ -1120,10 +1134,10 @@ def automate(screen, tl, ttree, interface='curses'):
     tlist2 = tl.tlist2.data
 
     library = open("library.dat", "r")
-    index, constants = create_index(screen, tl, library)
+    index, constants, constant_order = create_index(screen, tl, library)
     maximal_constants = get_maximal_constants(constants, tl)
 
-    atab = AutoTab(screen, tl, ttree, library, constants, maximal_constants) # initialise automation data structure
+    atab = AutoTab(screen, tl, ttree, library, constants, constant_order, maximal_constants) # initialise automation data structure
 
     done = False # whether all targets are proved
     
