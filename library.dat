@@ -724,7 +724,7 @@ Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
 ------------------------------
-A \subsetneq B \iff A \subseteq B \wedge A \neq B
+A \subsetneq B \iff A \subseteq B \wedge \neg(B \subseteq A)
 
 Title: Transitivity of set inclusion
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
