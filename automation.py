@@ -152,8 +152,10 @@ class AutoData:
         self.depth = 0 # depth of this head
         self.mv_inc = 0 # number of metavars this implication adds going left to right
         self.nmv_inc = 0 # number of metavars this implication adds going right to left
-        self.ltor = True # whether the theorem can be applied left to right
-        self.rtol = True # whether the theorem can be applied right to left
+        self.ltor = True # whether the theorem can be applied left to right on constant partial ordering grounds
+        self.ltor2 = True # whether the theorem can be applied left to right on constant linear ordering grounds
+        self.rtol = True # whether the theorem can be applied right to left on constant partial ordering grounds
+        self.rtol2 = True # whether the theorem can be applied right to left on constant linear ordering grounds
         self.defn = False # whether the theorem is a definition
 
     def __str__(self):
@@ -261,10 +263,10 @@ def check_constant_direction(atab, const1, const2):
     return max_l >= max_r
 
 def compute_direction(atab, dat):
-    dat.ltor = check_maximal_constants(atab.constants, atab.maximal_constants, dat.const2) and \
-               check_constant_direction(atab, dat.const1, dat.const2)
-    dat.rtol = check_maximal_constants(atab.constants, atab.maximal_constants, dat.nconst1) and \
-               check_constant_direction(atab, dat.nconst2, dat.nconst1)
+    dat.ltor = check_maximal_constants(atab.constants, atab.maximal_constants, dat.const2)
+    dat.ltor2 = check_constant_direction(atab, dat.const1, dat.const2)
+    dat.rtol = check_maximal_constants(atab.constants, atab.maximal_constants, dat.nconst1)
+    dat.rtol2 = check_constant_direction(atab, dat.nconst2, dat.nconst1)
 
 def tree_size(tree):
     if tree == None:
@@ -990,7 +992,17 @@ def backwards_reasoning_possible(screen, atab, line2, filepos, line):
 
     return unifies1, unifies2, unifies3, tl, line
     
-def forwards_reasoning_possible(screen, atab, imp, hyp, mv_check, var_check, allow_ltor_violation):
+def check_ltor(imp, ltor_level, positive):
+    if positive:
+        return (imp.ltor and imp.ltor2) or \
+               (ltor_level == 1 and (imp.ltor or imp.ltor2)) or \
+               (ltor_level == 2)
+    else:
+        return (imp.rtol and imp.rtol2) or \
+               (ltor_level == 1 and (imp.rtol or imp.rtol2)) or \
+               (ltor_level == 2)
+
+def forwards_reasoning_possible(screen, atab, imp, hyp, mv_check, var_check, ltor_level):
     """
     Given a theorem node imp, check whether it applies to hypothesis with node
     hyp. The return result is a triple (unifies1, unifies2, unifies3), the
@@ -1017,8 +1029,8 @@ def forwards_reasoning_possible(screen, atab, imp, hyp, mv_check, var_check, all
         
         hc = hyp.const1
 
-        pos = set(imp.const1).issubset(hc) and (not mv_check or imp.mv_inc == 0) and (imp.ltor or allow_ltor_violation)
-        neg = set(imp.nconst2).issubset(hc) and imp.nmv_inc == 0 and (imp.rtol or allow_ltor_violation)
+        pos = set(imp.const1).issubset(hc) and (not mv_check or imp.mv_inc == 0) and check_ltor(imp, ltor_level, True)
+        neg = set(imp.nconst2).issubset(hc) and imp.nmv_inc == 0 and check_ltor(imp, ltor_level, False)
 
         if pos or neg:                
             if isinstance(thm, ImpliesNode): # reasoning
@@ -1144,7 +1156,7 @@ def automate(screen, tl, ttree, interface='curses'):
     tar_heads_exhausted = [] # heads for which we've already tried everything
     hypc = []
     old_hypc = []
-    for allow_ltor_violation in range(2):
+    for ltor_level in range(3):
         while True: # keep going until theorem proved or progress stalls
             progress = False
 
@@ -1298,6 +1310,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 if tprogress:
                     break
                 tar_heads_exhausted.append(tar)
+
                 # 3) find all consequences of individual hypotheses (Fredy's ball)
                 for hyp in heads:
                     if hyp in hyp_heads_exhausted:
@@ -1311,15 +1324,15 @@ def automate(screen, tl, ttree, interface='curses'):
 
                     # first check if any hyp_impls can be applied to head
                     for imp in impls:
-                        if (imp.line, allow_ltor_violation) in hyp.applied: # check if we've applied this theorem before
+                        if (imp.line, ltor_level) in hyp.applied: # check if we've applied this theorem before
                             continue
 
-                        hyp.applied.append((imp.line, allow_ltor_violation)) # mark as applied
+                        hyp.applied.append((imp.line, ltor_level)) # mark as applied
 
                         line1 = imp.line
 
                         unifies1, unifies2, unifies3 = \
-                              forwards_reasoning_possible(screen, atab, imp, hyp, True, True, allow_ltor_violation)
+                              forwards_reasoning_possible(screen, atab, imp, hyp, True, True, ltor_level)
 
                         if unifies1 or unifies2 or unifies3:
                             n1 = len(tl.tlist1.data) # any lines after this have been added to tableau
