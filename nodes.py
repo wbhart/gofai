@@ -106,9 +106,14 @@ class VarNode(LeafNode):
         self.is_metavar = is_metavar # whether this is a metavariable
         self.is_binder = False # whether this node is a binder variable
         self.skolemized = False # make sure we don't skolemize a variable twice
+        self._is_shared = False # whether this is a shared metavariable
+        self.is_target = False # whether the variable is a target (meta)variable or not
 
     def name(self):
         return self._name
+
+    def is_shared(self):
+        return self._is_shared
 
     def __str__(self):
         return univar(self._name)+"\u0307" if self.is_metavar else univar(self._name)
@@ -165,6 +170,10 @@ class FnApplNode:
     def name(self): # only used to compare against constant names
         return self.var.name() if isinstance(self.var, VarNode) or \
                isinstance(self.var, FnApplNode) else str(self.var)
+
+    def is_shared(self):
+        # this is only called if function is not, but we code it safely
+        return isinstance(self.var, VarNode) and self.var.is_shared()
 
     def __str__(self):
         if isinstance(self.var, VarNode):

@@ -44,7 +44,7 @@ def tree_contains_binder(tree, ignorevars=[]):
                 return True
     return False # all other cases
 
-def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
+def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], allow_shared=True):
     assign = deepcopy(assigned) # default params are mutable
     macros = deepcopy(macro)
     # special case to deal with unexpanded macros
@@ -57,11 +57,11 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
         macros.append((tree1, tree2))
         return True, assign, macros
     if isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode) \
-           and tree1.is_metavar:
+           and tree1.is_metavar and (allow_shared or not tree1.is_shared()):
         if len(tree1.args) != len(tree2.args):
             return False, [], []
         for i in range(0, len(tree1.args)):
-            unifies, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, bidirn)
+            unifies, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, allow_shared)
             if not unifies:
                 return False, [], []
         if sorts_compatible(screen, tl, tree1.var.sort, tree2.var.sort):
@@ -69,12 +69,12 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
             return True, assign, macros
         else:
             return False, [], []
-    if bidirn and isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode) \
-           and tree2.is_metavar:
+    if isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode) \
+           and tree2.is_metavar and (allow_shared or not tree2.is_shared()):
         if len(tree1.args) != len(tree2.args):
             return False, [], []
         for i in range(0, len(tree1.args)):
-            unifies, assign, macros = trees_unify(screen, tl, tree2.args[i], tree1.args[i], assign, macros, bidirn)
+            unifies, assign, macros = trees_unify(screen, tl, tree2.args[i], tree1.args[i], assign, macros, allow_shared)
             if not unifies:
                 return False, [], []
         if sorts_compatible(screen, tl, tree2.var.sort, tree1.var.sort):
@@ -83,7 +83,7 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
         else:
             return False, [], []
     if (isinstance(tree1, VarNode) or isinstance(tree1, FnApplNode)) \
-           and tree1.is_metavar:
+           and tree1.is_metavar and (allow_shared or not tree1.is_shared()):
         if isinstance(tree2, Sort) and isinstance(tree1.sort, SetSort) and \
            isinstance(tree1.sort.sort, Universum):
             assign.append(deepcopy((tree1, tree2)))
@@ -97,8 +97,8 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
                       return False, [], []
         else:
             return False, [], []
-    elif bidirn and (isinstance(tree2, VarNode) or isinstance(tree2, FnApplNode)) \
-           and tree2.is_metavar:
+    elif (isinstance(tree2, VarNode) or isinstance(tree2, FnApplNode)) \
+           and tree2.is_metavar and (allow_shared or not tree2.is_shared()):
         if isinstance(tree1, Sort) and isinstance(tree2.sort, SetSort) and \
            isinstance(tree2.sort.sort, Universum):
             assign.append(deepcopy((tree2, tree1)))
@@ -118,13 +118,13 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
         if tree1.name() != tree2.name(): # if not metavars check names
             return False, [], []
     elif isinstance(tree1, FnApplNode) and isinstance(tree2, FnApplNode):
-        unified, assign, macros = trees_unify(screen, tl, tree1.var, tree2.var, assign, macros, bidirn)
+        unified, assign, macros = trees_unify(screen, tl, tree1.var, tree2.var, assign, macros, allow_shared)
         if not unified:
             return False, [], []
         if len(tree1.args) != len(tree2.args):
             return False, [], []
         for i in range(0, len(tree1.args)):
-            unified, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, allow_shared)
             if not unified:
                 return False, [], []
     elif isinstance(tree1, LambdaNode) and isinstance(tree2, LambdaNode):
@@ -134,24 +134,24 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
         var2 = t2.left
         mark_binder_vars(t1, var1)
         mark_binder_vars(t2, var2)
-        unified, assign, macros = trees_unify(screen, tl, var1, var2, assign, macros, bidirn)
+        unified, assign, macros = trees_unify(screen, tl, var1, var2, assign, macros, allow_shared)
         if not unified:
             return False, [], []
-        unified, assign, macros = trees_unify(screen, tl, t1.right, t2.right, assign, macros, bidirn)
+        unified, assign, macros = trees_unify(screen, tl, t1.right, t2.right, assign, macros, allow_shared)
         if not unified:
             return False, [], []
     elif isinstance(tree1, EqNode) and isinstance(tree2, EqNode):
         # special case for equality, try both directions
         ass = deepcopy(assign)
         mac = deepcopy(macros)
-        unified, ass, mac = trees_unify(screen, tl, tree1.left, tree2.left, ass, mac, bidirn)
+        unified, ass, mac = trees_unify(screen, tl, tree1.left, tree2.left, ass, mac, allow_shared)
         if unified:
-            unified, ass, mac = trees_unify(screen, tl, tree1.right, tree2.right, ass, mac, bidirn)
+            unified, ass, mac = trees_unify(screen, tl, tree1.right, tree2.right, ass, mac, allow_shared)
         if not unified: # try the other way around
-            unified, assign, macros = trees_unify(screen, tl, tree1.left, tree2.right, assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.left, tree2.right, assign, macros, allow_shared)
             if not unified:
                 return False, [], []
-            unified, assign, macros = trees_unify(screen, tl, tree1.right, tree2.left, assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.right, tree2.left, assign, macros, allow_shared)
             if not unified:
                 return False, [], []
         else:
@@ -183,7 +183,7 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
             if tree1.name() != tree2.name():
                 return False, [], []
             if tree1.name() == '\\emptyset':
-                unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros, bidirn)
+                unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros, allow_shared)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, SetSort):
@@ -191,36 +191,36 @@ def trees_unify(screen, tl, tree1, tree2, assigned=[], macro=[], bidirn=True):
                 return (tree2.sort == tree2 and tree1 == tree2), assign, macros
             if tree2.sort == tree2:
                 return False, [], []
-            unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.sort, tree2.sort, assign, macros, allow_shared)
             if not unified:
                 return False, [], []
         elif isinstance(tree1, TupleSort):
             if len(tree1.sorts) != len(tree2.sorts):
                 return False, [], []
             for i in range(len(tree1.sorts)):
-                unified, assign, macros = trees_unify(screen, tl, tree1.sorts[i], tree2.sorts[i], assign, macros, bidirn)
+                unified, assign, macros = trees_unify(screen, tl, tree1.sorts[i], tree2.sorts[i], assign, macros, allow_shared)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, TupleNode):
             if len(tree1.args) != len(tree2.args):
                 return False, [], []
             for i in range(0, len(tree1.args)):
-                unified, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, bidirn)
+                unified, assign, macros = trees_unify(screen, tl, tree1.args[i], tree2.args[i], assign, macros, allow_shared)
                 if not unified:
                     return False, [], []
         elif isinstance(tree1, LRNode):
-            unified, assign, macros = trees_unify(screen, tl, tree1.left, tree2.left, assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.left, tree2.left, assign, macros, allow_shared)
             if not unified:
                 return False, [], []
-            unified, assign, macros = trees_unify(screen, tl, tree1.right, tree2.right, assign, macros, bidirn)
+            unified, assign, macros = trees_unify(screen, tl, tree1.right, tree2.right, assign, macros, allow_shared)
             if not unified:
                 return False, [], []
     # if any case falls through, unification occurred successfully
     return True, assign, macros
 
-def unify(screen, tl, tree1, tree2, assigned=[], bidirn=True):
+def unify(screen, tl, tree1, tree2, assigned=[], allow_shared=True):
     assign = deepcopy(assigned) # default params are mutable
-    unified, assign, macros = trees_unify(screen, tl, tree1, tree2, assign, bidirn=bidirn)
+    unified, assign, macros = trees_unify(screen, tl, tree1, tree2, assign, allow_shared=allow_shared)
     if not unified:
         return False, [], []
     i = 0

@@ -1563,6 +1563,61 @@ def vars_used(screen, tl, tree, include_metavars=False):
     process(tree)
     return var_list
 
+def metavariables_used(tree):
+    """
+    Return a list of all the metavariables which appear in the tree. The actual
+    variables are returned, with possible duplicates.
+    """
+    var_list = []
+
+    def process(tree):
+        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            if tree.var.is_metavar:
+                var_list.append(tree.var)
+            process(tree.left)
+        elif isinstance(tree, VarNode):
+            if tree.is_metavar:
+                var_list.append(tree)
+        elif isinstance(tree, FnApplNode):
+            process(tree.var)
+            for v in tree.args:
+                process(v)
+        elif isinstance(tree, TupleNode):
+            for v in tree.args:
+                process(v)
+        elif isinstance(tree, LRNode):
+            process(tree.left)
+            process(tree.right)
+
+    process(tree)
+    return var_list
+
+def mark_shared(tree1, tree2):
+    mv1 = metavariables_used(tree1)
+    mv2 = metavariables_used(tree2)
+    names1 = []
+    names2 = []
+    for v in mv1:
+        if v.is_target:
+            name = v.name()
+            if name not in names1:
+                names1.append(name)
+    for v in mv2:
+        if v.is_target:
+            name = v.name()
+            if name not in names2:
+                names1.append(name)
+    shared_names = list(filter(lambda x: x in names2, names1))
+    for v in mv1:
+        name = v.name()
+        if name in shared_names:
+            v.is_shared = True
+    for v in mv2:
+        name = v.name()
+        if name in shared_names:
+            v.is_shared = True
+    
+
 def type_depth(screen, tl, tree):
     """
     Given a type of a term, determine the maximum depth of the type as measured
@@ -2413,7 +2468,7 @@ def process_constraints(screen, tl, tree, constraints, vars=None):
              return False, error
     return True, None
 
-def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocked=False):
+def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocked=False, target=False):
     """
     Given a statement, tree, return a version of it in which all variables that
     have been skolemized so far, as specified by sk, are replaced with
@@ -2455,8 +2510,8 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
         neq.sort = PredSort # may be replacing an already typed node
         return neq
     if isinstance(tree, OrNode):
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, True)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, True)
+        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, True, target)
+        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, True, target)
         return tree
     elif isinstance(tree, ForallNode):
         is_blocked = blocked
@@ -2473,8 +2528,8 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
                     qz.append(ExistsNode(tree.var, None))
                 else:
                     is_blocked = True
-        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked or isinstance(tree.left, IffNode))
+        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked, target)
+        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked or isinstance(tree.left, IffNode), target)
         rollback()
         return tree.left if not is_blocked else tree    
     elif isinstance(tree, ExistsNode):
@@ -2488,6 +2543,7 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
                 fn_constraint = FunctionConstraint(domain_constraints[0], SetOfNode(tree.var.constraint))
             else:
                 fn_constraint = FunctionConstraint(None, SetOfNode(tree.var.constraint))
+            tree.var.is_target = target
             if positive:
                 if not blocked:
                     tree.var.is_metavar = True
@@ -2499,8 +2555,8 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
             else:
                 v = VarNode(tree.var.name(), fn_constraint, False)
                 qz.append(ForallNode(v, None))
-        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked)
+        tree.var.constraint = skolemize_statement(screen, tree.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked, target)
+        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, is_blocked, target)
         rollback()
         return tree.left if not blocked else tree
     elif isinstance(tree, SetBuilderNode):
@@ -2511,31 +2567,31 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
                 tree.left.left.is_metavar = True
                 deps.append(tree.left.left) # free
                 mv.append(tree.left.left.name())
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked, target)
+        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, IffNode) or isinstance(tree, ImpliesNode):
         is_blocked = blocked or isinstance(tree, IffNode)
         t = tree
         while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
-            t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, not positive, is_blocked)
+            t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, not positive, is_blocked, target)
             t = t.left
-        t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, not positive, is_blocked)
+        t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, not positive, is_blocked, target)
         if not isinstance(tree.right, ForallNode) and not isinstance(tree.right, ExistsNode):
-            tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, is_blocked)
+            tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, is_blocked, target)
         else:
-            tree.right.var.constraint = skolemize_statement(screen, tree.right.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
+            tree.right.var.constraint = skolemize_statement(screen, tree.right.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked, target)
             t = tree.right
             while isinstance(t.left, ForallNode) or isinstance(t.left, ExistsNode):
-                t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked)
+                t.left.var.constraint = skolemize_statement(screen, t.left.var.constraint, deps, depmin, sk, qz, mv, positive, is_blocked, target)
                 t = t.left
-            t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, positive, is_blocked)
+            t.left = skolemize_statement(screen, t.left, deps, depmin, sk, qz, mv, positive, is_blocked, target)
         rollback()
         return tree
     elif isinstance(tree, LRNode):
-        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.left = skolemize_statement(screen, tree.left, deps, depmin, sk, qz, mv, positive, blocked, target)
+        tree.right = skolemize_statement(screen, tree.right, deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, VarNode):
@@ -2564,43 +2620,43 @@ def skolemize_statement(screen, tree, deps, depmin, sk, qz, mv, positive, blocke
             tree.var.is_metavar = True
         n, is_orig = skolem_deps(tree.name(), sk)
         if n != -1 and not tree.is_skolem: # skolem variable not already skolemized
-            tree.var = skolemize_statement(screen, tree.var, deps, depmin, sk, qz, mv, positive, blocked)
+            tree.var = skolemize_statement(screen, tree.var, deps, depmin, sk, qz, mv, positive, blocked, target)
             rollback()
         for i in range(0, len(tree.args)):
-            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked)
+            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked, target)
             rollback()
         return tree
     elif isinstance(tree, TupleNode):
         for i in range(0, len(tree.args)):
-            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked)
+            tree.args[i] = skolemize_statement(screen, tree.args[i], deps, depmin, sk, qz, mv, positive, blocked, target)
             rollback()
         return tree
     elif isinstance(tree, SetSort):
-        tree.sort = skolemize_statement(screen, tree.sort, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.sort = skolemize_statement(screen, tree.sort, deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, TupleSort):
         for i in range(len(tree.sorts)):
-            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
+            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, CartesianConstraint):
         for i in range(len(tree.sorts)):
-            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked)
+            tree.sorts[i] = skolemize_statement(screen, tree.sorts[i], deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, FunctionConstraint):
-        tree.domain = skolemize_statement(screen, tree.domain, deps, depmin, sk, qz, mv, positive, blocked)
-        tree.codomain = skolemize_statement(screen, tree.codomain, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.domain = skolemize_statement(screen, tree.domain, deps, depmin, sk, qz, mv, positive, blocked, target)
+        tree.codomain = skolemize_statement(screen, tree.codomain, deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, DomainTuple):
         for i in range(len(tree.sets)):
-             tree.sets[i] = skolemize_statement(screen, tree.sets[i], deps, depmin, sk, qz, mv, positive, blocked)
+             tree.sets[i] = skolemize_statement(screen, tree.sets[i], deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     elif isinstance(tree, SymbolNode) and tree.name() == '\\emptyset':
-        tree.constraint = skolemize_statement(screen, tree.constraint, deps, depmin, sk, qz, mv, positive, blocked)
+        tree.constraint = skolemize_statement(screen, tree.constraint, deps, depmin, sk, qz, mv, positive, blocked, target)
         rollback()
         return tree
     else:

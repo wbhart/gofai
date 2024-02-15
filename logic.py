@@ -2,7 +2,7 @@ from utility import unquantify, relabel, append_tree, replace_tree, \
      add_descendant, target_compatible, complement_tree, process_constraints, \
      get_constants, merge_lists, skolemize_quantifiers, skolemize_statement, \
      add_sibling, vars_used, domain, codomain, universe, metavars_used, \
-     tags_to_list, canonicalise_tags, record_move, duplicate_move
+     tags_to_list, canonicalise_tags, record_move, duplicate_move, mark_shared
 from unification import check_macros, unify, substitute, same_tree
 from copy import deepcopy
 from nodes import AndNode, OrNode, ImpliesNode, LRNode, LeafNode, ForallNode, \
@@ -126,14 +126,14 @@ def modus_ponens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), bidirn=forward)
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), allow_shared=False)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, bidirn=forward)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, allow_shared=False)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2, bidirn=forward)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2, allow_shared=False)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
@@ -220,14 +220,14 @@ def modus_tollens(screen, tl, ttree, dep, line1, line2_list, forward):
     if isinstance(qP2, ImpliesNode):
         # treat P => Q as ¬P \wedge Q
         # temporary relabelling
-        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), bidirn=forward)
+        unifies, assign, macros = unify(screen, tl, qP1, complement_tree(relabel(screen, tl, [], deepcopy(qP2.left), temp=True)[0]), allow_shared=False)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
         if unifies:
             # temporary relabelling
-            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, bidirn=forward)
+            unifies, assign, macros = unify(screen, tl, qP1, relabel(screen, tl, [], deepcopy(qP2.right), temp=True)[0], assign, allow_shared=False)
             unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     else:
-        unifies, assign, macros = unify(screen, tl, qP1, qP2, bidirn=forward)
+        unifies, assign, macros = unify(screen, tl, qP1, qP2, allow_shared=False)
         unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
     if not unifies:
         return False, dirty1, dirty2 # fail: predicate does not match implication
@@ -283,10 +283,10 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
         if str(tree) == string: # we found an occurrence
             occur += 1
             if occur == n: # we found the right occurrence
-                unifies, assign, macros = unify(screen, tl, subst.left, tree, bidirn=is_hyp)
+                unifies, assign, macros = unify(screen, tl, subst.left, tree, allow_shared=False)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 if not unifies:
-                    unifies, assign, macros = unify(screen, tl, subst.right, tree, bidirn=is_hyp)
+                    unifies, assign, macros = unify(screen, tl, subst.right, tree, allow_shared=False)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                     if not unifies:
                         return False, tree # does not unify, bogus selection
@@ -313,11 +313,23 @@ def equality_substitution(screen, tl, line1, line2, is_hyp, string, n):
 
     found, tree = find(tree, string, n, subst)
     if found:
+        tree = substitute(tree, assign) # we may have assigned metavars used elsewhere in the expression
         if is_hyp:
-            record_move(screen, tl, line2, ('e', line1))
-            tl.tlist1.data[line2] = tree
+            append_tree(tl.tlist1.data, tree, dirty1)
+            n = len(tl.tlist1.data) - 1
+            tl.tlist1.dep[n] = dep
+            record_move(screen, tl, n, ('e', line1, [line2]))
         else:
-            tl.tlist2.data[line2] = tree
+            if line2 in tl.tars: # we already reasoned from this target
+                tree = complement_tree(tree)
+                append_tree(tl.tlist1.data, tree, dirty1) # add negation to hypotheses
+                n = len(tl.tlist1.data) - 1
+                tl.tlist1.dep[n] = [line2]
+                record_move(screen, tl, n, ('e', line1, []))
+            else:
+                append_tree(tl.tlist2.data, tree, dirty2)
+                add_descendant(ttree, line2, len(tl.tlist2.data) - 1, line1)
+                tl.tars[line2] = True
     return found
 
 def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, check_only=False):
@@ -356,7 +368,7 @@ def limited_equality_substitution(screen, tl, ttree, dep, line1, line2, is_hyp, 
         if not isinstance(tree.sort, PredSort): # we found a term
             left = subst.left
             right = subst.right
-            unifies, assign, macros = unify(screen, tl, left, tree, bidirn=is_hyp)
+            unifies, assign, macros = unify(screen, tl, left, tree, allow_shared=False)
             if not check_only:
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
             if not unifies:
@@ -848,12 +860,14 @@ def cleanup(screen, tl, ttree):
                         n = len(tl1) - 1
                         tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                         duplicate_move(screen, tl, n, i)
+                        mark_shared(tl1[i], tl1[n])
                 if isinstance(tl1[i], NotNode) and isinstance(tl1[i].left, ImpliesNode):
                     append_tree(tl1, complement_tree(tl1[i].left.right), dirty1)
                     replace_tree(tl1, i, tl1[i].left.left, dirty1)
                     n = len(tl1) - 1
                     tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                     duplicate_move(screen, tl, n, i)
+                    mark_shared(tl1[i], tl1[n])
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
                     var2 = metavars_used(tl1[i].left.right)
@@ -874,6 +888,7 @@ def cleanup(screen, tl, ttree):
                                 n = len(tl1) - 1
                                 tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                                 duplicate_move(screen, tl, n, i)
+                                mark_shared(tl1[i], tl1[n])
                 if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     P = tl1[i].left
                     Q = tl1[i].right.left
@@ -889,6 +904,7 @@ def cleanup(screen, tl, ttree):
                             n = len(tl1) - 1
                             tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                             duplicate_move(screen, tl, n, i)
+                            mark_shared(tl1[i], tl1[n])
                 i += 1
                 while len(mv) > m:
                     mv.pop()
@@ -896,7 +912,7 @@ def cleanup(screen, tl, ttree):
             tars_done = True
             while j < len(tl2):
                 oldtlj = str(tl2[j])
-                tl2[j] = skolemize_statement(screen, tl2[j], deps, depmin, sk, qz, mv, True)
+                tl2[j] = skolemize_statement(screen, tl2[j], deps, depmin, sk, qz, mv, True, False, True)
                 if str(tl2[j]) != oldtlj and j not in dirty2:
                     dirty2.append(j)
                 rollback()
@@ -904,7 +920,9 @@ def cleanup(screen, tl, ttree):
                     append_tree(tl1, complement_tree(tl2[j].left), dirty1)
                     hyps_done = False
                     replace_tree(tl2, j, tl2[j].right, dirty2)
-                    n = tl.tlist1.dep[len(tl1) - 1] = [j]
+                    n = len(tl1) - 1
+                    tl.tlist1.dep[n] = [j]
+                    mark_shared(tl2[j], tl1[n])
                 if isinstance(tl2[j], ImpliesNode):
                     # can't relabel or metavar dependencies between existing targets broken
                     # left = relabel(screen, tl, [], tl2[j].left, tl.vars, True)
@@ -915,7 +933,9 @@ def cleanup(screen, tl, ttree):
                     # right = relabel(screen, tl, [], tl2[j].right, tl.vars, True)
                     right = tl2[j].right
                     replace_tree(tl2, j, right, dirty2)
-                    tl.tlist1.dep[len(tl1) - 1] = [j]
+                    n = len(tl1) - 1
+                    tl.tlist1.dep[n] = [j]
+                    mark_shared(tl2[j], tl1[n])
                 while isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
@@ -925,11 +945,15 @@ def cleanup(screen, tl, ttree):
                     else:
                         append_tree(tl2, tl2[j].right, dirty2)
                         replace_tree(tl2, j, tl2[j].left, dirty2)
-                        add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                        n = len(tl2) - 1
+                        add_sibling(screen, tl, ttree, j, n)
+                        mark_shared(tl2[j], tl2[n])
                 if isinstance(tl2[j], NotNode) and isinstance(tl2[j].left, ImpliesNode):
                     append_tree(tl2, complement_tree(tl2[j].left.right), dirty2)
                     replace_tree(tl2, j, tl2[j].left.left, dirty2)
-                    add_sibling(screen, tl, ttree, j, len(tl2) - 1)
+                    n = len(tl2) - 1
+                    add_sibling(screen, tl, ttree, j, n)
+                    mark_shared(tl2[j], tl2[n])
                 if not isinstance(tl2[j], ForallNode) and not isinstance(tl2[j], ExistsNode) \
                    and not isinstance(tl2[j], ImpliesNode):
                     j += 1
