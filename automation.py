@@ -1,6 +1,6 @@
 from utility import is_implication, get_constants, update_constraints, process_sorts, unquantify, \
      relabel, deps_defunct, vars_used, complement_tree, sorts_mark, sorts_rollback, find_dangling_vars, \
-     target_compatible, metavars_used
+     target_compatible, metavars_used, replace_tree
 from autoparse import parse_consts
 from unification import unify
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
@@ -585,11 +585,12 @@ def automate(screen, tl, ttree):
                 if proved:
                     break
 
-                # 1) Turn targets disjunctions into implications
+                # 1) Turn target disjunctions into implications
 
                     # Handled by cleanup above
 
-                # 2) Split tableau if hypothesis is disjunction and no shared metavariables
+                # 2) Split tableau if hypothesis is disjunction and no shared metavariables else turn
+                #    hypothesis into implication
                 
                 found_hyp_disjunct = False # whether we found a disjunction
                 
@@ -600,25 +601,35 @@ def automate(screen, tl, ttree):
                         right = hyps[hidx].right
                         v1 = metavars_used(left)
                         v2 = metavars_used(right)
-                        if any(v in v2 for v in v1):
-                            screen.dialog("Tableau split in the presence of shared metavariables is not currently supported")
-                            return False, None # Failure
+                        if any(v in v2 for v in v1): # shared metavars
+                            # First check we don't have P \vee P
+                            unifies, assign, macros = unify(screen, tab.tl, hyps[hidx].left, hyps[hidx].right)
+                            unifies = unifies and check_macros(screen, tab.tl, macros, assign, tab.tl.tlist0.data)
+                            if unifies and not assign:
+                                replace_tree(hyps, hidx, hyps[hidx].left, [])
+                            else:
+                                stmt = ImpliesNode(complement_tree(hyps[hidx].left), hyps[hidx].right)
+                                if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
+                                    temp = stmt.left.left
+                                    stmt.left = stmt.right.left
+                                    stmt.right = temp
+                                replace_tree(hyps, hidx, stmt, [])
+                        else:
+                            new_tab = deepcopy(tab)
+                            tableau_list.append(new_tab)
 
-                        new_tab = deepcopy(tab)
-                        tableau_list.append(new_tab)
+                            new_tab.start_lines = len(tab.tl.tlist1.data)
 
-                        new_tab.start_lines = len(tab.tl.tlist1.data)
+                            # replace P \vee Q with P, ¬P \wedge Q
+                            hyps[hidx] = hyps[hidx].left # P
 
-                        # replace P \vee Q with P, ¬P \wedge Q
-                        hyps[hidx] = hyps[hidx].left # P
+                            hyps2 = new_tab.tl.tlist1.data
+                            hyps2[hidx] = AndNode(complement_tree(hyps2[hidx].left), hyps2[hidx].right) # ¬P \wedge Q
+                           
+                            # reinsert current target
+                            new_tab.targets.append(tidx)
 
-                        hyps2 = new_tab.tl.tlist1.data
-                        hyps2[hidx] = AndNode(complement_tree(hyps2[hidx].left), hyps2[hidx].right) # ¬P \wedge Q
-                    
                         found_hyp_disjunct = True
-
-                        # reinsert current target
-                        new_tab.targets.append(tidx)
 
                         break
                 
