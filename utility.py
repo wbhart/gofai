@@ -741,6 +741,54 @@ def is_duplicate_upto_metavars(tree1, tree2, sk=None, from_vars=None, to_vars=No
             to_vars.append(i)
     return val
 
+class UnionFind:
+    def __init__(self):
+        self.parent = {}
+
+    def find(self, x):
+        if x not in self.parent:
+            self.parent[x] = x
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def union(self, x, y):
+        rootX = self.find(x)
+        rootY = self.find(y)
+        if rootX != rootY:
+            self.parent[rootX] = rootY
+
+def find_hydras(tlist2, tars):
+    """
+    Given a target list tlist2, and a list tars of indices of currently active
+    targets, partition tars such that each partition is a list of target indices
+    corresponding to targets that are connected via common metavariables. For
+    example, if targets 1, 2 and 3 had metavariables ['a', 'b'], ['c'], ['a', 'c']
+    respectively, they would all be grouped in the same partition because they are
+    'connected' through common metavariables.
+    """
+    uf = UnionFind()
+    metavar_to_obj = {}
+
+    for idx, tar in enumerate(tars):
+        metavars = metavars_used(tlist2[tar])
+        for metavar in metavars:
+            if metavar not in metavar_to_obj:
+                metavar_to_obj[metavar] = idx
+            else:
+                uf.union(idx, metavar_to_obj[metavar])
+
+    # Creating partitions
+    partitions = {}
+    for idx in range(len(tars)):
+        root = uf.find(idx)
+        if root not in partitions:
+            partitions[root] = [tars[idx]]
+        else:
+            partitions[root].append(tars[idx])
+
+    return list(sorted(partitions.values()))
+
 class TargetNode:
     """
     Used for building a tree of targets so we can keep track of which targets
