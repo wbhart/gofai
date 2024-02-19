@@ -418,6 +418,9 @@ def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
     
     left = subst.left
     right = subst.right
+
+    quant = isinstance(right, ForallNode) or isinstance(right, ExistsNode) # don't allow expansions with quantifiers except top level
+
     orig_tree = tl.tlist1.data[idx] if is_hyp else tl.tlist2.data[idx]
     current_level = 0
     unprocessed = [(orig_tree, None, None)] # unprocessed nodes at this level
@@ -430,18 +433,21 @@ def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
             (tree, parent, pos) = unprocessed.pop()
             
             if level == None or level == current_level: # check this level       
-                unifies, assign, macros = unify(screen, tl, left, tree, bidirn=is_hyp)
+                unifies, assign, macros = unify(screen, tl, left, tree, bidirn=False)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 
                 if unifies:
                     if level == None:
-                        return current_level
+                        if current_level == 0 or not quant:
+                            return current_level
+                        else:
+                            return None
                     else: # actually make the substitution
                         if not is_hyp:
                             substitute(copied[0], assign)
 
                         tree = substitute(deepcopy(right), assign) # we may have assigned metavars used elsewhere in the expression
-                             
+                            
                         # substitute correct location of parent
                         if parent == None: # top level
                             orig_tree = tree
@@ -449,7 +455,7 @@ def expansion(screen, tl, defn_idx, idx, is_hyp, level=None):
                             if pos == -1:
                                 parent.left = tree
                             elif pos == -2:
-                                parent.right == tree
+                                parent.right = tree
                             else:
                                 parent.args[pos] = tree
 

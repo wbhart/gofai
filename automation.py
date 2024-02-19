@@ -175,6 +175,7 @@ class Tableau:
         self.tl = tl # data structure containing tl.tlist0 (QZ), tl.tlist1 (hypotheses), tl.tlist2 (targets)
         self.maximal_constants = None # list of maximal constants in tableau
         self.libthms_loaded = dict() # keeps track of which library theorems we already loaded
+        self.libthms_used = dict() # keeps track of which (filepos, line) pairs have been applied
         self.hypotheses = [i for i in range(len(tl.tlist1.data))] # list of hypotheses which have not been used or deleted
         self.targets = [i for i in range(len(tl.tlist2.data))] # list of targets which have not been proved or discarded
         self.twins = [] # list of twinned (hypothesis, target) pairs
@@ -372,7 +373,7 @@ def modus_ponens(screen, tab, idx1, idx2, forward, library):
     success, dirty1, dirty2 = logic.modus_ponens(None, tab.tl, None, dep, idx1, [idx2], forward)
     
     if success:
-        if not library:
+        if idx1 in tab.hypotheses:
             tab.hypotheses.remove(idx1)
             
         # update hypothesis and target lists and dependency information
@@ -381,7 +382,9 @@ def modus_ponens(screen, tab, idx1, idx2, forward, library):
             tab.hypotheses.append(dirty1[0])
         else:
             tab.targets.append(dirty2[0])
-
+            if idx2 in tab.targets:
+                tab.targets.remove(idx2)
+            
             # update dependency information
             for i in range(len(hyps)):
                 if i in tab.tl.tlist1.dep: # we have dependency information for this hypothesis
@@ -410,7 +413,7 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
     success, dirty1, dirty2 = logic.modus_tollens(None, tab.tl, None, dep, idx1, [idx2], forward)
     
     if success:
-        if not library:
+        if idx1 in tab.hypotheses:
             tab.hypotheses.remove(idx1)
             
         # update hypothesis and target lists and dependency information
@@ -419,7 +422,9 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
             tab.hypotheses.append(dirty1[0])
         else:
             tab.targets.append(dirty2[0])
-
+            if idx2 in tab.targets:
+                tab.targets.remove(idx2)
+            
             # update dependency information
             for i in range(len(hyps)):
                 if i in tab.tl.tlist1.dep: # we have dependency information for this hypothesis
@@ -432,7 +437,7 @@ def modus_tollens(screen, tab, idx1, idx2, forward, library):
     return success
 
 def expansion(screen, tab, defn_idx, idx, is_hyp, level):
-    dirty1, dirty2 = logic.expansion(None, tab.tl, defn_idx, idx, is_hyp, level)
+    dirty1, dirty2 = logic.expansion(screen, tab.tl, defn_idx, idx, is_hyp, level)
     hyps = tab.tl.tlist1.data
 
     # update hypothesis and target lists and dependency information
@@ -441,6 +446,8 @@ def expansion(screen, tab, defn_idx, idx, is_hyp, level):
         tab.hypotheses.append(dirty1[0])
     else:
         tab.targets.append(dirty2[0])
+        if idx in tab.targets:
+            tab.targets.remove(idx)
 
         # update dependency information
         for i in range(len(hyps)):
@@ -451,7 +458,7 @@ def expansion(screen, tab, defn_idx, idx, is_hyp, level):
                     dep.remove(idx) # remove old target from dependency list
                     dep += dirty2 # put new target in dependency list
 
-def filter_theorems(screen, index, constant_graph, maximal_constants, forward):
+def filter_theorems(screen, tab, index, constant_graph, maximal_constants, forward):
     """
     Given a library index, filter for theorems which will not introduce a new maximal constant
     that are not definitions.
@@ -466,7 +473,8 @@ def filter_theorems(screen, index, constant_graph, maximal_constants, forward):
             thm = thmlist[line]
             nthm = nthmlist[line]
             if '#definition' not in tag_list and \
-                  (isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode)):
+                  (isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode)) and \
+                  (filepos, line) not in tab.libthms_used:
                 tcl = thm.left
                 tcr = thm.right
                 tncl = nthm.left
@@ -712,6 +720,7 @@ def automate(screen, tl):
                                 success = modus_tollens(screen, tab, hidx, tidx, False, False) # backwards modus tollens
 
                             if success:
+                                screen.debug("Backwards library reasoning")
                                 break
 
                 if success:
@@ -731,6 +740,7 @@ def automate(screen, tl):
                                     success = modus_tollens(screen, tab, hidx1, hidx2, True, False) # forwards modus tollens
 
                                 if success:
+                                    screen.debug("Forwards non-library reasoning")
                                     break
 
                         if success:
@@ -744,7 +754,7 @@ def automate(screen, tl):
                 # 5a) Backwards library reasoning
                 
                 # get all theorems that won't introduce a new maximal constant
-                libthms = filter_theorems(screen, index, constant_graph, tab.maximal_constants, False)
+                libthms = filter_theorems(screen, tab, index, constant_graph, tab.maximal_constants, False)
 
                 for (title, c, nc, filepos, line, neg) in libthms: # iterate over library theorems
                     implc = c.right # constants used in theorem
@@ -765,7 +775,7 @@ def automate(screen, tl):
                             elif (not neg and not set(implc).issubset(tar_constants)) or (neg and not set(nimplc).issubset(tar_constants)):
                                 nomatch_count += 1 # increment count of non-matches
                         
-                        if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
+                        if True: # exclude immediately if potential match count already too low
                             # first check if the selected theorem could even in theory unify with our target
                             tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
                             
@@ -787,7 +797,7 @@ def automate(screen, tl):
                                     elif (not neg and not mpi) or (neg and not mti):
                                         nomatch_count += 1
 
-                                if unification_count > nomatch_count: # only continue if more matches than not
+                                if unification_count > 0: # only continue if more matches than not
                                     # everything checks out, load the theorem into main tableau if not already there
                                     thm_idx = load_theorem(screen, tab, library, filepos, line)
 
@@ -796,6 +806,10 @@ def automate(screen, tl):
                                         success = modus_ponens(screen, tab, thm_idx, tidx, False, True) # backwards modus ponens
                                     elif (neg and mt):
                                         success = modus_tollens(screen, tab, thm_idx, tidx, False, True) # backwards modus tollens
+
+                                    if success:
+                                        tab.libthms_used[(filepos, line)] = True # mark theorem line as used
+                                        screen.debug("Backwards library reasoning")
 
                             if success:
                                 break
@@ -806,7 +820,7 @@ def automate(screen, tl):
                 # 5b) Forwards library reasoning
                 
                 # get all theorems that won't introduce a new maximal constant
-                libthms = filter_theorems(screen, index, constant_graph, tab.maximal_constants, True)
+                libthms = filter_theorems(screen, tab, index, constant_graph, tab.maximal_constants, True)
 
                 for (title, c, nc, filepos, line, neg) in libthms: # iterate over library theorems
                     implc = c.left # constants used in theorem
@@ -825,7 +839,7 @@ def automate(screen, tl):
                             elif (not neg and not set(implc).issubset(hyp_constants)) or (neg and not set(nimplc).issubset(hyp_constants)):
                                 nomatch_count += 1 # increment count of non-matches
                     
-                    if len(matches) > nomatch_count: # exclude immediately if potential match count already too low
+                    if True: # exclude immediately if potential match count already too low
                         tl, thm_idx = temp_load_theorem(screen, tab, library, filepos, line) # temp. load thm in same tableau as our target
                         
                         temp_hyps = tl.tlist1.data # hypothesis list from tl
@@ -842,7 +856,7 @@ def automate(screen, tl):
                             elif (not neg and not mpi) or (neg and not mti):
                                 nomatch_count += 1
 
-                        if len(unifications) > nomatch_count: # only continue if more matches than not
+                        if unifications: # only continue if more matches than not
                             # everything checks out, load the theorem into main tableau if not already there
                             thm_idx = load_theorem(screen, tab, library, filepos, line)
                             (hidx, mp, mt) = unifications[0] # first unification
@@ -852,6 +866,10 @@ def automate(screen, tl):
                                 success = modus_ponens(screen, tab, thm_idx, hidx, True, True) # forwards modus ponens
                             elif (neg and mt):
                                 success = modus_tollens(screen, tab, thm_idx, hidx, True, True) # forwards modus tollens
+
+                            if success:
+                                tab.libthms_used[(filepos, line)] = True # mark theorem line as used
+                                screen.debug("Forwards library reasoning")
 
                     if success:
                         break
@@ -878,6 +896,7 @@ def automate(screen, tl):
                         expansion(screen, tab, defn_idx, tidx, False, level)
 
                         success = True
+                        screen.debug("Expand target")
                         break
 
                 if success:
@@ -903,6 +922,7 @@ def automate(screen, tl):
                             expansion(screen, tab, defn_idx, hidx, True, level)
 
                             success = True
+                            screen.debug("Expand hypothesis ")
                             break
                     if success:
                         break
