@@ -431,7 +431,7 @@ def expansion(screen, tl, ttree, defn_idx, idx, is_hyp, level=None):
             (tree, parent, pos) = unprocessed.pop()
             
             if level == None or level == current_level: # check this level       
-                unifies, assign, macros = unify(screen, tl, left, tree, bidirn=is_hyp)
+                unifies, assign, macros = unify(screen, tl, left, tree, bidirn=False)
                 unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
                 
                 if unifies:
@@ -450,7 +450,7 @@ def expansion(screen, tl, ttree, defn_idx, idx, is_hyp, level=None):
                             if pos == -1:
                                 parent.left = tree
                             elif pos == -2:
-                                parent.right == tree
+                                parent.right = tree
                             else:
                                 parent.args[pos] = tree
 
