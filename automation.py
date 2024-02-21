@@ -363,7 +363,7 @@ def insert_sort(screen, L, dat):
 
         L.insert(lo, dat)
      
-def update_autotab(screen, atab, dirty1, dirty2, interface, depth, defn=False, special=False):
+def update_autotab(screen, atab, dirty1, dirty2, interface, depth, defn=False, special=False, library=False):
     """
     Given an AutoTab data structure and a list of modified/added hypotheses
     (dirty1) and a list of modified/added targets (dirty2), update the data
@@ -409,6 +409,9 @@ def update_autotab(screen, atab, dirty1, dirty2, interface, depth, defn=False, s
             m2 = metavars_used(v.right)
             mv = filter(lambda x : x not in m1, m2)
             nmv = filter(lambda x : x not in m2, m1)
+
+            if library:
+                dat.active = False
 
             dat.mv_inc = len(list(mv))
             dat.nmv_inv = len(list(nmv))
@@ -745,12 +748,12 @@ def filter_implications1(screen, atab, impls, consts):
         var1 = metavars_used(imp.left)
         var2 = metavars_used(imp.right)
                     
-        if set(impl.const2).issubset(consts): # may match given consts
+        if set(impl.const2).issubset(consts) and impl.rtol: # may match given consts
             if set(impl.const1).issubset(impl.const2) or not set(impl.const2).issubset(impl.const1):
                 if set(var1).issubset(var2):
                     impl_list.append((impl, True, False))
 
-        if set(impl.nconst1).issubset(consts): # may match given consts
+        if set(impl.nconst1).issubset(consts) and impl.ltor: # may match given consts
             if set(impl.nconst2).issubset(impl.nconst1) or not set(impl.nconst1).issubset(impl.nconst2):
                 if set(var2).issubset(var1):
                     impl_list.append((impl, False, True))
@@ -766,19 +769,24 @@ def filter_implications2(screen, atab, impls, consts):
 
     for impl in impls:
         imp = atab.tl.tlist1.data[impl.line]
+        pos = False
+        neg = False
 
         var1 = metavars_used(imp.left)
         var2 = metavars_used(imp.right)
                     
-        if set(impl.const1).issubset(consts): # may match given consts
+        if set(impl.const1).issubset(consts) and impl.ltor: # may match given consts
             if set(impl.const2).issubset(impl.const1) or not set(impl.const1).issubset(impl.const2):
                 if set(var2).issubset(var1):
-                    impl_list.append((impl, True, False))
+                    pos = True
 
-        if set(impl.nconst2).issubset(consts): # may match given consts
+        if set(impl.nconst2).issubset(consts) and impl.rtol: # may match given consts
             if set(impl.nconst1).issubset(impl.nconst2) or not set(impl.nconst2).issubset(impl.nconst1):
                 if set(var1).issubset(var2):
-                    impl_list.append((impl, False, True))
+                    neg = True
+        
+        if pos or neg:
+            impl_list.append((impl, pos, neg))
 
     return impl_list
 
@@ -1065,7 +1073,7 @@ def temp_load_theorem(screen, atab, filepos, line):
 
     return temp_tl
 
-def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, check_mv=True):
+def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, mv_check=True):
     """
     Given a filepos and line of a library result, check whether it applies to
     target with index line2 in the tableau. The return result is a triple
@@ -1085,15 +1093,14 @@ def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, r
         tnode = get_autonode(screen, atab.hyp_impls, line) # get the autonode for the theorem
 
         if tnode and line2 not in tnode.applied2: # check we haven't already applied this theorem to this head
-            tnode.applied2.append(line2) # mark it as applied
             thm = tlist1[line] # theorem we are applying
             thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
 
-            if check_mv:
+            if mv_check:
                 mv1 = metavars_used(thm.left)
                 mv2 = metavars_used(thm.right)
-                pos = pos and set(mv2).issubset(mv1)
-                neg = neg and set(mv1).issubset(mv2)
+                pos = pos and set(mv1).issubset(mv2)
+                neg = neg and set(mv2).issubset(mv1)
                 
             if isinstance(thm, ImpliesNode): # reasoning
                 thm, _ = relabel(screen, tl, univs, thm, True)
@@ -1117,7 +1124,7 @@ def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, r
         thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
         thm, _ = relabel(screen, temp_tl, univs, thm, True)
 
-        if check_mv:
+        if mv_check:
             mv1 = metavars_used(thm.left)
             mv2 = metavars_used(thm.right)
             pos = pos and set(mv2).issubset(mv1)
@@ -1206,51 +1213,52 @@ def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos,
     tlist2 = atab.tl.tlist2.data
               
     if filepos in atab.libthms_loaded: # check if already loaded in tableau
-        temp_tl = None
+        temp_tl = atab.tl
+        line += atab.libthms_loaded[filepos]
     else:
         temp_tl = temp_load_theorem(screen, atab, filepos, line)
 
-        thm = temp_tl.tlist1.data[line] # line of interest in theorem in temporary tableau
-        thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+    thm = temp_tl.tlist1.data[line] # line of interest in theorem in temporary tableau
+    thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
 
-        if isinstance(thm, ImpliesNode):
-            if mv_check:
-                m1 = metavars_used(thm.left)
-                m2 = metavars_used(thm.right)
-                mv = filter(lambda x : x not in m1, m2)
-                nmv = filter(lambda x : x not in m2, m1)
-                mv_inc = len(list(mv))
-                nmv_inc = len(list(nmv))
+    if isinstance(thm, ImpliesNode):
+        if mv_check:
+            m1 = metavars_used(thm.left)
+            m2 = metavars_used(thm.right)
+            mv = filter(lambda x : x not in m1, m2)
+            nmv = filter(lambda x : x not in m2, m1)
+            mv_inc = len(list(mv))
+            nmv_inc = len(list(nmv))
 
-                prec, u = unquantify(screen, thm.left, True)
-                if not isinstance(prec, AndNode) and (not mv_check or mv_inc == 0):
-                    # check if precedent unifies with hyp
-                    if var_check:
-                        v1 = vars_used(screen, atab.tl, prec)
-                        v2 = vars_used(screen, atab.tl, tlist1[line2])
-                    
-                    if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
-                        if pos:
-                            unifies1, assign, macros = unify(screen, temp_tl, prec, tlist1[line2])
-                        if neg and not unifies1:
-                            prec, u = unquantify(screen, thm.right, False)
-                            if not isinstance(prec, AndNode) and (not mv_check or nmv_inc == 0):
-                                # check if precedent unifies with hyp
-                                if var_check:
-                                    v1 = vars_used(screen, atab.tl, prec)
-                                    v2 = vars_used(screen, atab.tl, tlist1[line2])
-                                        
-                                if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
-                                    unifies2, assign, macros = unify(screen, temp_tl, complement_tree(prec), tlist1[line2])
-        elif rewrite and isinstance(thm, EqNode):
-            temp_tlist1 = temp_tl.tlist1.data
-            temp_tlist1.append(tlist1[line2])
-            n = len(temp_tlist1) - 1
-            unifies3, _, _ = logic.limited_equality_substitution(screen, temp_tl, atab.ttree, None, line, n, True, True)
-            del temp_tlist1[n]
+        prec, u = unquantify(screen, thm.left, True)
+        if not isinstance(prec, AndNode) and (not mv_check or mv_inc == 0):
+            # check if precedent unifies with hyp
+            if var_check:
+                v1 = vars_used(screen, atab.tl, prec)
+                v2 = vars_used(screen, atab.tl, tlist1[line2])
+            
+            if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
+                if pos:
+                    unifies1, assign, macros = unify(screen, temp_tl, prec, tlist1[line2])
+                if neg and not unifies1:
+                    prec, u = unquantify(screen, thm.right, False)
+                    if not isinstance(prec, AndNode) and (not mv_check or nmv_inc == 0):
+                        # check if precedent unifies with hyp
+                        if var_check:
+                            v1 = vars_used(screen, atab.tl, prec)
+                            v2 = vars_used(screen, atab.tl, tlist1[line2])
+                                
+                        if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
+                            unifies2, assign, macros = unify(screen, temp_tl, complement_tree(prec), tlist1[line2])
+    elif rewrite and isinstance(thm, EqNode):
+        temp_tlist1 = temp_tl.tlist1.data
+        temp_tlist1.append(tlist1[line2])
+        n = len(temp_tlist1) - 1
+        unifies3, _, _ = logic.limited_equality_substitution(screen, temp_tl, atab.ttree, None, line, n, True, True)
+        del temp_tlist1[n]
 
-        if not unifies1 and not unifies2 and not unifies3:
-            sorts_rollback(screen, atab.tl) # restore sort graph if temporary tableau was loaded
+    if not unifies1 and not unifies2 and not unifies3:
+        sorts_rollback(screen, atab.tl) # restore sort graph if temporary tableau was loaded
 
     return unifies1, unifies2, unifies3, temp_tl, line
 
@@ -1269,13 +1277,19 @@ def apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, is_h
     if not dep: # not target compatible
         return False, None, None
     else: # target compatible
+        success = False
+        
         if unifies1: # modus ponens
-           return logic.modus_ponens(screen, atab.tl, atab.ttree, dep, line1, [line2], is_hyp)
-        elif unifies2: # modus tollens
-            return logic.modus_tollens(screen, atab.tl, atab.ttree, dep, line1, [line2], is_hyp)
-        elif unifies3: # rewriting
-            return logic.limited_equality_substitution(screen, atab.tl, atab.ttree, dep, line1, line2, is_hyp, False)
-                                        
+           success, dirty1, dirty2 = logic.modus_ponens(screen, atab.tl, atab.ttree, dep, line1, [line2], is_hyp)
+            
+        if not success and unifies2: # modus tollens
+            success, dirty1, dirty2 = logic.modus_tollens(screen, atab.tl, atab.ttree, dep, line1, [line2], is_hyp)
+            
+        if not success and unifies3: # rewriting
+            success, dirty1, dirty2 = logic.limited_equality_substitution(screen, atab.tl, atab.ttree, dep, line1, line2, is_hyp, False)
+    
+        return success, dirty1, dirty2
+
 def check_done(screen, atab, interface):
     dirty1, dirty2, done, plist = check_targets_proved(screen, atab.tl, atab.ttree, atab.start1, atab.start2)
 
@@ -1471,7 +1485,7 @@ def automate(screen, tl, ttree, interface='curses'):
 
                 if line2 not in impl.applied2: # check we didn't already apply this impl to this target
                     impl.applied2.append(line2) # mark impl as applied to our target
-
+                        
                     n1 = len(tlist1) # any lines added after these are new
                     n2 = len(tlist2)
 
@@ -1603,12 +1617,12 @@ def automate(screen, tl, ttree, interface='curses'):
                 if unifies1 or unifies2:
                     dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
-                    update_autotab(screen, atab, dirty1, dirty2, interface, 0, False) # update autotab with new lines
+                    update_autotab(screen, atab, dirty1, dirty2, interface, 0, False, library=True) # update autotab with new lines
 
                     thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                     if tar.line not in thmnode.applied2: # check we haven't applied it before
                         thmnode.applied2.append(tar.line) # mark theorem as applied to our target
-
+                        
                         n1 = len(tl.tlist1.data) # any lines added after these are new
                         n2 = len(tl.tlist2.data)
 
@@ -1677,7 +1691,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     # transfer library result to tableau
                     dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
-                    update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, False)
+                    update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, False, library=True)
 
                     if line1 not in head.applied: # check we didn't already apply this impl to this head
                         head.applied.append(line1) # mark head as applied with our impl
@@ -1687,7 +1701,7 @@ def automate(screen, tl, ttree, interface='curses'):
                         success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
 
                         if success:
-                            depth = max(head.depth, impl.depth) + 1
+                            depth = head.depth + 1
 
                             update_autotab(screen, atab, dirty1, dirty2, interface, depth, False)
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
@@ -1711,7 +1725,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                     library.close()
                                     return True
 
-                                screen.debug("Forwards non-library reasoning")
+                                screen.debug("Forwards library reasoning")
 
                             if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                 library.close()
@@ -1742,17 +1756,18 @@ def automate(screen, tl, ttree, interface='curses'):
                 if unifies1 or unifies2 or unifies3:
                     dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
-                    update_autotab(screen, atab, dirty1, dirty2, interface, 0, True) # update autotab with new lines
+                    update_autotab(screen, atab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
 
                     thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
+                    
                     if tar.line not in thmnode.applied2: # check we haven't applied it before
                         thmnode.applied2.append(tar.line) # mark theorem as applied to our target
-
+                        
                         n1 = len(tl.tlist1.data) # any lines added after these are new
                         n2 = len(tl.tlist2.data)
 
                         success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, False)
-
+                        
                         if success:
                             update_autotab(screen, atab, dirty1, dirty2, interface, 0, False)
                             dirty1, dirty2 = autocleanup(screen, tl, ttree)
@@ -1808,7 +1823,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     # transfer library result to tableau
                     dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
-                    update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, True)
+                    update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
 
                     if line1 not in head.applied: # check we didn't already apply this impl to this head
                         head.applied.append(line1) # mark head as applied with our impl
