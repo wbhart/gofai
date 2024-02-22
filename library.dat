@@ -718,8 +718,8 @@ Tags: #sets #definition
 S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
 
 Title: Definition of strict set inclusion
-[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\neq']), ('\\iff', ['\\neq', '\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
-[['Set'], [], ('\\iff', ['\\subsetneq'], ['=']), ('\\iff', ['=', '\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
