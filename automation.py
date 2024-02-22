@@ -687,9 +687,6 @@ def filter_theorems2(screen, atab, index, consts, hypc):
     """
     thms = []
     
-    # we allow backwards reasoning if there are no hyp_heads
-    empty = not hypc or not atab.hyp_heads
-    
     for (title, c, nc, filepos, defn) in index:
         if not defn:
             thmlist = c[2]
@@ -707,12 +704,12 @@ def filter_theorems2(screen, atab, index, consts, hypc):
 
                     if set(tc).issubset(consts):
                         if set(tcl).issubset(tc) or not set(tc).issubset(tcl):
-                            if empty or set(tcl).issubset(hypc): # ensure we don't add new constants to hypotheses
+                            if set(tcl).issubset(hypc): # ensure we don't add new constants to hypotheses
                                 thms.append((title, True, False, filepos, line))
 
                     if set(tnc).issubset(consts):
                         if set(tncr).issubset(tnc) or not set(tnc).issubset(tncr):
-                            if empty or set(tncr).issubset(hypc): # ensure we don't add new constants to hypotheses
+                            if set(tncr).issubset(hypc): # ensure we don't add new constants to hypotheses
                                 thms.append((title, False, True, filepos, line))
     return thms
 
@@ -1318,7 +1315,7 @@ def check_done(screen, atab, interface):
             
             atab.hydra = atab.hydras.pop() # get new hydra
             tar = atab.hydra.tars[0]
-    
+            
     update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
     return done
@@ -1410,7 +1407,7 @@ def automate(screen, tl, ttree, interface='curses'):
     
     while True: # keep going until theorem proved or progress stalls
         progress = False # whether progress was made at some level of the waterfall
-
+        
         # get all constants in active hypotheses
         hypc = []
         
@@ -1758,7 +1755,7 @@ def automate(screen, tl, ttree, interface='curses'):
             continue
 
         # 6) Target expansion
-
+        
         for break_rules in False, True: # first try following all the rules used elsewhere, then lift them
 
             for tar in atab.hydra.tars:
@@ -1778,8 +1775,8 @@ def automate(screen, tl, ttree, interface='curses'):
 
                         thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                         
-                        if line1 not in thmnode.applied2: # check we haven't applied it before
-                            thmnode.applied2.append(line1) # mark theorem as applied to our target
+                        if tar.line not in thmnode.applied2: # check we haven't applied it before
+                            thmnode.applied2.append(tar.line) # mark theorem as applied to our target
                             
                             n1 = len(tl.tlist1.data) # any lines added after these are new
                             n2 = len(tl.tlist2.data)
