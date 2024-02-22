@@ -156,6 +156,7 @@ class AutoData:
         self.rtol = True # whether the theorem can be applied right to left
         self.defn = False # whether the theorem is a definition
         self.active = True # whether this node corresponds to a still active hypothesis/target
+        self.special = False # whether this node is a special theorem that is not an implication
 
     def __str__(self):
         return str(self.line)
@@ -667,7 +668,7 @@ def filter_theorems1(screen, index, type_consts, consts, tabc):
                     tcr = thm.right
                     tnc = nthm.right
                     tncl = nthm.left
-
+                    yes = title == 'Extensionality of sets'
                     if set(tconst).issubset(type_consts):
                         if set(tc).issubset(consts):
                             if set(tcr).issubset(tc) or not set(tc).issubset(tcr):
@@ -757,7 +758,7 @@ def filter_implications1(screen, atab, impls, consts):
 
     return impl_list
 
-def filter_implications2(screen, atab, impls, consts):
+def filter_implications2(screen, atab, impls, consts, special=False):
     """
     Given a list of constants and a list of implication nodes, filter out those that
     could apply to a head with the given consts.
@@ -772,14 +773,14 @@ def filter_implications2(screen, atab, impls, consts):
         var1 = metavars_used(imp.left)
         var2 = metavars_used(imp.right)
                     
-        if set(impl.const1).issubset(consts) and impl.ltor: # may match given consts
-            if set(impl.const2).issubset(impl.const1) or not set(impl.const1).issubset(impl.const2):
-                if set(var2).issubset(var1):
+        if set(impl.const1).issubset(consts) and (special or impl.ltor): # may match given consts
+            if special or set(impl.const2).issubset(impl.const1) or not set(impl.const1).issubset(impl.const2):
+                if special or set(var2).issubset(var1):
                     pos = True
 
-        if set(impl.nconst2).issubset(consts) and impl.rtol: # may match given consts
-            if set(impl.nconst1).issubset(impl.nconst2) or not set(impl.nconst2).issubset(impl.nconst1):
-                if set(var1).issubset(var2):
+        if set(impl.nconst2).issubset(consts) and (special or impl.rtol): # may match given consts
+            if special or set(impl.nconst1).issubset(impl.nconst2) or not set(impl.nconst2).issubset(impl.nconst1):
+                if special or set(var1).issubset(var2):
                     neg = True
         
         if pos or neg:
@@ -788,7 +789,7 @@ def filter_implications2(screen, atab, impls, consts):
     return impl_list
 
 
-def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=True):
+def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=False):
     """
     Given a library index, filter out theorems all of whose precedents
     contain only constants in the given list and whose type constants
@@ -811,7 +812,7 @@ def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=
                     tcr = thm.right
                     tnc = nthm.right
                     tncl = nthm.left
-
+                    
                     if set(tconst).issubset(type_consts):
                         if isinstance(thm, AutoImplNode) or isinstance(thm, AutoIffNode):
                             if set(tc).issubset(consts) and check_constant_direction(atab, tc, tcr):
@@ -827,7 +828,7 @@ def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=
 
     return thms
 
-def filter_definitions2(screen, atab, index, consts, hypc, library=True):
+def filter_definitions2(screen, atab, index, consts, hypc, library=False):
     """
     Given a library index, filter out theorems all of whose consequents
     contain only constants in the given list.
@@ -1250,16 +1251,16 @@ def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos,
             if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
                 if pos and (not mv_check or mv_inc == 0):
                     unifies1, assign, macros = unify(screen, temp_tl, prec, tlist1[line2])
-                if neg and not unifies1:
-                    prec, u = unquantify(screen, thm.right, False)
-                    if not isinstance(prec, AndNode) and (not mv_check or nmv_inc == 0):
-                        # check if precedent unifies with hyp
-                        if var_check:
-                            v1 = vars_used(screen, atab.tl, prec)
-                            v2 = vars_used(screen, atab.tl, tlist1[line2])
-                                
-                        if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
-                            unifies2, assign, macros = unify(screen, temp_tl, complement_tree(prec), tlist1[line2])
+        if neg and not unifies1:
+            prec, u = unquantify(screen, thm.right, False)
+            if not isinstance(prec, AndNode) and (not mv_check or nmv_inc == 0):
+                # check if precedent unifies with hyp
+                if var_check:
+                    v1 = vars_used(screen, atab.tl, prec)
+                    v2 = vars_used(screen, atab.tl, tlist1[line2])
+                        
+                if not var_check or v1 or v2: # ensure not applying metavar thm to metavar head
+                    unifies2, assign, macros = unify(screen, temp_tl, complement_tree(prec), tlist1[line2])
     elif rewrite and isinstance(thm, EqNode):
         temp_tlist1 = temp_tl.tlist1.data
         temp_tlist1.append(tlist1[line2])
@@ -1555,13 +1556,13 @@ def automate(screen, tl, ttree, interface='curses'):
                     insert_sort(screen, impls, v)
 
             for v in atab.hyp_heads:
-                if v.active and deps_compatible(screen, atab.tl, atab.ttree, tar.line, v.line):
+                if (v.active or v.special) and deps_compatible(screen, atab.tl, atab.ttree, tar.line, v.line):
                     insert_sort(screen, heads, v)
 
         for head in heads:
             line2 = head.line
 
-            for impl, pos, neg in filter_implications2(screen, atab, impls, head.const1):
+            for impl, pos, neg in filter_implications2(screen, atab, impls, head.const1, special=head.special):
                 line1 = impl.line    
 
                 if line1 not in head.applied: # check we didn't already apply this impl to this head
@@ -1694,7 +1695,7 @@ def automate(screen, tl, ttree, interface='curses'):
 
                 head.filepos_done = filepos
                 head.line_done = line + 1
-
+                
                 unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
                                                                             atab, line2, filepos, line, pos, neg, False)
 
@@ -1833,16 +1834,16 @@ def automate(screen, tl, ttree, interface='curses'):
                 old_title = ''
                 
                 for (title, pos, neg, rewrite, filepos, line) in libthms:
+                    
                     unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
                                                                                 atab, line2, filepos, line, pos, neg, rewrite)
-                    
                     if progress and title != old_title:
                         break
 
                     if unifies1 or unifies2 or unifies3:
                         # transfer library result to tableau
                         dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
-
+                        
                         update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
 
                         if line1 not in head.applied: # check we didn't already apply this impl to this head
