@@ -363,7 +363,7 @@ a*b > 0
 a > 0 \wedge b > 0 \vee a < 0 \wedge b < 0
 
 Title: Value less than or equal to all positive values is nonpositive
-[['Real'], [], (['0', '>', '\\implies', '\\leq'], ['0', '\\leq'])]
+[['Real'], [], (['0', '>', '\\leq'], ['0', '\\leq'])]
 [['Real'], [], (['0', '>'], ['0', '>'])]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
@@ -373,7 +373,7 @@ Tags: #inequalities #iff #\mathbb{R}
 a \leq 0
 
 Title: Value less than all positive values is nonpositive
-[['Real'], [], (['0', '<', '>', '\\implies'], ['0', '\\leq'])]
+[['Real'], [], (['0', '<', '>'], ['0', '\\leq'])]
 [['Real'], [], (['0', '>', '\\geq'], ['0', '>'])]
 Tags: #inequalities #iff #\mathbb{R}
 \forall a \in \mathbb{R} \exists \epsilon \in \mathbb{R}
@@ -612,7 +612,7 @@ Tags: #inequalities #algebra #min #\mathbb{R}
 min(a, b) = a \vee min(a, b) = b
 
 Title: Definition of upper bound
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_upper_bound'], ['\\implies', '\\in', '\\leq'])]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_upper_bound'], ['\\in', '\\leq'])]
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_upper_bound'], ['>', '\\in'])]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall u \in \mathbb{R} \forall x \in \mathbb{R}
@@ -623,7 +623,7 @@ is_upper_bound(S, u)
 x \in S \implies x \leq u
 
 Title: Definition of lower bound
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_lower_bound'], ['\\geq', '\\implies', '\\in'])]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_lower_bound'], ['\\geq', '\\in'])]
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_lower_bound'], ['<', '\\in'])]
 Tags: #inequalities #definition #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall x \in \mathbb{R}
@@ -634,7 +634,7 @@ is_lower_bound(S, l)
 x \in S \implies x \geq l
 
 Title: Definition of bounded
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_bounded'], ['\\geq', '\\implies', '\\in', '\\leq'])]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_bounded'], ['\\geq', '\\in', '\\leq'])]
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_bounded'], ['<', '>', '\\in'])]
 Tags: #inequalities #\mathbb{R}
 \forall S : Set(\mathbb{R}) \forall l \in \mathbb{R} \forall u \in \mathbb{R} \forall x \in \mathbb{R}
@@ -645,7 +645,7 @@ is_bounded(S, l, u)
 x \in S \implies x \leq u \wedge x \geq l
 
 Title: Definition of supremum
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_supremum'], ['Real', '\\implies', '\\leq', 'is_upper_bound'])]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_supremum'], ['Real', '\\leq', 'is_upper_bound'])]
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_supremum'], ['>', 'Real', 'is_upper_bound'])]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall u \in \mathbb{R}
@@ -657,7 +657,7 @@ is_supremum(U, u)
 \forall w \in \mathbb{R} is_upper_bound(U, w) \implies u \leq w
 
 Title: Definition of infimum
-[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_infimum'], ['Real', '\\geq', '\\implies', 'is_lower_bound'])]
+[['Real', 'Set'], [], (['Real', '\\subseteq', 'is_infimum'], ['Real', '\\geq', 'is_lower_bound'])]
 [['Real', 'Set'], [], (['Real', '\\subseteq', 'is_infimum'], ['<', 'Real', 'is_lower_bound'])]
 Tags: #inequalities #definition #\mathbb{R}
 \forall U : Set(\mathbb{R}) \forall l \in \mathbb{R}
@@ -691,7 +691,7 @@ is_lower_bound(U, l)
 \exists v \in \mathbb{R} is_infimum(U, v)
 
 Title: Definition of set inclusion
-[['Set'], [], ('\\iff', ['\\subseteq'], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subseteq'], ['\\in']), ('\\iff', ['\\in'], ['\\subseteq'])]
 [['Set'], [], ('\\iff', ['\\subseteq'], ['\\in']), ('\\iff', ['\\in'], ['\\subseteq'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
@@ -709,7 +709,7 @@ Tags: #sets
 A = B \iff A \subseteq B \wedge B \subseteq A
 
 Title: Extensionality of sets
-[['Set'], [], ('\\iff', ['='], ['\\implies', '\\in']), ('\\iff', ['\\implies', '\\in'], ['='])]
+[['Set'], [], ('\\iff', ['='], ['\\in']), ('\\iff', ['\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
@@ -900,7 +900,7 @@ C \subseteq S \vee C \subseteq T
 C \subseteq S \cup T
 
 Title: Elements of set contained in two sets implies set is subset of their union
-[['Set'], [], (['\\implies', '\\in'], ['\\cup', '\\subseteq'])]
+[['Set'], [], (['\\in'], ['\\cup', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cup', '\\subseteq'])]
 Tags: #sets
 \forall X : Set, \forall C : Set(X), \forall S : Set(X), \forall T : Set(X)
@@ -1014,7 +1014,7 @@ S \subseteq S \cap T
 S \subseteq T
 
 Title: Set included in two others is included in their intersection
-[['Set'], [], (['\\implies', '\\in'], ['\\cap', '\\subseteq'])]
+[['Set'], [], (['\\in'], ['\\cap', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cap', '\\subseteq'])]
 Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall C : Set(X)
@@ -1522,7 +1522,7 @@ Tags: #sets
 {x \in S | x \in T} = S \cap T
 
 Title: Definition of function
-[['->', 'Set'], [], ('\\iff', ['is_function'], ['=', 'Tuple(2)', '\\implies', '\\in']), ('\\iff', ['=', 'Tuple(2)', '\\implies', '\\in', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\implies', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
+[['->', 'Set'], [], ('\\iff', ['is_function'], ['=', 'Tuple(2)', '\\in']), ('\\iff', ['=', 'Tuple(2)', '\\in', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
 [['->', 'Set'], [], ('\\iff', ['is_function'], ['Tuple(2)', '\\in', '\\neq']), ('\\iff', ['Tuple(2)', '\\in', '\\neq', '\\subseteq', '\\times'], ['is_function']), ('\\iff', ['is_function'], ['Tuple(2)', '\\in']), ('\\iff', ['is_function'], ['\\subseteq', '\\times'])]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
@@ -1582,7 +1582,7 @@ is_function(g, B, C)
 is_function(g \circ f, A, C)
 
 Title: Function values of composition
-[['->', 'Set'], [], (['is_function'], ['=', '\\circ', '\\implies', '\\in'])]
+[['->', 'Set'], [], (['is_function'], ['=', '\\circ', '\\in'])]
 [['->', 'Set'], [], (['is_function'], ['\\circ', '\\in', '\\neq'])]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : A \to B, \forall g : B \to C, \forall a \in X
@@ -1593,7 +1593,7 @@ is_function(g, B, C)
 a \in A \implies (g \circ f)(a) = g(f(a))
 
 Title: Functions restrict to subsets
-[['Set'], [], (['\\subseteq', 'is_function'], ['->', '=', '\\implies', '\\in', 'is_function'])]
+[['Set'], [], (['\\subseteq', 'is_function'], ['->', '=', '\\in', 'is_function'])]
 [['Set'], [], (['\\subseteq', 'is_function'], ['->', '\\in', '\\neq', 'is_function'])]
 Tags: #sets #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall C : Set(X), \forall f : B \to C
@@ -1616,8 +1616,8 @@ is_function(h, A, B)
 (f \circ g) \circ h = f \circ (g \circ h)
 
 Title: Definition of injective
-[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_injective'])]
-[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_injective'])]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\in', 'is_injective'])]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\in', 'is_injective'])]
 Tags: #functions
 \forall X : Set, \forall A : Set(X), \forall B : Set(X), \forall f : A \to B
 ------------------------------
@@ -1638,8 +1638,8 @@ is_injective(g)
 is_injective(g \circ f)
 
 Title: Definition of surjective
-[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_surjective'])]
-[['Set'], [], (['is_function'], ['=', '\\iff', '\\implies', '\\in', 'is_surjective'])]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\in', 'is_surjective'])]
+[['Set'], [], (['is_function'], ['=', '\\iff', '\\in', 'is_surjective'])]
 Tags: #functions
 \forall X : Set, \forall D : Set(X), \forall C : Set(X), \forall f : D \to C
 ------------------------------

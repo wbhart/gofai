@@ -1465,7 +1465,8 @@ def get_constants(screen, tl, tree, constants_in=[], include_types=True):
           or isinstance(tree, DeadNode) or isinstance(tree, LambdaNode) \
           or isinstance(tree, ForallNode) or isinstance(tree, ExistsNode) \
           or isinstance(tree, Universum) or isinstance(tree, AndNode) \
-          or isinstance(tree, OrNode) or isinstance(tree, NotNode):
+          or isinstance(tree, OrNode) or isinstance(tree, NotNode) \
+          or isinstance(tree, ImpliesNode):
             pass
         elif isinstance(tree, FnApplNode):
             if isinstance(tree.var, VarNode):

@@ -1767,7 +1767,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     
                     unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
                                                                                     atab, line2, filepos, line, pos, neg, rewrite)
-
+                    
                     if unifies1 or unifies2 or unifies3:
                         dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
 
