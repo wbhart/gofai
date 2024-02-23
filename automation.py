@@ -861,8 +861,8 @@ def filter_definitions2(screen, atab, index, consts, hypc, library=False):
                             if library or empty or set(tncr).issubset(hypc): # ensure we don't add new constants to hypotheses
                                 thms.append((title, False, True, False, filepos, line))
                     else: # AutoEqNode
-                        if set(tc).issubset(consts) and check_constant_direction(atab, tc, tcl):
-                            if library or empty or set(tcl).issubset(hypc):
+                        if set(tcl).issubset(consts) and check_constant_direction(atab, tcl, tc):
+                            if library or empty or set(tc).issubset(hypc):
                                 thms.append((title, False, False, True, filepos, line))                
     return thms
 
@@ -1823,7 +1823,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 head.line_done = line + 1
                 
                 unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
-                                                                            atab, line2, filepos, line, pos, neg, False)
+                                                            atab, line2, filepos, line, pos, neg, False)
 
                 if unifies1 or unifies2:
                     # transfer library result to tableau
@@ -1889,7 +1889,6 @@ def automate(screen, tl, ttree, interface='curses'):
                 libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=break_rules)
 
                 for (title, pos, neg, rewrite, filepos, line) in libthms:
-                    
                     # check to see if thm already loaded
                     line2 = tar.line
                     
@@ -1961,7 +1960,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 for (title, pos, neg, rewrite, filepos, line) in libthms:
                     
                     unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
-                                                                atab, line2, filepos, line, pos, neg, rewrite, defn=True)
+                                                atab, line2, filepos, line, pos, neg, rewrite, mv_check=not break_rules, defn=True)
 
                     if unifies1 or unifies2 or unifies3:
                         # transfer library result to tableau
