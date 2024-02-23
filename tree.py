@@ -47,6 +47,7 @@ class TreeList:
         self.sorts_record = [] # list of sort records to roll back (pop)
         self.unification_count = [] # used by incremental completion checking
         self.unifications = [] # used by incremental completion checking
+        self.defn = [] # used to keep track of definitions that shouldn't be expanded further
         
     def switch_list(self):
         if self.focus == self.tlist0:

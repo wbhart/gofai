@@ -700,9 +700,9 @@ Tags: #sets #definition
 A \subseteq B \iff (\forall x \in X x \in A \implies x \in B)
 
 Title: Sets are equal iff they include one another
-[['Set'], [], ('\\iff', ['='], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['=']), ('\\iff', ['='], ['\\subseteq'])]
-[['Set'], [], ('\\iff', ['\\neq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\neq']), ('\\iff', ['\\neq'], ['\\subseteq'])]
-Tags: #sets
+[['Set'], [], ('\\iff', ['='], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['='])]
+[['Set'], [], ('\\iff', ['\\neq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\neq'])]
+Tags: #sets #definition
 \forall X : Set, \forall A : Set(X) \forall B : Set(X)
 ------------------------------
 ------------------------------
@@ -711,15 +711,15 @@ A = B \iff A \subseteq B \wedge B \subseteq A
 Title: Extensionality of sets
 [['Set'], [], ('\\iff', ['='], ['\\in']), ('\\iff', ['\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
-Tags: #sets #definition
+Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall T : Set(X)
 ------------------------------
 ------------------------------
 S = T \iff (\forall x \in X (x \in S \implies x \in T) \wedge (x \in T \implies x \in S))
 
 Title: Definition of strict set inclusion
-[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
-[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq']), ('\\iff', ['\\subsetneq'], ['\\subseteq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq'])]
+[['Set'], [], ('\\iff', ['\\subsetneq'], ['\\subseteq']), ('\\iff', ['\\subseteq'], ['\\subsetneq'])]
 Tags: #sets #definition
 \forall X : Set, \forall A : Set(X), \forall B : Set(X)
 ------------------------------
@@ -948,8 +948,8 @@ S \cup T = \emptyset(X)
 S = \emptyset(X) \wedge T = \emptyset(X)
 
 Title: Definition of set intersection
-[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in']), ('\\iff', ['\\cap', '\\in'], ['\\in'])]
-[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in']), ('\\iff', ['\\cap', '\\in'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in'])]
+[['Set'], [], ('\\iff', ['\\cap', '\\in'], ['\\in']), ('\\iff', ['\\in'], ['\\cap', '\\in'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X
 ------------------------------
@@ -1052,6 +1052,15 @@ Tags: #sets
 ------------------------------
 S \cup (T \cap U) = S \cup T \cap (S \cup U)
 
+Title: Equality of pairs
+[['Set'], [], ('\\iff', ['=', 'Tuple(2)'], ['=']), ('\\iff', ['='], ['=', 'Tuple(2)'])]
+[['Set'], [], ('\\iff', ['Tuple(2)', '\\neq'], ['\\neq']), ('\\iff', ['\\neq'], ['Tuple(2)', '\\neq'])]
+Tags: #sets #definition
+\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X, \forall c \in X, \forall d \in X
+------------------------------
+------------------------------
+(a, b) = (c, d) \iff a = c \wedge b = d
+
 Title: Components of pair
 [['Set'], [], (['=', 'Tuple(2)'], ['0', '1', '=', '[]'])]
 [['Set'], [], (['Tuple(2)', '\\neq'], ['0', '1', '[]', '\\neq'])]
@@ -1061,18 +1070,9 @@ Tags: #sets
 ------------------------------
 x = (c, d) \implies x[0] = c \wedge x[1] = d
 
-Title: Equality of pairs
-[['Set'], [], ('\\iff', ['=', 'Tuple(2)'], ['=']), ('\\iff', ['='], ['=', 'Tuple(2)']), ('\\iff', ['=', 'Tuple(2)'], ['='])]
-[['Set'], [], ('\\iff', ['Tuple(2)', '\\neq'], ['\\neq']), ('\\iff', ['\\neq'], ['Tuple(2)', '\\neq']), ('\\iff', ['Tuple(2)', '\\neq'], ['\\neq'])]
-Tags: #sets #definition
-\forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall a \in X, \forall b \in X, \forall c \in X, \forall d \in X
-------------------------------
-------------------------------
-(a, b) = (c, d) \iff a = c \wedge b = d
-
 Title: Definition of pair
-[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['=', 'Tuple(2)'])]
-[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['1', '[]', '\\in']), ('\\iff', ['0', '1', 'Tuple(2)', '[]', '\\in', '\\neq'], ['is_pair']), ('\\iff', ['is_pair'], ['0', '[]', '\\in']), ('\\iff', ['is_pair'], ['Tuple(2)', '\\neq'])]
+[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['0', '1', '=', 'Tuple(2)', '[]', '\\in']), ('\\iff', ['0', '1', '=', 'Tuple(2)', '[]', '\\in'], ['is_pair'])]
+[['Set', '\\times'], [], ('\\iff', ['is_pair'], ['0', '1', 'Tuple(2)', '[]', '\\in', '\\neq']), ('\\iff', ['0', '1', 'Tuple(2)', '[]', '\\in', '\\neq'], ['is_pair'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall T : Set(X), \forall x \in X \times X
 ------------------------------
@@ -1275,8 +1275,8 @@ Tags: #sets
 \mathcal{P}(S) \cup \mathcal{P}(T) \subseteq \mathcal{P}(S \cup T)
 
 Title: Definition of complement
-[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement']), ('\\iff', ['\\in', 'complement'], ['\\in'])]
-[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement']), ('\\iff', ['\\in', 'complement'], ['\\in'])]
+[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement'])]
+[['Set'], [], ('\\iff', ['\\in', 'complement'], ['\\in']), ('\\iff', ['\\in'], ['\\in', 'complement'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
@@ -1504,8 +1504,8 @@ B \setminus C \subseteq A
 B \setminus A \subseteq C
 
 Title: Definition of set builder
-[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}']), ('\\iff', ['\\in', '{|}'], [])]
-[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}']), ('\\iff', ['\\in', '{|}'], [])]
+[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}'])]
+[['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}'])]
 Tags: #sets #definition
 \forall X : Set, \forall S : Set(X), \forall x \in X, \forall P : Pred
 ------------------------------

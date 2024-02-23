@@ -2,13 +2,13 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
      TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
      append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
      vars_used, max_type_size, complement_tree, sorts_mark, sorts_rollback, is_equality, \
-     target_depends, get_constants_qz, find_hydras
+     target_depends, get_constants_qz, find_hydras, replace_tree, record_move
 from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
      SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, SubsetneqNode, LeafNode, \
-     LRNode, TupleNode
+     LRNode, TupleNode, ExistsNode, OrNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy, copy
@@ -788,10 +788,9 @@ def filter_implications2(screen, atab, impls, consts, special=False):
 
     return impl_list
 
-
 def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=False):
     """
-    Given a library index, filter out theorems all of whose precedents
+    Given a library index, filter out definitions all of whose precedents
     contain only constants in the given list and whose type constants
     are all contained in the given list.
     """
@@ -830,7 +829,7 @@ def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=
 
 def filter_definitions2(screen, atab, index, consts, hypc, library=False):
     """
-    Given a library index, filter out theorems all of whose consequents
+    Given a library index, filter out definition all of whose consequents
     contain only constants in the given list.
     """
     thms = []
@@ -867,8 +866,39 @@ def filter_definitions2(screen, atab, index, consts, hypc, library=False):
                                 thms.append((title, False, False, True, filepos, line))                
     return thms
 
-def autocleanup(screen, tl, ttree):
-    dirty1, dirty2 = logic.cleanup(screen, tl, ttree)
+def filter_definitions3(screen, atab, index, type_consts, const1, const2, tabc):
+    """
+    Given a library index, filter out definitions all of whose precedents
+    contain only constants in one of the given lists (the second list may
+    optionally be None) and whose type constants are all contained in the
+    given list.
+    """
+    thms = []
+
+    for (title, c, nc, filepos, defn) in index:
+        if defn:
+            thmlist = c[2]
+            nthmlist = nc[2]
+            tconst = c[0]
+
+            for line in range(len(thmlist)):
+                thm = thmlist[line]
+                nthm = nthmlist[line]
+
+                if isinstance(thm, AutoIffNode):
+                    tc = thm.left
+                    tcr = thm.right
+                    
+                    if set(tconst).issubset(type_consts):
+                        set_tc = set(tc)
+                        if set_tc.issubset(const1) or const2 == None or set_tc.issubset(const2):
+                            if set(tcr).issubset(tabc):
+                                thms.append((title, filepos, line))
+
+    return thms
+
+def autocleanup(screen, tl, ttree, defn=False):
+    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn)
     logic.fill_macros(screen, tl)
     ok, error = update_constraints(screen, tl)
     if ok:
@@ -1048,9 +1078,9 @@ def check_type_sizes(screen, tl, atab, n1, n2, interface):
     update_screen(screen, tl, interface, dirty1, dirty2)
     return nooversize_found
 
-def load_theorem(screen, atab, temp_tl, filepos, line):
+def load_theorem(screen, atab, temp_tl, filepos, line, defn=False):
     """
-    Given a tableau and line where the theorem exist, copy the theorem into
+    Given a tableau and line where the theorem exists, copy the theorem into
     the main tableau if not already there and return the line where it is
     loaded.
     """
@@ -1068,23 +1098,25 @@ def load_theorem(screen, atab, temp_tl, filepos, line):
             append_quantifiers(atab.tl.tlist0.data, temp_tlist0[0])
         for k in range(len(temp_tlist1)):
             append_tree(tlist1, temp_tlist1[k], dirty1)
+            if defn:
+                atab.tl.defn.append(len(tlist1) - 1)
         atab.libthms_loaded[filepos] = j # mark theorem as loaded
         atab.tl.vars = temp_tl.vars # update vars in main tableau
         atab.tl.stree = temp_tl.stree # update sort graph in main tableau
             
     return dirty1, dirty2, line
 
-def temp_load_theorem(screen, atab, filepos, line):
+def temp_load_theorem(screen, atab, filepos, line, defn=False):
     temp_tl = TreeList() # create a temporary tableau
     temp_tl.vars = deepcopy(atab.tl.vars) # copy variable subscript record from tl
     temp_tl.stree = atab.tl.stree # copy sort tree from tl
     sorts_mark(screen, atab.tl) # allow rollback of sort graph
     logic.library_import(screen, temp_tl, atab.library, filepos) # load the theorem into temporary tableau
-    autocleanup(screen, temp_tl, TargetNode(-1, [])) # expand theorem into tableau with temporary target tree
+    autocleanup(screen, temp_tl, TargetNode(-1, []), defn) # expand theorem into tableau with temporary target tree
 
     return temp_tl
 
-def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, mv_check=True):
+def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, defn=False):
     """
     Given a filepos and line of a library result, check whether it applies to
     target with index line2 in the tableau. The return result is a triple
@@ -1129,7 +1161,7 @@ def backwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, r
                 unifies3, _, _ = logic.limited_equality_substitution(screen, atab.tl, atab.ttree, None, \
                                                                 line, line2, False, True) # check rewriting
     else: # library theorem not yet loaded, load into temporary tableau
-        temp_tl = temp_load_theorem(screen, atab, filepos, line)
+        temp_tl = temp_load_theorem(screen, atab, filepos, line, defn)
 
         thm = temp_tl.tlist1.data[line] # line of interest in theorem in temporary tableau
         thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
@@ -1215,7 +1247,7 @@ def forwards_reasoning_possible(screen, atab, imp, hyp, pos, neg, rewrite, mv_ch
 
     return unifies1, unifies2, unifies3
 
-def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, var_check=True):
+def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, var_check=True, defn=False):
     unifies1 = False
     unifies2 = False
     unifies3 = False
@@ -1227,7 +1259,7 @@ def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos,
         temp_tl = atab.tl
         line += atab.libthms_loaded[filepos]
     else:
-        temp_tl = temp_load_theorem(screen, atab, filepos, line)
+        temp_tl = temp_load_theorem(screen, atab, filepos, line, defn)
 
     thm = temp_tl.tlist1.data[line] # line of interest in theorem in temporary tableau
     thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
@@ -1272,6 +1304,37 @@ def library_forwards_reasoning_possible(screen, atab, line2, filepos, line, pos,
         sorts_rollback(screen, atab.tl) # restore sort graph if temporary tableau was loaded
 
     return unifies1, unifies2, unifies3, temp_tl, line
+
+def atomic_rewrite_possible(screen, atab, atomic, filepos, line):
+    filtered_atomic = [] # implications that can be rewritten
+    
+    if filepos in atab.libthms_loaded: # check if already loaded in tableau
+        temp_tl = atab.tl
+        line += atab.libthms_loaded[filepos]
+    else:
+        temp_tl = temp_load_theorem(screen, atab, filepos, line, True)
+
+    thm = temp_tl.tlist1.data[line] # line of interest in theorem in temporary tableau
+    thm, univs = unquantify(screen, thm, False) # remove quantifiers by taking temporary metavars
+    
+    if isinstance(thm, ImpliesNode) and not isinstance(thm.right, ExistsNode) and \
+                                                            not isinstance(thm.right, ForallNode):
+        prec, u = unquantify(screen, thm.left, True)
+        
+        if not isinstance(prec, AndNode):
+            for parent, n in atomic:
+                tree = parent.left if n == 1 else parent.right
+
+                if vars_used(screen, atab.tl, tree): # ensure not applying metavar thm to metavar head
+                    unifies, assign, macros = unify(screen, temp_tl, prec, tree)
+                 
+                    if unifies:
+                        filtered_atomic.append((parent, n))
+
+    if not filtered_atomic:
+        sorts_rollback(screen, atab.tl) # restore sort graph if temporary tableau was loaded
+
+    return filtered_atomic, temp_tl, line
 
 def apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, is_hyp):
     """
@@ -1384,6 +1447,69 @@ def hydra_split(screen, atab, tar, n2):
 
         atab.hydras.append(hnode)
         atab.hydra_idx += 1
+
+def find_atomic_predicates(screen, tree):
+    """
+    Given a parse tree representing a predicate, find a list of pairs (p, n)
+    where p is a node such that position n (1 = left or 2 = right) is an atomic
+    predicate. If tree is itself an atomic predicate, [] is returned.
+    """
+    pred_list = []
+
+    def find(tree):
+        if tree == None:
+            return False
+
+        if isinstance(tree, ForallNode) or isinstance(tree, ExistsNode):
+            find(tree.left)
+            return False
+
+        if not isinstance(tree, NotNode) and not isinstance(tree, ImpliesNode) and \
+           not isinstance(tree, AndNode) and not isinstance(tree, OrNode):
+            return True
+
+        if find(tree.left):
+            pred_list.append((tree, 1))
+
+        if find(tree.right):
+            pred_list.append((tree, 2))
+
+        return False
+
+    find(tree)
+    return pred_list
+
+def apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, len1, line1, line2):
+    """
+    Given the right implication of an iff statement on line1 of the tableau, rewrite
+    the expression parent.left if n == 1 or parent.right if n == 2, parent being the
+    parent of the atomic predicate being rewritten, which is part of line2 in the
+    tableau. The resulting expression will be placed on line len1 of the tableau.
+    """
+    tlist1 = atab.tl.tlist1.data
+    
+    subst = tlist1[line1]
+    subst, univs = unquantify(screen, subst, True)
+    prec = subst.left
+
+    tree = deepcopy(parent.left) if n == 1 else deepcopy(parent.right) # make copy of tree being replaced
+    dep = atab.tl.tlist1.dependency(line2)
+     
+    unifies, assign, macros = unify(screen, atab.tl, prec, tree)
+    rewrite = substitute(subst.right, assign) # compute the rewritten expression
+
+    # replace atomic predicate by rewrite
+    if n == 1:
+        parent.left = rewrite 
+    else:
+        parent.right = rewrite
+
+    if len1 == len(tlist1): # we are appending
+        append_tree(tlist1, deepcopy(tlist1[line2]), dirty1)
+        atab.tl.tlist1.dep[len1] = dep
+        record_move(screen, atab.tl, len1, ('e', line1, [line2]))
+    else:
+        replace_tree(tlist1, len1, deepcopy(tlist1[line2]), dirty1)
 
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
@@ -1623,7 +1749,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 line2 = tar.line
                 
                 unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
-                                                                                atab, line2, filepos, line, pos, neg, False)
+                                                                        atab, line2, filepos, line, pos, neg, False)
 
                 if unifies1 or unifies2:
                     dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
@@ -1763,14 +1889,15 @@ def automate(screen, tl, ttree, interface='curses'):
                 libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=break_rules)
 
                 for (title, pos, neg, rewrite, filepos, line) in libthms:
+                    
                     # check to see if thm already loaded
                     line2 = tar.line
                     
                     unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
-                                                                                    atab, line2, filepos, line, pos, neg, rewrite)
+                                            atab, line2, filepos, line, pos, neg, rewrite, mv_check=not break_rules, defn=True)
                     
                     if unifies1 or unifies2 or unifies3:
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
+                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
 
                         update_autotab(screen, atab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
 
@@ -1830,19 +1957,15 @@ def automate(screen, tl, ttree, interface='curses'):
                 line2 = head.line
 
                 libthms = filter_definitions1(screen, atab, index, ht, head.const1, tabc, library=break_rules)
-
-                old_title = ''
                 
                 for (title, pos, neg, rewrite, filepos, line) in libthms:
                     
                     unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
-                                                                                atab, line2, filepos, line, pos, neg, rewrite)
-                    if progress and title != old_title:
-                        break
+                                                                atab, line2, filepos, line, pos, neg, rewrite, defn=True)
 
                     if unifies1 or unifies2 or unifies3:
                         # transfer library result to tableau
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line)
+                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
                         
                         update_autotab(screen, atab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
 
@@ -1871,8 +1994,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                     hydra_add_heads(screen, atab, n1) # add new heads to hydra
                                     
                                     progress = True
-                                    old_title = title
-
+                                    
                                     done = check_done(screen, atab, interface)
                                     
                                     if done:
@@ -1886,11 +2008,160 @@ def automate(screen, tl, ttree, interface='curses'):
                                     automation_limit += automation_increment
                                     return False
 
-                                # we don't break on progress
+                                if progress:
+                                    break
 
                 if progress:
                     break
 
+            if progress:
+                break
+
+        if progress:
+            continue
+
+        # 8) Implication atomic predicate expansion
+
+        for impl in impls:
+            line2 = impl.line
+
+            tree = tlist1[line2]
+            atomic = find_atomic_predicates(screen, tree)
+    
+            if not atomic: # predicates at the top level would already have been expanded
+                continue
+
+            libthms = filter_definitions3(screen, atab, index, ht, impl.const1, impl.const2, tabc)
+
+            for title, filepos, line in libthms:
+                filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
+
+                if filtered_atomic:
+                    # transfer library result to tableau
+                    dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                    
+                    update_autotab(screen, atab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
+
+                    if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
+                        impl.applied.append(line1) # mark as applied
+
+                        n1 = len(tlist1) # any lines added after these are new
+                        dirty1 = []
+                        dirty2 = []
+
+                        tcopy = deepcopy(tree) # we'll replace the original line with this
+                
+                        for parent, n in filtered_atomic:
+                            apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
+
+                            progress = True
+
+                        if progress:
+                            tlist1[line2] = tcopy # switch original impl with copy
+                            atab.hyp_impls.remove(impl) # remove original node from hyp_impls
+
+                            depth = impl.depth + 1
+
+                            update_autotab(screen, atab, dirty1, dirty2, interface, depth, False)
+                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                            update_autotab(screen, atab, dirty1, dirty2, interface, depth, False)
+                            update_screen(screen, tl, interface, dirty1, dirty2)
+
+                            # remove deductions which are duplicates or that have oversize types
+                            c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
+                            c2 = check_type_sizes(screen, tl, atab, n1, len(tlist2), interface)
+
+                            if c1 and c2:
+                                hydra_add_heads(screen, atab, n1) # add new heads to hydra
+                                
+                                done = check_done(screen, atab, interface)
+                                
+                                if done:
+                                    library.close()
+                                    return True
+
+                                screen.debug("Implication atomic predicate expansion")
+
+                            if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                library.close()
+                                automation_limit += automation_increment
+                                return False
+
+                            break
+            if progress:
+                break
+
+        if progress:
+            continue
+
+        # 9) Head atomic predicate expansion
+
+        for head in heads:
+            line2 = head.line
+
+            tree = tlist1[line2]
+            atomic = find_atomic_predicates(screen, tree)
+    
+            if not atomic: # predicates at the top level would already have been expanded
+                continue
+
+            libthms = filter_definitions3(screen, atab, index, ht, head.const1, None, tabc)
+
+            for title, filepos, line in libthms:
+                filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
+
+                if filtered_atomic:
+                    # transfer library result to tableau
+                    dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                    
+                    update_autotab(screen, atab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
+
+                    if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
+                        impl.applied.append(line1) # mark as applied
+
+                        n1 = len(tlist1) # any lines added after these are new
+                        dirty1 = []
+                        dirty2 = []
+
+                        tcopy = deepcopy(tree) # we'll replace the original line with this
+                
+                        for parent, n in filtered_atomic:
+                            apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
+
+                            progress = True
+
+                        if progress:
+                            tlist1[line2] = tcopy # switch original head with copy
+                            atab.hyp_heads.remove(head) # remove original node from hyp_heads
+
+                            depth = head.depth + 1
+
+                            update_autotab(screen, atab, dirty1, dirty2, interface, depth, False)
+                            dirty1, dirty2 = autocleanup(screen, tl, ttree)
+                            update_autotab(screen, atab, dirty1, dirty2, interface, depth, False)
+                            update_screen(screen, tl, interface, dirty1, dirty2)
+
+                            # remove deductions which are duplicates or that have oversize types
+                            c1 = check_duplicates(screen, tl, ttree, n1, len(tlist2), interface)
+                            c2 = check_type_sizes(screen, tl, atab, n1, len(tlist2), interface)
+
+                            if c1 and c2:
+                                hydra_add_heads(screen, atab, n1) # add new heads to hydra
+                                
+                                done = check_done(screen, atab, interface)
+                                
+                                if done:
+                                    library.close()
+                                    return True
+
+                                screen.debug("Predicate atomic predicate expansion")
+
+                            if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                library.close()
+                                automation_limit += automation_increment
+                                return False
+
+                            break
             if progress:
                 break
 

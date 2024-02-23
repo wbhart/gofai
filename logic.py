@@ -446,6 +446,7 @@ def clear_tableau(screen, tl):
     tl.moves = []
     tl.unifications = []
     tl.unification_count = []
+    tl.defn = []
 
 def filter_library(screen, tl, library, tags):
     tags = canonicalise_tags(tags) # deal with constraint shorthands
@@ -715,7 +716,7 @@ def library_export(screen, tl, library, title, tags):
         library.write(repr(tar)+"\n")
     library.write("\n")
 
-def cleanup(screen, tl, ttree):
+def cleanup(screen, tl, ttree, defn=False):
     """
     Automated cleanup moves. This applies numerous moves that the user will
     essentially always want to do. This is applied automatically after every
@@ -868,7 +869,7 @@ def cleanup(screen, tl, ttree):
                     tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                     duplicate_move(screen, tl, n, i)
                     mark_shared(tl1[i], tl1[n])
-                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
+                if not defn and i not in tl.defn and isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].left, OrNode):
                     var1 = metavars_used(tl1[i].left.left)
                     var2 = metavars_used(tl1[i].left.right)
                     var = metavars_used(tl1[i].right)
@@ -889,7 +890,7 @@ def cleanup(screen, tl, ttree):
                                 tl.tlist1.dep[n] = tl.tlist1.dependency(i)
                                 duplicate_move(screen, tl, n, i)
                                 mark_shared(tl1[i], tl1[n])
-                if isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
+                if not defn and i not in tl.defn and isinstance(tl1[i], ImpliesNode) and isinstance(tl1[i].right, AndNode):
                     P = tl1[i].left
                     Q = tl1[i].right.left
                     R = tl1[i].right.right
