@@ -48,7 +48,9 @@ class TreeList:
         self.unification_count = [] # used by incremental completion checking
         self.unifications = [] # used by incremental completion checking
         self.defn = [] # used to keep track of definitions that shouldn't be expanded further
-        
+        self.hyp_tab = [] # used by automation to store the tableau which each hypothesis originated in
+        self.tar_tab = [] # used by automation to store the tableau which each target originated in
+
     def switch_list(self):
         if self.focus == self.tlist0:
             self.focus = self.tlist1

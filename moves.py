@@ -32,7 +32,7 @@ from editor import edit
 from parser import to_ast
 from interface import nchars_to_chars
 
-def annotate_ttree(screen, tl, ttree, hydras, tarmv, start1=0, start2=0):
+def annotate_ttree(screen, tl, ttree, hydras, tarmv, hyp_list, start1=0, start2=0):
     """
     Goes through the target dependency tree, ttree, and annotates each node
     with a list (called unifies) of hypotheses that unify with the associated
@@ -73,7 +73,7 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv, start1=0, start2=0):
                 ttree.unifies = []
             s = start1 if ttree.num < start2 else 0
             for i in range(s, len(tlist1)):
-                if not isinstance(tlist2[ttree.num], DeadNode) and not isinstance(tlist1[i], DeadNode) and \
+                if i in hyp_list and not isinstance(tlist2[ttree.num], DeadNode) and not isinstance(tlist1[i], DeadNode) and \
                        deps_compatible(screen, tl, ttree_full, ttree.num, i):
                     unifies, assign, macros = unify(screen, tl, tlist2[ttree.num], tlist1[i])
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
@@ -88,14 +88,14 @@ def annotate_ttree(screen, tl, ttree, hydras, tarmv, start1=0, start2=0):
                     ttree.unifies.append(-1) # -1 signifies tautology P = P
                     unification_count[ttree.num] += 1
                     unifications[ttree.num].append(-1)
-            for i in range(len(tlist1)):
+            for i in hyp_list:
                 if not isinstance(tlist1[i], DeadNode) and \
                         deps_compatible(screen, tl, ttree_full, ttree.num, i): # a contradiction to hyp i would prove this target
                     tree1 = complement_tree(tlist1[i])
                     mv1 = metavars_used(tlist1[i])
                     s = start1 if i < start1 else 0
                     for j in range(s, len(tlist1)):
-                        if i != j:
+                        if j in hyp_list and i != j:
                             di = deps_intersect(screen, tl, ttree_full, i, j)
                             dep_ok = False
                             for d in di:
@@ -272,7 +272,7 @@ def try_unifications(screen, tl, ttree, unifications, gen):
                 plist += pl
     return dirty1, dirty2, plist
                 
-def check_zero_metavar_unifications(screen, tl, ttree, tarmv, start1=0, start2=0):
+def check_zero_metavar_unifications(screen, tl, ttree, tarmv, hyp_list, tar_list, start1=0, start2=0):
     """
     Some targets do not contain metavariables, and when these can be unified
     with a hypothesis that doesn't involve metavariables used in other targets
@@ -289,35 +289,37 @@ def check_zero_metavar_unifications(screen, tl, ttree, tarmv, start1=0, start2=0
     plist = []
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
-    for i in range(len(tlist1)):
+    for i in hyp_list:
         mv1 = metavars_used(tlist1[i])
         if not isinstance(tlist1[i], DeadNode) and not any(v in tarmv for v in mv1):
             s = start2 if i < start1 else 0
             for j in range(s, len(tlist2)):
-                mv2 = metavars_used(tlist2[j])
-                if not isinstance(tlist2[j], DeadNode) and not any(v in tarmv for v in mv2):
-                    if deps_compatible(screen, tl, ttree, j, i):
-                        unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        if unifies:
-                            d1, d2, pl = mark_proved(screen, tl, ttree, j, i)
-                            dirty1 += d1
-                            dirty2 += d2
-                            plist += pl
-    d1, d2, pl = check_contradictions(screen, tl, ttree, tarmv, start1)
+                if j in tar_list:
+                    mv2 = metavars_used(tlist2[j])
+                    if not isinstance(tlist2[j], DeadNode) and not any(v in tarmv for v in mv2):
+                        if deps_compatible(screen, tl, ttree, j, i):
+                            unifies, assign, macros = unify(screen, tl, tlist1[i], tlist2[j])
+                            unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                            if unifies:
+                                d1, d2, pl = mark_proved(screen, tl, ttree, j, i)
+                                dirty1 += d1
+                                dirty2 += d2
+                                plist += pl
+    d1, d2, pl = check_contradictions(screen, tl, ttree, tarmv, hyp_list, start1)
     dirty1 += d1
     dirty2 += d2
     plist += pl
     for i in range(start2, len(tlist2)):
-        if isinstance(tlist2[i], EqNode):
-            if not metavars_used(tlist2[i]):
-                unifies, assign, macros = unify(screen, tl, tlist2[i].left, tlist2[i].right)
-                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                if unifies:
-                    d1, d2, p1 = mark_proved(screen, tl, ttree, i, -1)
-                    dirty1 += d1
-                    dirty2 += d2
-                    plist += pl
+        if i in tar_list:
+            if isinstance(tlist2[i], EqNode):
+                if not metavars_used(tlist2[i]):
+                    unifies, assign, macros = unify(screen, tl, tlist2[i].left, tlist2[i].right)
+                    unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                    if unifies:
+                        d1, d2, p1 = mark_proved(screen, tl, ttree, i, -1)
+                        dirty1 += d1
+                        dirty2 += d2
+                        plist += pl
     return dirty1, dirty2, plist
 
 def mark_proved(screen, tl, ttree, n, reason=None):
@@ -372,7 +374,7 @@ def mark_proved(screen, tl, ttree, n, reason=None):
     process(dirty1, dirty2, plist, ttree, n)
     return dirty1, dirty2, plist
 
-def check_contradictions(screen, tl, ttree, tarmv, start1=0):
+def check_contradictions(screen, tl, ttree, tarmv, hyp_list, start1=0):
     """
     Check for any contradictions amongst hypotheses that don't involve metavars
     in the list tarmv (taken to be a list of all metavars appearing in
@@ -385,26 +387,28 @@ def check_contradictions(screen, tl, ttree, tarmv, start1=0):
     plist = []
     tlist1 = tl.tlist1.data
     for i in range(start1, len(tlist1)):
-        mv1 = metavars_used(tlist1[i])
-        if not isinstance(tlist1[i], DeadNode) and not any(v in tarmv for v in mv1):
-            tree1 = complement_tree(tlist1[i])
-            for j in range(0, i):
-                mv2 = metavars_used(tlist1[j])
-                if not isinstance(tlist1[j], DeadNode) and not any(v in tarmv for v in mv2):
-                    di = deps_intersect(screen, tl, ttree, i, j)
-                    if di: # hyps i and j can be used to prove targets
-                        tree2 = tlist1[j]
-                        unifies, assign, macros = unify(screen, tl, tree1, tree2)
-                        unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
-                        if unifies: # we found a contradiction
-                            for t in di:
-                                d1, d2, pl = mark_proved(screen, tl, ttree, t, (i, j))
-                                dirty1 += d1
-                                dirty2 += d2
-                                plist += pl
+        if i in hyp_list:
+            mv1 = metavars_used(tlist1[i])
+            if not isinstance(tlist1[i], DeadNode) and not any(v in tarmv for v in mv1):
+                tree1 = complement_tree(tlist1[i])
+                for j in range(0, i):
+                    if j in hyp_list:
+                        mv2 = metavars_used(tlist1[j])
+                        if not isinstance(tlist1[j], DeadNode) and not any(v in tarmv for v in mv2):
+                            di = deps_intersect(screen, tl, ttree, i, j)
+                            if di: # hyps i and j can be used to prove targets
+                                tree2 = tlist1[j]
+                                unifies, assign, macros = unify(screen, tl, tree1, tree2)
+                                unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)
+                                if unifies: # we found a contradiction
+                                    for t in di:
+                                        d1, d2, pl = mark_proved(screen, tl, ttree, t, (i, j))
+                                        dirty1 += d1
+                                        dirty2 += d2
+                                        plist += pl
     return dirty1, dirty2, plist
 
-def check_targets_proved(screen, tl, ttree, start1=0, start2=0):
+def check_targets_proved(screen, tl, ttree, start1=0, start2=0, hyp_list=None, tar_list=None):
     """
     This is the main wrapper which is called every move to see if we are done.
     First it computes all metavariables used in the targets. It then checks a
@@ -431,12 +435,16 @@ def check_targets_proved(screen, tl, ttree, start1=0, start2=0):
     plist = []
     hydras_done = []
     hydras_todo = []
+    if hyp_list == None:
+        hyp_list = [i for i in range(len(tl.tlist1.data))]
+    if tar_list == None:
+        tar_list = [i for i in range(len(tl.tlist2.data))]
     tarmv = target_metavars(screen, tl, ttree)
-    d1, d2, pl = check_zero_metavar_unifications(screen, tl, ttree, tarmv, start1, start2)
+    d1, d2, pl = check_zero_metavar_unifications(screen, tl, ttree, tarmv, hyp_list, tar_list, start1, start2)
     dirty1 += d1
     dirty2 += d2
     plist += pl
-    unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo, tarmv, start1, start2)
+    unification_count, unifications = annotate_ttree(screen, tl, ttree, hydras_todo, tarmv, hyp_list, start1, start2)
     while hydras_todo:
         hydra = hydras_todo.pop()
         heads = find_hydra_heads(screen, tl, ttree, hydras_done, hydras_todo, hydra)

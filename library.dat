@@ -1290,7 +1290,7 @@ Tags: #sets
 \forall X : Set, \forall S : Set(X), \forall x \in X
 ------------------------------
 ------------------------------
-x \in S \implies x \in universe(S)
+x \in S \implies x \in S \wedge x \in universe(S)
 
 Title: Complement of complement of a set is equal to that set
 [['Set'], [], ('=', ['complement'], [])]

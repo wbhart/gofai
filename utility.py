@@ -797,10 +797,13 @@ class TargetNode:
     target nodes of all the targets that have to be proved in order to prove
     it.
     """
-    def __init__(self, num, andlist=[]):
+    def __init__(self, num, andlist=None):
         self.num = num # which target this node corresponds to
         self.proved = False # start in unproved state
-        self.andlist = andlist # a list of targets that would prove this target
+        if andlist == None:
+            self.andlist = []
+        else:
+            self.andlist = andlist # a list of targets that would prove this target
         self.metavars = [] # metavariables used by this target
         self.unifies = [] # list of hyps this target unifies with on its own
         self.reason = None # how target was proved (hyp. i, contr. (i, j), equal. -1, andlist None)

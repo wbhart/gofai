@@ -437,10 +437,17 @@ def clear_tableau(screen, tl):
     tlist2.line = 0
     tl.vars = dict()
     tl.tars = dict()
+    tl.stree = None
+    tl.hyp_tab = []
+    tl.tar_tab = []
     tl.constraints = dict()
     tl.constraints_processed = (0, 0, 0)
     tl.sorts_processed = (0, 0, 0)
+    tl.depmin = 0
+    tl.sorts_recording = False
+    tl.sorts_record = []
     tl.tlist1.dep = dict()
+    tl.tlist1.line = 0
     tl.loaded_theorem = None
     tl.focus = tl.tlist0
     tl.moves = []
@@ -824,12 +831,15 @@ def cleanup(screen, tl, ttree, defn=False):
                            and not isinstance(t.left, OrNode):
                         t = t.left
                     if isinstance(t.left, OrNode):
-                        t.left = ImpliesNode(complement_tree(t.left.left), t.left.right)
-                        if isinstance(t.left.left, NotNode) and isinstance(t.left.right, NotNode):
-                            temp = t.left.left.left
-                            t.left.left = t.left.right.left
-                            t.left.right = temp
-                        dirty1.append(i)
+                        mv1 = metavars_used(t.left.left)
+                        mv2 = metavars_used(t.left.right)
+                        if len(set(mv1).intersection(mv2)) > 0: # there are shared metavars, turn into an implication
+                            t.left = ImpliesNode(complement_tree(t.left.left), t.left.right)
+                            if isinstance(t.left.left, NotNode) and isinstance(t.left.right, NotNode):
+                                temp = t.left.left.left
+                                t.left.left = t.left.right.left
+                                t.left.right = temp
+                            dirty1.append(i)
                 if isinstance(tl1[i], OrNode):
                     # First check we don't have P \vee P
                     unifies, assign, macros = unify(screen, tl, tl1[i].left, tl1[i].right)
@@ -837,12 +847,15 @@ def cleanup(screen, tl, ttree, defn=False):
                     if unifies and not assign:
                         replace_tree(tl1, i, tl1[i].left, dirty1)
                     else:
-                        stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
-                        if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
-                            temp = stmt.left.left
-                            stmt.left = stmt.right.left
-                            stmt.right = temp
-                        replace_tree(tl1, i, stmt, dirty1)
+                        mv1 = metavars_used(tl1[i].left)
+                        mv2 = metavars_used(tl1[i].right)
+                        if len(set(mv1).intersection(mv2)) > 0: # there are shared metavars, turn into an implication
+                            stmt = ImpliesNode(complement_tree(tl1[i].left), tl1[i].right)
+                            if isinstance(stmt.left, NotNode) and isinstance(stmt.right, NotNode):
+                                temp = stmt.left.left
+                                stmt.left = stmt.right.left
+                                stmt.right = temp
+                            replace_tree(tl1, i, stmt, dirty1)
                 if isinstance(tl1[i], IffNode):
                     tl1[i] = ImpliesNode(tl1[i].left, tl1[i].right)
                     impl = ImpliesNode(deepcopy(tl1[i].right), deepcopy(tl1[i].left))
