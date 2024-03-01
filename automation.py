@@ -157,6 +157,7 @@ class AutoData:
         self.defn = False # whether the theorem is a definition
         self.special = False # whether this node is a special theorem that is not an implication
         self.ancestors = [] # ancestors of this node as far as reasoning is concerned
+        self.backtrackable = False # whether this node could still be backtracked
 
     def __str__(self):
         return str(self.line)
@@ -1150,7 +1151,7 @@ def update_screen(screen, atab, interface, d1=None, d2=None):
             tl.tlist1.line += 1
         tl.tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
         tl.tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
-        screen.pad0.refresh()
+        #screen.pad0.refresh()
         screen.pad1.refresh()
         screen.pad2.refresh()
         screen.focus.refresh()
@@ -1840,6 +1841,8 @@ def automate(screen, tl, ttree, interface='curses'):
     atab = AutoTab(screen, tl, ttree, library, constants, constant_order) # initialise automation data structure
     atab.top_tab = atab
 
+    old_bt_list = [] # used by backtracking
+
     # mark everything as active
     for node in atab.hyp_heads:
          if node not in atab.hyps_active:
@@ -2113,6 +2116,7 @@ def automate(screen, tl, ttree, interface='curses'):
                         success, dirty1, dirty2 = apply_theorem(screen, atab, pos, neg, False, line1, line2, True)
 
                         if success:
+                            head.backtrackable = True
                             depth = max(head.depth, impl.depth) + 1
 
                             hyp_tab_dep1 = atab.tl.hyp_tab[line1]
@@ -2271,6 +2275,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
 
                                 if success:
+                                    head.backtrackable = True
                                     depth = head.depth + 1
 
                                     hyp_tab_dep1 = atab.tl.hyp_tab[line1]
@@ -2422,6 +2427,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, True)
 
                                 if success:
+                                    head.backtrackable = True
                                     depth = head.depth + 1
 
                                     hyp_tab_dep1 = atab.tl.hyp_tab[line1]
@@ -2568,6 +2574,8 @@ def automate(screen, tl, ttree, interface='curses'):
                         # transfer library result to tableau
                         dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
                         
+                        impl = get_autonode(screen, atab.hyp_impls, line1)
+
                         update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
 
                         if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
@@ -2585,6 +2593,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 progress = True
 
                             if progress:
+                                head.backtrackable = True
                                 tlist1[line2] = tcopy # switch original head with copy
                                 atab.hyp_heads.remove(head) # remove original node from hyp_heads
 
@@ -2622,6 +2631,45 @@ def automate(screen, tl, ttree, interface='curses'):
 
             if done:
                 break
+
+            if progress:
+                continue
+
+            # 10) Hypothesis "backtracking"
+
+            if False: # whether we want hypothesis backtracking
+                for node in atab.hyps_active:
+                    if not is_implication(tlist1[node.line]):
+                        node.backtrackable = False
+
+                if not old_bt_list:
+                    bt_list = atab.hyps_active
+                    old_bt_list = copy(bt_list)
+                else:
+                    bt_list = old_bt_list
+
+                atab.hyps_active = copy(bt_list)
+
+                checked = []
+
+                while bt_list:
+                    while bt_list:
+                        node = bt_list.pop()
+                        if not is_implication(tlist1[node.line]) and node.backtrackable:
+                            atab.hyps_active.append(node)
+                            progress = True
+                            break
+                        else:
+                            checked.append(node)
+                    
+                    if progress:
+                        break
+
+                    while checked:
+                        node = checked.pop()
+                        for n in node.ancestors:
+                            if n not in bt_list:
+                                bt_list.append(n)
 
             if progress:
                 continue
