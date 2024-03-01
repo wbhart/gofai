@@ -445,13 +445,19 @@ def update_ttrees(screen, atab, paths):
     for tab in atab.descendants:
         update_ttrees(screen, tab, paths)
 
-def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, defn=False, special=False, library=False, top=True):
+def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, \
+                                defn=False, special=False, library=False, top=True, \
+                                hhead_dats0=None, himpl_dats0=None, thead_dats0=None):
     """
     Given an AutoTab data structure and a list of modified/added hypotheses
     (dirty1) and a list of modified/added targets (dirty2), update the data
     in the AutoTab structure to reflect current reality.
     """
     if top:
+        hhead_dats = []
+        himpl_dats = []
+        thead_dats = []
+
         dirty1 = list(sorted(dirty1))
         dirty2 = list(sorted(dirty2))
         
@@ -479,6 +485,10 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, def
         update_lists(screen, atab, dirty1, dirty2)
         paths = get_paths(screen, orig_tab.ttree, dirty2)
         update_ttrees(screen, atab, paths)
+    else:
+       hhead_dats = hhead_dats0
+       himpl_dats = himpl_dats0
+       thead_dats = thead_dats0
 
     tlist0 = atab.tl.tlist0.data
     tlist1 = atab.tl.tlist1.data
@@ -504,51 +514,59 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, def
             if dat.line == i:
                 atab.hyps_active.remove(dat)
         # add new details
-        v = tlist1[i]
-        if is_implication(v) or is_equality(v):
-            v, univs = unquantify(screen, v, False)
 
-            c1 = get_constants(screen, atab.tl, v.left)
-            c2 = get_constants(screen, atab.tl, v.right)
-            nc1 = get_constants(screen, atab.tl, complement_tree(v.left))
-            nc2 = get_constants(screen, atab.tl, complement_tree(v.right))
+    if top:
+        for i in dirty1:
+            v = tlist1[i]
+            if is_implication(v) or is_equality(v):
+                v, univs = unquantify(screen, v, False)
 
-            dat = AutoData(i, c1, c2, nc1, nc2)
+                c1 = get_constants(screen, atab.tl, v.left)
+                c2 = get_constants(screen, atab.tl, v.right)
+                nc1 = get_constants(screen, atab.tl, complement_tree(v.left))
+                nc2 = get_constants(screen, atab.tl, complement_tree(v.right))
 
-            compute_direction(atab, dat)
-            compute_score(screen, atab.tl, dat, True)
+                dat = AutoData(i, c1, c2, nc1, nc2)
 
-            m1 = metavars_used(v.left)
-            m2 = metavars_used(v.right)
-            mv = filter(lambda x : x not in m1, m2)
-            nmv = filter(lambda x : x not in m2, m1)
+                compute_direction(atab, dat)
+                compute_score(screen, atab.tl, dat, True)
 
-            if not library and dat not in atab.hyps_active:
-                atab.hyps_active.append(dat)
+                m1 = metavars_used(v.left)
+                m2 = metavars_used(v.right)
+                mv = filter(lambda x : x not in m1, m2)
+                nmv = filter(lambda x : x not in m2, m1)
 
-            dat.mv_inc = len(list(mv))
-            dat.nmv_inv = len(list(nmv))
+                dat.mv_inc = len(list(mv))
+                dat.nmv_inv = len(list(nmv))
 
-            dat.defn = defn
+                dat.defn = defn
 
-            insert_sort(screen, atab.hyp_impls, dat)
-        else:
-            c = get_constants(screen, atab.tl, v)
-            nc = get_constants(screen, atab.tl, complement_tree(v))
-            
-            dat = AutoData(i, c, None, nc, None)
+                hhead_dats.append(dat)
+            else:
+                c = get_constants(screen, atab.tl, v)
+                nc = get_constants(screen, atab.tl, complement_tree(v))
+                
+                dat = AutoData(i, c, None, nc, None)
 
-            if special:
-                dat.special = True
-            
-            if dat not in atab.hyps_active:
-                atab.hyps_active.append(dat)
+                if special:
+                    dat.special = True
+                
+                dat.depth = depth
 
-            dat.depth = depth
+                compute_score(screen, atab.tl, dat, True)
 
-            compute_score(screen, atab.tl, dat, True)
+                himpl_dats.append(dat)
 
-            insert_sort(screen, atab.hyp_heads, dat)
+    for dat in hhead_dats:
+        if not library:
+            atab.hyps_active.append(dat)
+
+        insert_sort(screen, atab.hyp_impls, dat)
+
+    for dat in himpl_dats:
+        atab.hyps_active.append(dat)
+                
+        insert_sort(screen, atab.hyp_heads, dat) 
 
     for j in dirty2:
         if j < atab.ntars: # delete old target
@@ -564,18 +582,23 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, def
             if dat.line == j:
                 atab.tars_active.remove(dat)
 
-        # add new details
-        v = tlist2[j]
+    if top:
+        for j in dirty2:
+            # add new details
+            v = tlist2[j]
 
-        c = get_constants(screen, atab.tl, v)
-        nc = get_constants(screen, atab.tl, complement_tree(v))
-   
-        dat = AutoData(j, c, None, nc, None)
+            c = get_constants(screen, atab.tl, v)
+            nc = get_constants(screen, atab.tl, complement_tree(v))
 
-        if dat not in atab.tars_active:
-            atab.tars_active.append(dat)
-        
-        compute_score(screen, atab.tl, dat, False)
+            dat = AutoData(j, c, None, nc, None)
+            
+            compute_score(screen, atab.tl, dat, False)
+            
+            thead_dats.append(dat)
+
+    for dat in thead_dats:
+        atab.tars_active.append(dat)
+
         insert_sort(screen, atab.tar_heads, dat)
 
     atab.nhyps = len(tlist1)
@@ -585,7 +608,11 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, def
         update_screen(screen, atab, interface, dirty1, dirty2)
 
     for tab in atab.descendants:
-        update_autotab(screen, orig_tab, tab, dirty1, dirty2, interface, depth, defn, special, library, False)
+        update_autotab(screen, orig_tab, tab, dirty1, dirty2, interface, depth, \
+                         defn, special, library, False, hhead_dats, himpl_dats, thead_dats)
+
+    if top:
+        return hhead_dats + himpl_dats, thead_dats
 
 def autotab_remove_deadnodes(screen, atab, heads, impls, interface, top=True):
     list1 = atab.tl.tlist1.data
