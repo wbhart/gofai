@@ -156,6 +156,7 @@ class AutoData:
         self.rtol = True # whether the theorem can be applied right to left
         self.defn = False # whether the theorem is a definition
         self.special = False # whether this node is a special theorem that is not an implication
+        self.ancestors = [] # ancestors of this node as far as reasoning is concerned
 
     def __str__(self):
         return str(self.line)
@@ -188,6 +189,7 @@ class AutoTab:
         self.tar_list = [k for k in range(len(tlist2))] # list of targets covered by this tableau
         self.descendants = [] # tableaus derived from this one (via splitting)
         self.top_tab = None # top tableau from which all others derived
+        self.hyp_nodes = [] # list of all hypothesis nodes
 
         hyp_heads = []
         hyp_impls = []
@@ -210,6 +212,7 @@ class AutoTab:
                 nc2 = get_constants(screen, tl, complement_tree(v.right))
 
                 dat = AutoData(i, c1, c2, nc1, nc2)
+                self.hyp_nodes.append(dat)
 
                 compute_direction(self, dat)
                 compute_score(screen, tl, dat, True)
@@ -229,7 +232,8 @@ class AutoTab:
                 nc = get_constants(screen, tl, complement_tree(v))
                 
                 dat = AutoData(i, c, None, nc, None)
-
+                self.hyp_nodes.append(dat)
+                
                 compute_score(screen, tl, dat, True)
                
                 insert_sort(screen, hyp_heads, dat)
@@ -527,6 +531,7 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, \
                 nc2 = get_constants(screen, atab.tl, complement_tree(v.right))
 
                 dat = AutoData(i, c1, c2, nc1, nc2)
+                atab.hyp_nodes.append(dat)
 
                 compute_direction(atab, dat)
                 compute_score(screen, atab.tl, dat, True)
@@ -540,13 +545,14 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, \
                 dat.nmv_inv = len(list(nmv))
 
                 dat.defn = defn
-
+                
                 hhead_dats.append(dat)
             else:
                 c = get_constants(screen, atab.tl, v)
                 nc = get_constants(screen, atab.tl, complement_tree(v))
                 
                 dat = AutoData(i, c, None, nc, None)
+                atab.hyp_nodes.append(dat)
 
                 if special:
                     dat.special = True
@@ -1207,6 +1213,42 @@ def check_duplicates(screen, tl, ttree, n1, n2, interface):
     update_screen(screen, tl, interface, dirty1, dirty2)
     return nodup_found
     
+def prevent_duplicates(screen, atab, nd1, nd2):
+    tlist1 = atab.tl.tlist1.data
+    nodes = nd1 + nd2
+
+    def find(node, tree, line):
+        for n in node.ancestors:
+            old_tree = tlist1[n.line]
+            if not is_implication(old_tree):
+                if is_duplicate_upto_metavars(tree, old_tree):
+                    if atab.tl.tlist1.dependency(line) == atab.tl.tlist1.dependency(n.line):
+                        for dat in atab.hyp_nodes:
+                            if dat.line == n.line:
+                                return dat.applied
+            applied = find(n, tree, line)
+            if applied != None:
+                return applied
+
+        return None
+
+    no_dup = False
+    vacuous = True
+
+    for node in nodes:
+        tree = tlist1[node.line]
+        if not is_implication(tree):
+            vacuous = False
+            applied = find(node, tree, node.line)
+            if applied != None: # found duplicate
+                for i in applied:
+                    if i not in node.applied:
+                        node.applied.append(i)
+            else:
+                no_dup = True
+
+    return no_dup or vacuous
+
 def check_trivial(screen, tl, atab, n1, interface):
     tlist1 = tl.tlist1.data
     dirty1 = []
@@ -1773,6 +1815,19 @@ def check_lengths(atab, length=0):
     for tab in atab.descendants:
         check_lengths(tab, n)
 
+def add_ancestors(nd1, nd2, head, impl):
+    for node in nd1:
+        if head not in node.ancestors:
+            node.ancestors.append(head)
+        if impl != None and impl not in node.ancestors:
+            node.ancestors.append(impl)
+
+    for node in nd2:
+        if head not in node.ancestors:
+            node.ancestors.append(head)
+        if impl != None and impl not in node.ancestors:
+            node.ancestors.append(impl)
+
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
 
@@ -1824,17 +1879,21 @@ def automate(screen, tl, ttree, interface='curses'):
             line, alt_tree, depth = atab.alt
             tlist1[line] = alt_tree
 
-            # create new autotab for the new line
-            update_autotab(screen, atab, atab, [line], [], interface, depth)
+            old_node = get_autonode(screen, atab.hyp_heads, line)
 
-            node = get_autonode(screen, atab.hyp_heads, line)
-            if not node:
-                node = get_autonode(screen, atab.hyp_impls, line)
-            depth = node.depth
+            # create new autotab for the new line
+            nd1, _ = update_autotab(screen, atab, atab, [line], [], interface, depth)
+            
+            node = nd1[0]
+            node.ancestors = copy(old_node.ancestors)
                     
             # loading a new tableau can result in line needing cleanup
             dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-            update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth + 1)
+            nd2, _ = update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth + 1)
+
+            for node2 in nd2:
+                if node2 != node:
+                    node2.ancestors = copy(old_node.ancestors)
 
             atab.start1 = line # reset incremental completion checking to new line
             
@@ -1924,11 +1983,11 @@ def automate(screen, tl, ttree, interface='curses'):
                     n2 = len(tlist2)      
 
                     j = len(tlist1) - 1
-                    update_autotab(screen, atab, atab.top_tab, [j], [], interface, 0, special=True)
+                    nd1, _ = update_autotab(screen, atab, atab.top_tab, [j], [], interface, 0, special=True)
                     atab.libthms_loaded[filepos] = j
 
                     dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                    update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, special=True)
+                    nd2, _ = update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, special=True)
                     # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                     done = check_done(screen, atab, interface)
@@ -2060,25 +2119,23 @@ def automate(screen, tl, ttree, interface='curses'):
                             hyp_tab_dep2 = atab.tl.hyp_tab[line2]
                             tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
 
-                            update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                            for d in dirty1:
-                                node = get_autonode(screen, atab.hyp_heads, d)
-                                if node:
-                                    node.applied.append(line1)
+                            nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                            for node in nd1:
+                                node.applied.append(line1)
                             dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                            update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                            for d in dirty1:
-                                node = get_autonode(screen, atab.hyp_heads, d)
-                                if node and line1 not in node.applied:
+                            nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                            for node in nd2:
+                                if line1 not in node.applied:
                                     node.applied.append(line1)
-
+                            add_ancestors(nd2, nd1, head, impl)
+                            c1 = prevent_duplicates(screen, atab, nd1, nd2)
                             # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                             # remove deductions which are duplicates or that have oversize types
                             #c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
                             #c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
-                            if True: # c1 and c2:
+                            if c1:
                                 mark_hyp_inactive(tab_dep, head)
 
                                 progress = True
@@ -2220,24 +2277,23 @@ def automate(screen, tl, ttree, interface='curses'):
                                     hyp_tab_dep2 = atab.tl.hyp_tab[line2]
                                     tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
                                     
-                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                    for d in dirty1:
-                                        node = get_autonode(screen, atab.hyp_heads, d)
-                                        if node:
-                                            node.applied.append(line1)
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    for node in nd1:
+                                        node.applied.append(line1)
                                     dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                    for d in dirty1:
-                                        node = get_autonode(screen, atab.hyp_heads, d)
-                                        if node and line1 not in node.applied:
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    for node in nd2:
+                                        if line1 not in node.applied:
                                             node.applied.append(line1)
+                                    add_ancestors(nd2, nd1, head, None)
+                                    c1 = prevent_duplicates(screen, atab, nd1, nd2)
                                     # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                                     # remove deductions which are duplicates or that have oversize types
                                     # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
                                     # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
-                                    if True: # c1 and c2:
+                                    if c1:
                                         mark_hyp_inactive(tab_dep, head)
 
                                         progress = True
@@ -2372,16 +2428,18 @@ def automate(screen, tl, ttree, interface='curses'):
                                     hyp_tab_dep2 = atab.tl.hyp_tab[line2]
                                     tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
 
-                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                     dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    add_ancestors(nd2, nd1, head, None)
+                                    c1 = prevent_duplicates(screen, atab, nd1, nd2)
                                     # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                                     # remove deductions which are duplicates or that have oversize types
                                     # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
                                     # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
-                                    if True: # c1 and c2:
+                                    if c1:
                                         mark_hyp_inactive(tab_dep, head)
 
                                         progress = True
@@ -2458,9 +2516,10 @@ def automate(screen, tl, ttree, interface='curses'):
                                 hyp_tab_dep2 = atab.tl.hyp_tab[line2]
                                 tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
 
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                add_ancestors(nd2, nd1, impl, None)
                                 # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                                 # remove deductions which are duplicates or that have oversize types
@@ -2535,9 +2594,10 @@ def automate(screen, tl, ttree, interface='curses'):
                                 hyp_tab_dep2 = atab.tl.hyp_tab[line2]
                                 tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
     
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                add_ancestors(nd2, nd1, head, None)
                                 # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
                                 # remove deductions which are duplicates or that have oversize types
