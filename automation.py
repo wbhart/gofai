@@ -1625,7 +1625,7 @@ def check_done(screen, atab, interface):
             
     update_screen(screen, atab, interface, dirty1, dirty2)
 
-    return done
+    return done, plist
 
 class HydraNode:
     def __init__(self, idx, tars):
@@ -1843,8 +1843,6 @@ def automate(screen, tl, ttree, interface='curses'):
     atab = AutoTab(screen, tl, ttree, library, constants, constant_order) # initialise automation data structure
     atab.top_tab = atab
 
-    old_bt_list = [] # used by backtracking
-
     # mark everything as active
     for node in atab.hyp_heads:
          if node not in atab.hyps_active:
@@ -1902,8 +1900,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
             atab.start1 = line # reset incremental completion checking to new line
             
-        done = check_done(screen, atab, interface)
-        
+        done, _ = check_done(screen, atab, interface)
+        old_bt_list = [] # used by backtracking
+
         if autotab_remove_deadnodes(screen, atab, [], [], interface):
             library.close()
             automation_limit += automation_increment
@@ -1965,8 +1964,10 @@ def automate(screen, tl, ttree, interface='curses'):
                     nd2, _ = update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, special=True)
                     # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
-                    done = check_done(screen, atab, interface)
-                                    
+                    done, partial = check_done(screen, atab, interface)
+                    if partial:
+                        old_bt_list = [] # reset backtracking 
+
                     if autotab_remove_deadnodes(screen, atab, [], [], interface):
                         library.close()
                         automation_limit += automation_increment
@@ -2036,8 +2037,10 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                 progress = True
 
-                                done = check_done(screen, atab, interface)
-                                
+                                done, partial = check_done(screen, atab, interface)
+                                if partial:
+                                    old_bt_list = [] # reset backtracking 
+
                                 screen.debug("Backwards non-library reasoning")
 
                             if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
@@ -2117,7 +2120,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                 progress = True
 
-                                done = check_done(screen, atab, interface)
+                                done, partial = check_done(screen, atab, interface)
+                                if partial:
+                                    old_bt_list = [] # reset backtracking 
                                 
                                 screen.debug("Forwards non-library reasoning")
 
@@ -2225,7 +2230,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                     progress = True
 
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Target expansion")
 
@@ -2295,7 +2302,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                     progress = True
                                     
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Hypothesis expansion")
 
@@ -2370,7 +2379,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                         progress = True
 
-                                        done = check_done(screen, atab, interface)
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
                                         
                                         screen.debug("Backwards library reasoning")
 
@@ -2452,7 +2463,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                         progress = True
 
-                                        done = check_done(screen, atab, interface)
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
                                         
                                         screen.debug("Forwards library reasoning")
 
@@ -2526,7 +2539,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                     progress = True
 
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Target expansion")
 
@@ -2597,7 +2612,9 @@ def automate(screen, tl, ttree, interface='curses'):
 
                                     progress = True
                                     
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Hypothesis expansion")
 
@@ -2677,7 +2694,9 @@ def automate(screen, tl, ttree, interface='curses'):
                                 # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if True: # c1 and c2:
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Implication atomic predicate expansion")
 
@@ -2758,7 +2777,9 @@ def automate(screen, tl, ttree, interface='curses'):
                                 # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if True: # c1 and c2:
-                                    done = check_done(screen, atab, interface)
+                                    done, partial = check_done(screen, atab, interface)
+                                    if partial:
+                                        old_bt_list = [] # reset backtracking 
                                     
                                     screen.debug("Predicate atomic predicate expansion")
 
