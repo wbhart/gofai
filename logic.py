@@ -830,7 +830,7 @@ def cleanup(screen, tl, ttree, defn=False):
                     while isinstance(t, ExistsNode) or isinstance(t, ForallNode) \
                            and not isinstance(t.left, OrNode):
                         t = t.left
-                    if isinstance(t.left, OrNode):
+                    if (isinstance(t, ExistsNode) or isinstance(t, ForallNode)) and isinstance(t.left, OrNode):
                         t.left = ImpliesNode(complement_tree(t.left.left), t.left.right)
                         if isinstance(t.left.left, NotNode) and isinstance(t.left.right, NotNode):
                             temp = t.left.left.left
