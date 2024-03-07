@@ -2443,7 +2443,7 @@ def automate(screen, tl, ttree, interface='curses'):
 
             ht = get_constants_qz(screen, atab.tl, atab.tl.tlist0.data[0]) if atab.tl.tlist0.data else [] # type constants
 
-            # 4a) Type judgements
+            # 5) Type judgement
 
             for head in heads:
                 line2 = head.line
@@ -2530,7 +2530,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 5) Safe target expansion
+            # 6) Safe target expansion
             for tar in atab.hydra.tars:
                 tar = get_autonode(screen, atab.tar_heads, tar_line)
                 libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=False)
@@ -2607,7 +2607,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 6) Safe hypothesis expansion
+            # 7) Safe hypothesis expansion
 
             for head in heads:
                 line2 = head.line
@@ -2683,7 +2683,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 9) Target expansion
+            # 8) Target expansion
             for tar in atab.hydra.tars:
                 tar = get_autonode(screen, atab.tar_heads, tar_line)
                 libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=True)
@@ -2760,7 +2760,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 8) Forwards library reasoning
+            # 9) Forwards library reasoning
 
             for head in heads:
                 line2 = head.line
@@ -2847,7 +2847,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 7) Backwards library reasoning
+            # 10) Backwards library reasoning
 
             for tar_line in atab.hydra.tars:
                 tar = get_autonode(screen, atab.tar_heads, tar_line)
@@ -2925,7 +2925,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
                 
-            # 10) Hypothesis expansion
+            # 11) Hypothesis expansion
 
             for head in heads:
                 line2 = head.line
@@ -3001,7 +3001,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 11) Implication atomic predicate expansion
+            # 12) Implication atomic predicate expansion
 
             for impl in impls:
                 line2 = impl.line
@@ -3082,7 +3082,7 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 12) Head atomic predicate expansion
+            # 13) Head atomic predicate expansion
 
             for head in heads:
                 line2 = head.line
