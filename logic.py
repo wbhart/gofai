@@ -825,6 +825,8 @@ def cleanup(screen, tl, ttree, defn=False):
                 if str(tl1[i]) != oldtli and i not in dirty1:
                     dirty1.append(i)
                 rollback()
+                if isinstance(tl1[i], NotNode) and (isinstance(tl1[i].left, AndNode) or isinstance(tl1[i].left, OrNode)):
+                    replace_tree(tl1, i, complement_tree(tl1[i].left), dirty1)
                 t = tl1[i]
                 if isinstance(t, ExistsNode) or isinstance(t, ForallNode):
                     while isinstance(t, ExistsNode) or isinstance(t, ForallNode) \
