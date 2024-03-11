@@ -6,7 +6,7 @@ from nodes import LRNode, VarNode, NaturalNode, FnApplNode, ExpNode, AddNode, \
                   LeqNode, GeqNode, SubseteqNode, SubsetneqNode, \
                   SupseteqNode, SupsetneqNode, ImpliesNode, IffNode, \
                   NotNode, ForallNode, ExistsNode, BoolNode, TupleComponentNode, \
-                  SetBuilderNode, LambdaNode, mark_binder_vars
+                  SetBuilderNode, LambdaNode, mark_binder_vars, SetOfNode
 from utility import sorts_equal, find_sort, sorts_compatible, coerce_sorts, subst, \
                   make_substitution, substitute, is_predicate, is_expression, universe, \
                   domain, codomain

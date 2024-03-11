@@ -1841,6 +1841,16 @@ def apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, len1, line1, l
     else:
         replace_tree(tlist1, len1, deepcopy(tlist1[line2]), dirty1)
 
+def mark_hyp_active(atab, hyp):
+    if hyp not in atab.hyps_active:
+        atab.hyps_active.append(hyp)
+
+    atab.marked = True
+
+    for tab in atab.descendants:
+        if not tab.marked:
+            mark_hyp_active(tab, hyp)
+        
 def mark_hyp_inactive(atab, hyp):
     if hyp in atab.hyps_active:
         atab.hyps_active.remove(hyp)
@@ -2008,6 +2018,20 @@ def find_tab(atab, tab, level=0):
             return a
     
     return None, None
+
+def reinsert_head(screen, atab, head):
+    if head in atab.hyp_heads:
+        atab.hyp_heads.remove(head)
+    insert_sort(screen, atab.hyp_heads, head)
+    if head not in atab.hyps_active:
+        atab.hyps_active.append(head)
+    atab.start1 = min(atab.start1, head.line)
+
+    atab.marked = True
+
+    for tab in atab.descendants:
+        if not tab.marked:
+            reinsert_head(screen, tab, head)
 
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
@@ -2468,14 +2492,12 @@ def automate(screen, tl, ttree, interface='curses'):
                         thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                         if (pos and thmnode.ltor) or (neg and thmnode.rtol):
                             if line1 not in head.applied: # check we didn't already apply this impl to this head
-                                head.applied.append(line1) # mark head as applied with our impl
-
                                 n1 = len(tlist1) # any lines added after these are new
                                 
                                 success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
 
                                 if success:
-                                    head.backtrackable = True
+                                    head.backtrackable = False
                                     depth = head.depth + 1
 
                                     hyp_tab_dep1 = atab.tl.hyp_tab[line1]
@@ -2491,6 +2513,12 @@ def automate(screen, tl, ttree, interface='curses'):
                                         if line1 not in node.applied:
                                             node.applied.append(line1)
                                     add_ancestors(nd2, nd1, head, None)
+                                    head.applied.append(line1) # mark head as applied with our impl
+                                    head.depth = head.depth + 1
+                                    compute_score(screen, atab.tl, head, True)
+                                    reinsert_head(screen, tab_dep, head)
+                                    unmark(tab_dep)
+         
                                     c1 = prevent_duplicates(screen, atab, nd1, nd2)
                                     # update_screen(screen, atab.tl, interface, dirty1, dirty2)
 
@@ -2499,8 +2527,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                     # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                     if c1:
-                                        mark_hyp_inactive(tab_dep, head)
-                                        unmark(tab_dep)
+                                        #mark_hyp_inactive(tab_dep, head)
+                                        #unmark(tab_dep)
 
                                         progress = True
 
@@ -3165,7 +3193,7 @@ def automate(screen, tl, ttree, interface='curses'):
 
             if progress:
                 continue
-
+            
             # 13) Hypothesis "backtracking"
 
             if True: # whether we want hypothesis backtracking
