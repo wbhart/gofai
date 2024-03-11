@@ -2497,7 +2497,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
 
                                 if success:
-                                    head.backtrackable = False
+                                    head.backtrackable = True
                                     depth = head.depth + 1
 
                                     hyp_tab_dep1 = atab.tl.hyp_tab[line1]
@@ -3202,10 +3202,10 @@ def automate(screen, tl, ttree, interface='curses'):
                         node.backtrackable = False
 
                 if not old_bt_list:
-                    bt_list = atab.hyps_active
+                    bt_list = copy(atab.hyps_active)
                     old_bt_list = copy(bt_list)
                 else:
-                    bt_list = old_bt_list
+                    bt_list = copy(old_bt_list)
 
                 atab.hyps_active = copy(bt_list)
 
