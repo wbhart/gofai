@@ -488,6 +488,32 @@ def fill_macros(screen, tl):
     screen.pad2.refresh()
     screen.focus.refresh()
 
+def update_screen(screen, tl):
+    if len(tl.tlist0.data) > 0:  
+        screen.pad0.pad[0] = str(tl.tlist0.data[0])
+    for i in range(0, len(tl.tlist1.data)):
+        screen.pad1.pad[i] = str(tl.tlist1.data[i])
+    for i in range(0, len(tl.tlist2.data)):
+        screen.pad2.pad[i] = str(tl.tlist2.data[i])
+    tl.tlist1.line = 0
+    tl.tlist2.line = 0
+    tl.focus = tl.tlist1
+    screen.pad0.scroll_char = 0
+    screen.pad0.cursor_char = 0
+    screen.pad1.scroll_line = 0
+    screen.pad1.cursor_line = 0
+    screen.pad1.scroll_char = 0
+    screen.pad1.cursor_char = 0
+    screen.pad2.scroll_line = 0
+    screen.pad2.cursor_line = 0
+    screen.pad2.scroll_char = 0
+    screen.pad2.cursor_char = 0
+    screen.focus = screen.pad1
+    screen.pad0.refresh()
+    screen.pad1.refresh()
+    screen.pad2.refresh()
+    screen.focus.refresh()
+
 def select_substring(screen, tl):
     """
     Interface function for getting the user to select a substring of some

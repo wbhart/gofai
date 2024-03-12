@@ -6,7 +6,7 @@ from editor import get_text, edit
 from tree import TreeList
 from moves import cleanup, modus_ponens, modus_tollens, library_export, \
      library_import, clear_tableau, equality_substitution, targets_proved, \
-     library_load, fill_macros, convert, show_prune
+     library_load, fill_macros, convert, show_prune, update_screen
 from utility import TargetNode, initialise_sorts, type_vars, process_sorts, \
      update_constraints, prune_move_list
 from automation import automate
@@ -57,10 +57,12 @@ def main(stdscr):
         elif c == 'a': # automation
             if started:
                 if automate(screen, tl, ttree):
+                    update_screen(screen, tl)
                     screen.dialog("All targets proved!")
                     screen.dialog(str(len(tl.tlist1.data))+" lines")
                     done = True
                 else:
+                    update_screen(screen, tl)
                     screen.dialog("Unable to prove theorem.")
                 skip = True
         elif c == 'p': # modus ponens

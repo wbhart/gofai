@@ -1201,14 +1201,6 @@ def update_screen(screen, atab, interface, d1=None, d2=None):
     tlist2 = tl.tlist2.data
     dirty1 = atab.hyp_list
     dirty2 = atab.tar_list
-    #if d1 == None:
-    #    dirty1 = [i for i in range(len(tlist1))]
-    #    dirty2 = [i for i in range(len(tlist2))]
-    #else:
-    #    dirty1 = d1
-    #    dirty2 = d2
-    #    if not d1 and not d2:
-    #        return False # nothing to update
     if interface == 'curses':
         pad1 = screen.pad1.pad
         pad2 = screen.pad2.pad
