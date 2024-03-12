@@ -2013,9 +2013,22 @@ def find_tab(atab, tab, level=0):
         return atab, level
     
     for t in atab.descendants:
-        a = find_tab(t, tab, level + 1)
+        a, l = find_tab(t, tab, level + 1)
         if a:
-            return a
+            return a, l
+    
+    return None, None
+
+def remove_tab(atab, tab, level=0):
+    if tab == atab:
+        return atab, level
+    
+    for t in atab.descendants:
+        a, l = remove_tab(t, tab, level + 1)
+        if a:
+            if l == level + 1:
+                atab.descendants.remove(tab)
+            return a, l
     
     return None, None
 
@@ -2069,10 +2082,25 @@ def automate(screen, tl, ttree, interface='curses'):
         
     # make initial list of hydra nodes
     get_initial_hydras(screen, atab)
+
+    done = False
         
     while atab_list:
+        old_atab = atab
         atab = atab_list.pop() # get new tableau
+        if done:
+            remove_tab(atab.top_tab, old_atab)
 
+        remove_tabs = [] # tableaus identical to the current one
+        for tab2 in atab_list:
+            if all(node in tab2.hyps_active for node in atab.hyps_active) and \
+               all(node in tab2.tars_active for node in atab.tars_active) and \
+               all(node in atab.hyps_active for node in tab2.hyps_active) and \
+               all(node in atab.tars_active for node in tab2.tars_active):
+                  remove_tabs.append(tab2)
+        for tab2 in remove_tabs:
+            atab_list.remove(tab2)
+                
         screen.debug("New tableau")
 
         tlist1 = atab.tl.tlist1.data
@@ -2088,11 +2116,11 @@ def automate(screen, tl, ttree, interface='curses'):
             automation_limit += automation_increment
             return False
 
-        clear_screen(screen, atab.tl, interface)
-        update_screen(screen, atab, interface)
-
         if done:
             continue
+
+        clear_screen(screen, atab.tl, interface)
+        update_screen(screen, atab, interface)
 
         done = False # whether all targets are proved
         
@@ -3235,6 +3263,9 @@ def automate(screen, tl, ttree, interface='curses'):
             
             screen.debug("Final failure")
             return False
+
+    clear_screen(screen, atab.tl, interface)
+    update_screen(screen, atab, interface)
 
     library.close()
     return True # all tableaus done
