@@ -2115,7 +2115,7 @@ def automate(screen, tl, ttree, interface='curses'):
         if autotab_remove_deadnodes(screen, atab, [], [], interface):
             library.close()
             automation_limit += automation_increment
-            return False
+            return False, atab.tl
 
         if done:
             continue
@@ -2180,7 +2180,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     if autotab_remove_deadnodes(screen, atab, [], [], interface):
                         library.close()
                         automation_limit += automation_increment
-                        return False
+                        return False, atab.tl
 
                     check_lengths(atab.top_tab)
                     unmark(atab.top_tab)
@@ -2261,7 +2261,7 @@ def automate(screen, tl, ttree, interface='curses'):
                             if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                 library.close()
                                 automation_limit += automation_increment
-                                return False
+                                return False, atab.tl
 
                             check_lengths(atab.top_tab)
                             unmark(atab.top_tab)
@@ -2351,7 +2351,7 @@ def automate(screen, tl, ttree, interface='curses'):
                             if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                 library.close()
                                 automation_limit += automation_increment
-                                return False
+                                return False, atab.tl
 
                             check_lengths(atab.top_tab)
                             unmark(atab.top_tab)
@@ -2569,7 +2569,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                         if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                             library.close()
                                             automation_limit += automation_increment
-                                            return False
+                                            return False, atab.tl
 
                                         check_lengths(atab.top_tab)
                                         unmark(atab.top_tab)
@@ -2642,7 +2642,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -2711,7 +2711,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -2784,7 +2784,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -2866,7 +2866,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                         library.close()
                                         automation_limit += automation_increment
-                                        return False
+                                        return False, atab.tl
 
                                     check_lengths(atab.top_tab)
                                     unmark(atab.top_tab)
@@ -2940,7 +2940,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                         library.close()
                                         automation_limit += automation_increment
-                                        return False
+                                        return False, atab.tl
 
                                     check_lengths(atab.top_tab)
                                     unmark(atab.top_tab)
@@ -3011,7 +3011,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -3089,7 +3089,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -3168,7 +3168,7 @@ def automate(screen, tl, ttree, interface='curses'):
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
-                                    return False
+                                    return False, atab.tl
 
                                 check_lengths(atab.top_tab)
                                 unmark(atab.top_tab)
@@ -3223,13 +3223,13 @@ def automate(screen, tl, ttree, interface='curses'):
                 continue
             
             screen.debug("Final failure")
-            return False
+            return False, atab.tl
 
     clear_screen(screen, atab.tl, interface)
     update_screen(screen, atab, interface)
 
     library.close()
-    return True # all tableaus done
+    return True, atab.tl # all tableaus done
 
 
         
