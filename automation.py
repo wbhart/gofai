@@ -2,13 +2,13 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
      TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
      append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
      vars_used, max_type_size, complement_tree, sorts_mark, sorts_rollback, is_equality, \
-     target_depends, get_constants_qz, find_hydras, replace_tree, record_move
+     target_depends, get_constants_qz, find_hydras, replace_tree, record_move, deps_intersect
 from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
 from nodes import DeadNode, AutoImplNode, AutoEqNode, AutoIffNode, ImpliesNode, AndNode, \
      SymbolNode, NeqNode, ForallNode, EqNode, NotNode, FnApplNode, SubsetneqNode, LeafNode, \
-     LRNode, TupleNode, ExistsNode, OrNode
+     LRNode, TupleNode, ExistsNode, OrNode, ElemNode, VarNode
 from tree import TreeList
 from interface import nchars_to_chars, iswide_char
 from copy import deepcopy, copy
@@ -146,6 +146,8 @@ class AutoData:
         self.nconst2 = nconst2 # negated constants on right side of implication
         self.applied = [] # list of impls that have been applies to this head
         self.applied2 = [] # list of heads that have been applied to this impl
+        self.type_applied = [] # list of (varname, line) pairs of type judgements already obtained for this judgement
+        self.type = False # whether this head is the result of a type judgement
         self.num_mv = 0 # number of metavariables impl will increase or head has been increased
         self.score = 0.0 # score used for heuristic search (lower is better)
         self.impls_done = 0 # number of largest impl checked against this head for application
@@ -559,6 +561,7 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, \
             if dat.line == i:
                 atab.hyps_active.remove(dat)
         # add new details
+        atab.start1 = min(atab.start1, i)
 
     if top:
         for i in dirty1:
@@ -629,6 +632,8 @@ def update_autotab(screen, orig_tab, atab, dirty1, dirty2, interface, depth, \
         for dat in atab.tars_active:
             if dat.line == j:
                 atab.tars_active.remove(dat)
+
+        atab.start2 = min(atab.start2, j)
 
     if top:
         for j in dirty2:
@@ -1060,7 +1065,7 @@ def filter_definitions1(screen, atab, index, type_consts, consts, tabc, library=
     thms = []
 
     for (title, c, nc, filepos, defn) in index:
-        if defn or is_type_judgement(title):
+        if defn and not is_type_judgement(title):
             thmlist = c[2]
             nthmlist = nc[2]
             tconst = c[0]
@@ -1224,6 +1229,10 @@ def update_screen(screen, atab, interface, d1=None, d2=None):
             screen.pad1.cursor_down()
             screen.pad1.refresh()
             tl.tlist1.line += 1
+        while tl.tlist2.line < len(dirty2):
+            screen.pad2.cursor_down()
+            screen.pad2.refresh()
+            tl.tlist2.line += 1
         tl.tlist1.line = screen.pad1.scroll_line + screen.pad1.cursor_line
         tl.tlist2.line = screen.pad2.scroll_line + screen.pad2.cursor_line
         #screen.pad0.refresh()
@@ -2093,7 +2102,7 @@ def automate(screen, tl, ttree, interface='curses'):
         for tab2 in remove_tabs:
             atab_list.remove(tab2)
                 
-        screen.debug("New tableau")
+        screen.debug("New tableau: "+str(atab.num))
 
         tlist1 = atab.tl.tlist1.data
         tlist2 = atab.tl.tlist2.data
@@ -2223,11 +2232,6 @@ def automate(screen, tl, ttree, interface='curses'):
                             update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
                             dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                             update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                            # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                            # remove deductions which are duplicates or that have oversize types
-                            #c1 = check_duplicates(screen, atab.tl, ttree, n1, n2, interface)
-                            #c2 = check_type_sizes(screen, atab.tl, atab, n1, n2, interface)
                             
                             if True: # c1 and c2:
                                 tree = atab.tl.tlist1.data[line1]
@@ -2323,11 +2327,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                     node.applied.append(line1)
                             add_ancestors(nd2, nd1, head, impl)
                             c1 = prevent_duplicates(screen, atab, nd1, nd2)
-                            # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                            # remove deductions which are duplicates or that have oversize types
-                            #c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                            #c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                             if c1:
                                 tree = atab.tl.tlist1.data[line1]
@@ -2337,8 +2336,9 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if len(set(mv1).intersection(mv2)) == 0: # no shared metavars
                                         mark_hyp_inactive(tab_dep, impl)
 
-                                mark_hyp_inactive(tab_dep, head)
-                                unmark(tab_dep)
+                                if not head.type:
+                                    mark_hyp_inactive(tab_dep, head)
+                                    unmark(tab_dep)
 
                                 progress = True
 
@@ -2511,63 +2511,71 @@ def automate(screen, tl, ttree, interface='curses'):
 
                         thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                         if (pos and thmnode.ltor) or (neg and thmnode.rtol):
-                            if line1 not in head.applied: # check we didn't already apply this impl to this head
-                                n1 = len(tlist1) # any lines added after these are new
-                                
-                                success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
-
-                                if success:
-                                    head.backtrackable = True
-                                    depth = head.depth + 1
-
-                                    hyp_tab_dep1 = atab.tl.hyp_tab[line1]
-                                    hyp_tab_dep2 = atab.tl.hyp_tab[line2]
-                                    tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
-                                    
-                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                    for node in nd1:
-                                        node.applied.append(line1)
-                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                    for node in nd2:
-                                        if line1 not in node.applied:
-                                            node.applied.append(line1)
-                                    add_ancestors(nd2, nd1, head, None)
-                                    head.applied.append(line1) # mark head as applied with our impl
-                                    head.depth = head.depth + 1
-                                    compute_score(screen, atab.tl, head, True)
-                                    reinsert_head(screen, tab_dep, head)
-                                    unmark(tab_dep)
-         
-                                    c1 = prevent_duplicates(screen, atab, nd1, nd2)
-                                    # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                    # remove deductions which are duplicates or that have oversize types
-                                    # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                    # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
-
-                                    if c1:
-                                        #mark_hyp_inactive(tab_dep, head)
-                                        #unmark(tab_dep)
-
-                                        progress = True
-
-                                        done, partial = check_done(screen, atab, interface)
-                                        if partial:
-                                            old_bt_list = [] # reset backtracking 
-                                        
-                                        screen.debug("Type judgement")
-
-                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                        library.close()
-                                        automation_limit += automation_increment
-                                        return False
-
-                                    check_lengths(atab.top_tab)
-                                    unmark(atab.top_tab)
-                    
-                                    if done or progress:
+                            tree = tlist1[line2]
+                            if isinstance(tree, ElemNode) and isinstance(tree.left, VarNode):
+                                varname = tree.left.name()
+                                applied = False
+                                for var, tline in thmnode.type_applied:
+                                    if var == varname:
+                                        for hyp in atab.hyps_active:
+                                            if hyp.line == tline:
+                                                deps1 = atab.tl.tlist1.dependency(line2)
+                                                deps2 = atab.tl.tlist1.dependency(tline)
+                                                if -1 in deps2 or all(dep in deps2 for dep in deps1):
+                                                    applied = True
+                                                    break
+                                    if applied:
                                         break
+                                if not applied and line1 not in head.applied: # check we didn't already apply this impl to this head
+                                    n1 = len(tlist1) # any lines added after these are new
+                                    
+                                    success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, False, line1, line2, True)
+
+                                    if success:
+                                        head.backtrackable = True
+                                        depth = head.depth + 1
+
+                                        hyp_tab_dep1 = atab.tl.hyp_tab[line1]
+                                        hyp_tab_dep2 = atab.tl.hyp_tab[line2]
+                                        tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
+                                        
+                                        nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                        for node in nd1:
+                                            node.applied.append(line1)
+                                            node.type = True
+                                            newline = node.line
+                                        dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                        nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                        for node in nd2:
+                                            if line1 not in node.applied:
+                                                node.applied.append(line1)
+                                            newline = node.line
+                                            node.type = True
+                                        add_ancestors(nd2, nd1, head, None)
+                                        head.applied.append(line1) # mark head as applied with our impl
+                                        thmnode.type_applied.append((varname, newline))
+            
+                                        c1 = prevent_duplicates(screen, atab, nd1, nd2)
+
+                                        if c1:
+                                            progress = True
+
+                                            done, partial = check_done(screen, atab, interface)
+                                            if partial:
+                                                old_bt_list = [] # reset backtracking 
+                                            
+                                            screen.debug("Type judgement")
+
+                                        if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                            library.close()
+                                            automation_limit += automation_increment
+                                            return False
+
+                                        check_lengths(atab.top_tab)
+                                        unmark(atab.top_tab)
+                        
+                                        if done or progress:
+                                            break
 
                 if done or progress:
                     break
@@ -2613,11 +2621,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                 update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                                 update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, n2, interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, n2, interface)
                         
                                 if True: # c1 and c2:
                                     tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
@@ -2693,15 +2696,11 @@ def automate(screen, tl, ttree, interface='curses'):
                                 nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 add_ancestors(nd2, nd1, head, None)
                                 c1 = prevent_duplicates(screen, atab, nd1, nd2)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if c1:
-                                    mark_hyp_inactive(tab_dep, head)
-                                    unmark(tab_dep)
+                                    if not head.type:
+                                        mark_hyp_inactive(tab_dep, head)
+                                        unmark(tab_dep)
 
                                     progress = True
                                     
@@ -2709,8 +2708,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if partial:
                                         old_bt_list = [] # reset backtracking 
                                     
-                                    screen.debug("Safe hypothesis expansion")
-
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
                                     automation_limit += automation_increment
@@ -2766,11 +2763,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                 update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                                 update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, n2, interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, n2, interface)
                         
                                 if True: # c1 and c2:
                                     tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
@@ -2857,15 +2849,11 @@ def automate(screen, tl, ttree, interface='curses'):
                                             node.applied.append(line1)
                                     add_ancestors(nd2, nd1, head, None)
                                     c1 = prevent_duplicates(screen, atab, nd1, nd2)
-                                    # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                    # remove deductions which are duplicates or that have oversize types
-                                    # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                    # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                     if c1:
-                                        mark_hyp_inactive(tab_dep, head)
-                                        unmark(tab_dep)
+                                        if not head.type:
+                                            mark_hyp_inactive(tab_dep, head)
+                                            unmark(tab_dep)
 
                                         progress = True
 
@@ -2931,11 +2919,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                     update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
                                     dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                                     update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                                    # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                    # remove deductions which are duplicates or that have oversize types
-                                    # c1 = check_duplicates(screen, atab.tl, ttree, n1, n2, interface)
-                                    # c2 = check_type_sizes(screen, atab.tl, atab, n1, n2, interface)
                             
                                     if True: # c1 and c2:
                                         tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
@@ -3011,15 +2994,11 @@ def automate(screen, tl, ttree, interface='curses'):
                                 nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 add_ancestors(nd2, nd1, head, None)
                                 c1 = prevent_duplicates(screen, atab, nd1, nd2)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if c1:
-                                    mark_hyp_inactive(tab_dep, head)
-                                    unmark(tab_dep)
+                                    if not head.type:
+                                        mark_hyp_inactive(tab_dep, head)
+                                        unmark(tab_dep)
 
                                     progress = True
                                     
@@ -3099,11 +3078,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                                 nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 add_ancestors(nd2, nd1, impl, None)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if True: # c1 and c2:
                                     done, partial = check_done(screen, atab, interface)
@@ -3183,11 +3157,6 @@ def automate(screen, tl, ttree, interface='curses'):
                                 dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
                                 nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
                                 add_ancestors(nd2, nd1, head, None)
-                                # update_screen(screen, atab.tl, interface, dirty1, dirty2)
-
-                                # remove deductions which are duplicates or that have oversize types
-                                # c1 = check_duplicates(screen, atab.tl, ttree, n1, len(tlist2), interface)
-                                # c2 = check_type_sizes(screen, atab.tl, atab, n1, len(tlist2), interface)
 
                                 if True: # c1 and c2:
                                     done, partial = check_done(screen, atab, interface)
