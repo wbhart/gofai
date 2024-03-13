@@ -884,7 +884,7 @@ def filter_theorems1(screen, index, type_consts, consts, tabc):
     thms = []
 
     for (title, c, nc, filepos, defn) in index:
-        if not defn:
+        if not defn and '#' not in title:
             thmlist = c[2]
             nthmlist = nc[2]
             tconst = c[0]
@@ -919,7 +919,7 @@ def filter_theorems2(screen, atab, index, consts, hypc):
     thms = []
     
     for (title, c, nc, filepos, defn) in index:
-        if not defn:
+        if not defn and '#' not in title:
             thmlist = c[2]
             nthmlist = nc[2]
 
@@ -952,15 +952,16 @@ def filter_theorems3(screen, index, consts):
     thms = []
 
     for (title, c, nc, filepos, defn) in index:
-        thmlist = c[2]
+        if '#' not in title:
+            thmlist = c[2]
 
-        for line in range(len(thmlist)):
-            thm = thmlist[line]
+            for line in range(len(thmlist)):
+                thm = thmlist[line]
 
-            if not isinstance(thm, AutoImplNode) and not isinstance(thm, AutoEqNode) and \
-               not isinstance(thm, AutoIffNode):
-                if set(thm).issubset(consts):
-                    thms.append((title, filepos, line))
+                if not isinstance(thm, AutoImplNode) and not isinstance(thm, AutoEqNode) and \
+                not isinstance(thm, AutoIffNode):
+                    if set(thm).issubset(consts):
+                        thms.append((title, filepos, line))
     return thms
 
 def filter_implications1(screen, atab, impls, consts):

@@ -708,7 +708,7 @@ Tags: #sets #definition
 ------------------------------
 A = B \iff A \subseteq B \wedge B \subseteq A
 
-Title: Extensionality of sets
+Title: Extensionality of sets #
 [['Set'], [], ('\\iff', ['='], ['\\in']), ('\\iff', ['\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
 Tags: #sets
@@ -726,7 +726,7 @@ Tags: #sets #definition
 ------------------------------
 A \subsetneq B \iff A \subseteq B \wedge \neg(B \subseteq A)
 
-Title: Transitivity of set inclusion
+Title: Transitivity of set inclusion #
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq'])]
 Tags: #sets
@@ -737,7 +737,7 @@ B \subseteq C
 ------------------------------
 A \subseteq C
 
-Title: Mixed transitivity of set inclusion (right strict)
+Title: Mixed transitivity of set inclusion (right strict) #
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 Tags: #sets
@@ -748,7 +748,7 @@ B \subsetneq C
 ------------------------------
 A \subsetneq C
 
-Title: Mixed transitivity of set inclusion (left strict)
+Title: Mixed transitivity of set inclusion (left strict) #
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subseteq', '\\subsetneq'], ['\\subsetneq'])]
 Tags: #sets
@@ -759,7 +759,7 @@ B \subseteq C
 ------------------------------
 A \subsetneq C
 
-Title: Transitivity of strict set inclusion
+Title: Transitivity of strict set inclusion #
 [['Set'], [], (['\\subsetneq'], ['\\subsetneq'])]
 [['Set'], [], (['\\subsetneq'], ['\\subsetneq'])]
 Tags: #sets
@@ -770,7 +770,7 @@ B \subsetneq C
 ------------------------------
 A \subsetneq C
 
-Title: Element of a set is an element of a superset
+Title: Element of a set is an element of a superset #
 [['Set'], [], (['\\in', '\\subseteq'], ['\\in'])]
 [['Set'], [], (['\\in', '\\subseteq'], ['\\in'])]
 Tags: #sets
@@ -781,7 +781,7 @@ x \in A
 ------------------------------
 x \in B
 
-Title: Element of a set is an element of a strict superset
+Title: Element of a set is an element of a strict superset #
 [['Set'], [], (['\\in', '\\subsetneq'], ['\\in'])]
 [['Set'], [], (['\\in', '\\subsetneq'], ['\\in'])]
 Tags: #sets
@@ -792,7 +792,7 @@ x \in A
 ------------------------------
 x \in B
 
-Title: Cycle of set inclusions implies equality of those sets
+Title: Cycle of set inclusions implies equality of those sets #
 [['Set'], [], (['\\subseteq'], ['='])]
 [['Set'], [], (['\\subseteq'], ['\\neq'])]
 Tags: #sets
@@ -813,7 +813,7 @@ Tags: #sets
 ------------------------------
 \neg(x \in \emptyset(X))
 
-Title: Empty set is a subset of every set
+Title: Empty set is a subset of every set #
 [['Set'], [], ['\\emptyset', '\\subseteq']]
 [['Set'], [], ['\\emptyset', '\\subseteq']]
 Tags: #sets
@@ -831,7 +831,7 @@ Tags: #sets #definition
 ------------------------------
 x \in S \cup T \iff x \in S \vee x \in T
 
-Title: Subset of the empty set is empty
+Title: Subset of the empty set is empty #
 [['Set'], [], (['\\emptyset', '\\subseteq'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\emptyset', '\\subseteq'], ['\\emptyset', '\\neq'])]
 Tags: #sets
@@ -841,7 +841,7 @@ S \subseteq \emptyset(X)
 ------------------------------
 S = \emptyset(X)
 
-Title: Empty set strictly included in set implies set has an element
+Title: Empty set strictly included in set implies set has an element #
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
 [['Set'], [], (['\\emptyset', '\\subsetneq'], ['\\in'])]
 Tags: #sets
@@ -851,7 +851,7 @@ Tags: #sets
 ------------------------------
 \exists s \in X s \in S
 
-Title: Problem : A set containing an element strictly includes the empty set
+Title: Problem : A set containing an element strictly includes the empty set #
 [['Set'], [], (['\\in'], ['\\emptyset', '\\subsetneq'])]
 [['Set'], [], (['\\in'], ['\\emptyset', '\\subsetneq'])]
 Tags: #sets #tests
@@ -861,7 +861,7 @@ s \in S
 ------------------------------
 \emptyset(X) \subsetneq S
 
-Title: Commutativity of set union
+Title: Commutativity of set union #
 [['Set'], [], ('=', ['\\cup'], ['\\cup'])]
 [['Set'], [], ('=', ['\\cup'], ['\\cup'])]
 Tags: #sets
@@ -870,7 +870,7 @@ Tags: #sets
 ------------------------------
 S \cup T = T \cup S
 
-Title: Union of sets includes the sets individually
+Title: Union of sets includes the sets individually #
 [['Set'], [], ['\\cup', '\\subseteq']]
 [['Set'], [], ['\\cup', '\\subseteq']]
 Tags: #sets
@@ -879,7 +879,7 @@ Tags: #sets
 ------------------------------
 S \subseteq S \cup T
 
-Title: Union equal to one of the sets implies the other is included in it
+Title: Union equal to one of the sets implies the other is included in it #
 [['Set'], [], (['=', '\\cup'], ['\\subseteq'])]
 [['Set'], [], (['\\cup', '\\neq'], ['\\subseteq'])]
 Tags: #sets
@@ -889,7 +889,7 @@ S \cup T = S
 ------------------------------
 T \subseteq S
 
-Title: Subset of one of two sets is subset of their union
+Title: Subset of one of two sets is subset of their union #
 [['Set'], [], (['\\subseteq'], ['\\cup', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\cup', '\\subseteq'])]
 Tags: #sets
@@ -899,7 +899,7 @@ C \subseteq S \vee C \subseteq T
 ------------------------------
 C \subseteq S \cup T
 
-Title: Elements of set contained in two sets implies set is subset of their union
+Title: Elements of set contained in two sets implies set is subset of their union #
 [['Set'], [], (['\\in'], ['\\cup', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cup', '\\subseteq'])]
 Tags: #sets
@@ -909,7 +909,7 @@ Tags: #sets
 ------------------------------
 C \subseteq S \cup T
 
-Title: Union of set with the empty set is the original set
+Title: Union of set with the empty set is the original set #
 [['Set'], [], ('=', ['\\cup', '\\emptyset'], [])]
 [['Set'], [], ('=', ['\\cup', '\\emptyset'], [])]
 Tags: #sets
@@ -918,7 +918,7 @@ Tags: #sets
 ------------------------------
 S \cup \emptyset(X) = S
 
-Title: Union of a set with itself is itself
+Title: Union of a set with itself is itself #
 [['Set'], [], ('=', ['\\cup'], [])]
 [['Set'], [], ('=', ['\\cup'], [])]
 Tags: #sets
@@ -927,7 +927,7 @@ Tags: #sets
 ------------------------------
 S \cup S = S
 
-Title: Union is nonempty implies one of the sets has an element
+Title: Union is nonempty implies one of the sets has an element #
 [['Set'], [], (['\\cup', '\\emptyset', '\\neq'], ['\\in'])]
 [['Set'], [], (['=', '\\cup', '\\emptyset'], ['\\in'])]
 Tags: #sets
@@ -937,7 +937,7 @@ S \cup T \neq \emptyset(X)
 ------------------------------
 \exists x \in X x \in S \vee x \in T
 
-Title: Union is empty implies the sets are empty
+Title: Union is empty implies the sets are empty #
 [['Set'], [], (['=', '\\cup', '\\emptyset'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\cup', '\\emptyset', '\\neq'], ['\\emptyset', '\\neq'])]
 Tags: #sets
@@ -956,7 +956,7 @@ Tags: #sets #definition
 ------------------------------
 x \in S \cap T \iff x \in S \wedge x \in T
 
-Title: Commutativity of set intersection
+Title: Commutativity of set intersection #
 [['Set'], [], ('=', ['\\cap'], ['\\cap'])]
 [['Set'], [], ('=', ['\\cap'], ['\\cap'])]
 Tags: #sets
@@ -965,7 +965,7 @@ Tags: #sets
 ------------------------------
 S \cap T = T \cap S
 
-Title: Intersection of sets is a subset of the sets
+Title: Intersection of sets is a subset of the sets #
 [['Set'], [], ['\\cap', '\\subseteq']]
 [['Set'], [], ['\\cap', '\\subseteq']]
 Tags: #sets
@@ -974,7 +974,7 @@ Tags: #sets
 ------------------------------
 S \cap T \subseteq S
 
-Title: Intersection with the empty set is trivial
+Title: Intersection with the empty set is trivial #
 [['Set'], [], ('=', ['\\cap', '\\emptyset'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\cap', '\\emptyset'], ['\\emptyset'])]
 Tags: #sets
@@ -983,7 +983,7 @@ Tags: #sets
 ------------------------------
 S \cap \emptyset(X) = \emptyset(X)
 
-Title: Problem : An element in one set of an empty intersection is not in the other
+Title: Problem : An element in one set of an empty intersection is not in the other #
 [['Set'], [], (['=', '\\cap', '\\emptyset', '\\in'], ['\\in'])]
 [['Set'], [], (['\\cap', '\\emptyset', '\\in', '\\neq'], ['\\in'])]
 Tags: #sets #tests 
@@ -994,7 +994,7 @@ s \in S
 ------------------------------
 \neg(s \in T)
 
-Title: Intersection of a set with itself is itself
+Title: Intersection of a set with itself is itself #
 [['Set'], [], ('=', ['\\cap'], [])]
 [['Set'], [], ('=', ['\\cap'], [])]
 Tags: #sets
@@ -1003,7 +1003,7 @@ Tags: #sets
 ------------------------------
 S \cap S = S
 
-Title: Subset of intersection is subset of the second set
+Title: Subset of intersection is subset of the second set #
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 Tags: #sets
@@ -1013,7 +1013,7 @@ S \subseteq S \cap T
 ------------------------------
 S \subseteq T
 
-Title: Set included in two others is included in their intersection
+Title: Set included in two others is included in their intersection #
 [['Set'], [], (['\\in'], ['\\cap', '\\subseteq'])]
 [['Set'], [], (['\\in'], ['\\cap', '\\subseteq'])]
 Tags: #sets
@@ -1023,7 +1023,7 @@ Tags: #sets
 ------------------------------
 C \subseteq S \cap T
 
-Title: Set contained in intersection is contained in sets
+Title: Set contained in intersection is contained in sets #
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 [['Set'], [], (['\\cap', '\\subseteq'], ['\\subseteq'])]
 Tags: #sets
@@ -1034,7 +1034,7 @@ C \subseteq S \cap T
 C \subseteq S
 C \subseteq T
 
-Title: Intersection distributes over union
+Title: Intersection distributes over union #
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 Tags: #sets
@@ -1043,7 +1043,7 @@ Tags: #sets
 ------------------------------
 S \cap (T \cup U) = S \cap T \cup (S \cap U)
 
-Title: Union distributes over intersection
+Title: Union distributes over intersection #
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 [['Set'], [], ('=', ['\\cap', '\\cup'], ['\\cap', '\\cup'])]
 Tags: #sets
@@ -1088,7 +1088,7 @@ Tags: #sets #definition
 ------------------------------
 x \in S \times T \iff is_pair(x, S, T)
 
-Title: Element of cartesian product has components in the sets
+Title: Element of cartesian product has components in the sets #
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
 [['Set'], [], (['\\in', '\\times'], ['0', '1', '[]', '\\in'])]
 Tags: #sets
@@ -1106,7 +1106,7 @@ Tags: #sets
 ------------------------------
 a \in S \wedge b \in T \iff (a, b) \in S \times T
 
-Title: Cartesian product with the empty set is empty (right)
+Title: Cartesian product with the empty set is empty (right) #
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 Tags: #sets
@@ -1115,7 +1115,7 @@ Tags: #sets
 ------------------------------
 S \times \emptyset(X) = \emptyset(X \times X)
 
-Title: Cartesian product with the empty set is empty (left)
+Title: Cartesian product with the empty set is empty (left) #
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\times'], ['\\emptyset'])]
 Tags: #sets
@@ -1124,7 +1124,7 @@ Tags: #sets
 ------------------------------
 \emptyset(X) \times T = \emptyset(X \times X)
 
-Title: Cartesian product on the right preserves subset relation
+Title: Cartesian product on the right preserves subset relation #
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 Tags: #sets
@@ -1134,7 +1134,7 @@ A \subseteq B
 ------------------------------
 A \times C \subseteq B \times C
 
-Title: Cartesian product on the left preserves subset relation
+Title: Cartesian product on the left preserves subset relation #
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 Tags: #sets
@@ -1144,7 +1144,7 @@ B \subseteq C
 ------------------------------
 A \times B \subseteq A \times C
 
-Title: Problem : Subset on left and right of cartesian product gives subset
+Title: Problem : Subset on left and right of cartesian product gives subset #
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', '\\times'])]
 Tags: #sets #tests
@@ -1155,7 +1155,7 @@ B \subseteq D
 ------------------------------
 A \times B \subseteq C \times D
 
-Title: Cartesian product is empty implies one of the sets is empty
+Title: Cartesian product is empty implies one of the sets is empty #
 [['Set'], [], (['=', '\\emptyset', '\\times'], ['=', '\\emptyset'])]
 [['Set'], [], (['\\emptyset', '\\neq', '\\times'], ['\\emptyset', '\\neq'])]
 Tags: #sets
@@ -1165,7 +1165,7 @@ A \times B = \emptyset(X) \times \emptyset(X)
 ------------------------------
 A = \emptyset(X) \vee B = \emptyset(X)
 
-Title: Cartesian products are contained implies the sets are contained
+Title: Cartesian products are contained implies the sets are contained #
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subseteq', '\\times'], ['\\subseteq'])]
 Tags: #sets
@@ -1178,7 +1178,7 @@ B \neq \emptyset(X)
 A \subseteq C
 B \subseteq D
 
-Title: Cartesian products are contained implies the sets are contained (left)
+Title: Cartesian products are contained implies the sets are contained (left) #
 [['Set'], [], (['\\emptyset', '\\neq', '\\subseteq', '\\times'], ['\\subseteq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subseteq', '\\times'], ['\\subseteq'])]
 Tags: #sets
@@ -1189,7 +1189,7 @@ B \neq \emptyset(X)
 ------------------------------
 A \subseteq C
 
-Title: Strict containment of cartesian product of sets implies containment of sets
+Title: Strict containment of cartesian product of sets implies containment of sets #
 [['Set'], [], (['\\emptyset', '\\neq', '\\subsetneq', '\\times'], ['\\subsetneq'])]
 [['Set'], [], (['=', '\\emptyset', '\\subsetneq', '\\times'], ['\\subsetneq'])]
 Tags: #sets
@@ -1201,7 +1201,7 @@ B \neq \emptyset(X)
 ------------------------------
 A \subsetneq C \vee B \subsetneq D
 
-Title: Union of cartesian products is contained in product of unions
+Title: Union of cartesian products is contained in product of unions #
 [['Set'], [], ['\\cup', '\\subseteq', '\\times']]
 [['Set'], [], ['\\cup', '\\subseteq', '\\times']]
 Tags: #sets
@@ -1210,7 +1210,7 @@ Tags: #sets
 ------------------------------
 A \times B \cup C \times D \subseteq (A \cup C) \times (B \cup D)
 
-Title: Intersection of cartesian products equals cartesian product of intersections
+Title: Intersection of cartesian products equals cartesian product of intersections #
 [['Set'], [], ('=', ['\\cap', '\\times'], ['\\cap', '\\times'])]
 [['Set'], [], ('=', ['\\cap', '\\times'], ['\\cap', '\\times'])]
 Tags: #sets
@@ -1237,7 +1237,7 @@ Tags: #sets
 ------------------------------
 S \in \mathcal{P}(\emptyset(X)) \iff S = \emptyset(X)
 
-Title: Power sets are contained if the sets are contained
+Title: Power sets are contained if the sets are contained #
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\mathcal{P}', '\\subseteq'])]
 Tags: #sets
@@ -1247,7 +1247,7 @@ S \subseteq T
 ------------------------------
 \mathcal{P}(S) \subseteq \mathcal{P}(T)
 
-Title: Empty set is an element of the powerset of every set
+Title: Empty set is an element of the powerset of every set #
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
 [['Set'], [], ['\\emptyset', '\\in', '\\mathcal{P}']]
 Tags: #sets
@@ -1256,7 +1256,7 @@ Tags: #sets
 ------------------------------
 \emptyset(X) \in \mathcal{P}(S)
 
-Title: Power set of an intersection is the intersection of the power sets
+Title: Power set of an intersection is the intersection of the power sets #
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
 [['Set'], [], ('=', ['\\cap', '\\mathcal{P}'], ['\\cap', '\\mathcal{P}'])]
 Tags: #sets
@@ -1265,7 +1265,7 @@ Tags: #sets
 ------------------------------
 \mathcal{P}(S \cap T) = \mathcal{P}(S) \cap \mathcal{P}(T)
 
-Title: Union of powersets is contained in powerset of the union
+Title: Union of powersets is contained in powerset of the union #
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
 [['Set'], [], ['\\cup', '\\mathcal{P}', '\\subseteq']]
 Tags: #sets
@@ -1292,7 +1292,7 @@ Tags: #sets
 ------------------------------
 x \in S \implies x \in universe(S)
 
-Title: Complement of complement of a set is equal to that set
+Title: Complement of complement of a set is equal to that set #
 [['Set'], [], ('=', ['complement'], [])]
 [['Set'], [], ('=', ['complement'], [])]
 Tags: #sets
@@ -1301,7 +1301,7 @@ Tags: #sets
 ------------------------------
 complement(complement(S)) = S
 
-Title: Union of sets is the complement of the union of their complements
+Title: Union of sets is the complement of the union of their complements #
 [['Set'], [], ('=', ['\\cup'], ['\\cap', 'complement'])]
 [['Set'], [], ('=', ['\\cup'], ['\\cap', 'complement'])]
 Tags: #sets
@@ -1310,7 +1310,7 @@ Tags: #sets
 ------------------------------
 S \cup T = complement(complement(S) \cap complement(T))
 
-Title: Union of set and complement is universe
+Title: Union of set and complement is universe #
 [['Set'], [], ('=', ['\\cup', 'complement'], [])]
 [['Set'], [], ('=', ['\\cup', 'complement'], [])]
 Tags: #sets
@@ -1319,7 +1319,7 @@ Tags: #sets
 ------------------------------
 S \cup complement(S) = universe(S)
 
-Title: Intersection of a set with its complement is the empty set
+Title: Intersection of a set with its complement is the empty set #
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\cap', 'complement'], ['\\emptyset'])]
 Tags: #sets
@@ -1328,7 +1328,7 @@ Tags: #sets
 ------------------------------
 S \cap complement(S) = \emptyset(X)
 
-Title: Complement of a set equal to its universe is the empty set
+Title: Complement of a set equal to its universe is the empty set #
 [['Set'], [], (['='], ['=', '\\emptyset', 'complement'])]
 [['Set'], [], (['\\neq'], ['\\emptyset', '\\neq', 'complement'])]
 Tags: #sets
@@ -1338,7 +1338,7 @@ S = universe(S)
 ------------------------------
 complement(S) = \emptyset(X)
 
-Title: Complement reverses order of inclusion
+Title: Complement reverses order of inclusion #
 [['Set'], [], (['\\subseteq'], ['\\subseteq', 'complement'])]
 [['Set'], [], (['\\subseteq'], ['\\subseteq', 'complement'])]
 Tags: #sets
@@ -1357,7 +1357,7 @@ Tags: #sets #definition
 ------------------------------
 S \setminus T = S \cap complement(T)
 
-Title: Problem : Complement of set difference is complement of first set union second set
+Title: Problem : Complement of set difference is complement of first set union second set #
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cup', 'complement'])]
 Tags: #sets
@@ -1366,7 +1366,7 @@ Tags: #sets
 ------------------------------
 complement(S \setminus T) = complement(S) \cup T
 
-Title: Problem : Complement of set diff is complement of set union the intersection
+Title: Problem : Complement of set diff is complement of set union the intersection #
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cap', '\\cup', 'complement'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\cap', '\\cup', 'complement'])]
 Tags: #sets
@@ -1375,7 +1375,7 @@ Tags: #sets
 ------------------------------
 complement(S \setminus T) = complement(S) \cup (S \cap T)
 
-Title: Difference of complements is reverse difference
+Title: Difference of complements is reverse difference #
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\setminus'])]
 [['Set'], [], ('=', ['\\setminus', 'complement'], ['\\setminus'])]
 Tags: #sets
@@ -1384,7 +1384,7 @@ Tags: #sets
 ------------------------------
 complement(S) \setminus complement(T) = T \setminus S
 
-Title: Problem : Difference with intersection is union of differences
+Title: Problem : Difference with intersection is union of differences #
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cup', '\\setminus'])]
 Tags: #sets
@@ -1393,7 +1393,7 @@ Tags: #sets
 ------------------------------
 C \setminus (A \cap B) = (C \setminus A) \cup (C \setminus B)
 
-Title: Problem: Difference with union is intersection of differences
+Title: Problem: Difference with union is intersection of differences #
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cap', '\\setminus'])]
 Tags: #sets
@@ -1402,7 +1402,7 @@ Tags: #sets
 ------------------------------
 C \setminus (A \cup B) = (C \setminus A) \cap (C \setminus B)
 
-Title: Problem: Difference with difference is union of intersection and difference
+Title: Problem: Difference with difference is union of intersection and difference #
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', '\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap', '\\cup', '\\setminus'])]
 Tags: #sets
@@ -1411,7 +1411,7 @@ Tags: #sets
 ------------------------------
 C \setminus (B \setminus A) = C \cap A \cup (C \setminus B)
 
-Title: Problem : Difference with difference from same set is intersection
+Title: Problem : Difference with difference from same set is intersection #
 [['Set'], [], ('=', ['\\setminus'], ['\\cap'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\cap'])]
 Tags: #sets
@@ -1420,7 +1420,7 @@ Tags: #sets
 ------------------------------
 C \setminus (C \setminus A) = C \cap A
 
-Title: Problem: Intersection with difference is difference with intersection
+Title: Problem: Intersection with difference is difference with intersection #
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 Tags: #sets
@@ -1429,7 +1429,7 @@ Tags: #sets
 ------------------------------
 (B \setminus A) \cap C = B \cap C \setminus A
 
-Title: Problem : Intersection with difference is intersection with other difference
+Title: Problem : Intersection with difference is intersection with other difference #
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 [['Set'], [], ('=', ['\\cap', '\\setminus'], ['\\cap', '\\setminus'])]
 Tags: #sets
@@ -1438,7 +1438,7 @@ Tags: #sets
 ------------------------------
 (B \setminus A) \cap C = B \cap (C \setminus A)
 
-Title: Problem : Union with difference is difference of union and difference
+Title: Problem : Union with difference is difference of union and difference #
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cup', '\\setminus'])]
 [['Set'], [], ('=', ['\\cup', '\\setminus'], ['\\cup', '\\setminus'])]
 Tags: #sets
@@ -1447,7 +1447,7 @@ Tags: #sets
 ------------------------------
 (B \setminus A) \cup C = B \cup C \setminus (A \setminus C)
 
-Title: Difference of a set with itself is empty
+Title: Difference of a set with itself is empty #
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 Tags: #sets
@@ -1456,7 +1456,7 @@ Tags: #sets
 ------------------------------
 A \setminus A = \emptyset(X)
 
-Title: Difference of any set with empty set is empty
+Title: Difference of any set with empty set is empty #
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], ['\\emptyset'])]
 Tags: #sets
@@ -1465,7 +1465,7 @@ Tags: #sets
 ------------------------------
 \emptyset(X) \setminus A = \emptyset(X)
 
-Title: Difference of empty set with any set is that set
+Title: Difference of empty set with any set is that set #
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
 [['Set'], [], ('=', ['\\emptyset', '\\setminus'], [])]
 Tags: #sets
@@ -1474,7 +1474,7 @@ Tags: #sets
 ------------------------------
 A \setminus \emptyset(X) = A
 
-Title: Difference of a set and its universe is the empty set
+Title: Difference of a set and its universe is the empty set #
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 [['Set'], [], ('=', ['\\setminus'], ['\\emptyset'])]
 Tags: #sets
@@ -1483,7 +1483,7 @@ Tags: #sets
 ------------------------------
 A \setminus universe(A) = \emptyset(X)
 
-Title: Containment of sets is reversed upon taking differences with another set
+Title: Containment of sets is reversed upon taking differences with another set #
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
 [['Set'], [], (['\\subseteq'], ['\\setminus', '\\subseteq'])]
 Tags: #sets
@@ -1493,7 +1493,7 @@ A \subseteq B
 ------------------------------
 C \setminus B \subseteq C \setminus A
 
-Title: Problem : Difference is contained if different difference is contained
+Title: Problem : Difference is contained if different difference is contained #
 [['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
 [['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
 Tags: #sets
