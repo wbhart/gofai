@@ -2370,121 +2370,122 @@ def automate(screen, tl, ttree, interface='curses'):
                 continue
 
             # 4) See if there are any disjunctions as hypotheses where we can split the tableau
-            for impl in impls:
-                line = impl.line
-                tree = tlist1[line]
-                if isinstance(tree, ImpliesNode):
-                    mv1 = metavars_used(tree.left)
-                    mv2 = metavars_used(tree.right)
-                    if len(set(mv1).intersection(mv2)) == 0: # there are no shared metavars
-                        atab.hydras.append(atab.hydra) # reinsert current hydra
-                        atab.hydra = None
+            if False:
+                for impl in impls:
+                    line = impl.line
+                    tree = tlist1[line]
+                    if isinstance(tree, ImpliesNode):
+                        mv1 = metavars_used(tree.left)
+                        mv2 = metavars_used(tree.right)
+                        if len(set(mv1).intersection(mv2)) == 0: # there are no shared metavars
+                            atab.hydras.append(atab.hydra) # reinsert current hydra
+                            atab.hydra = None
 
-                        old_node = get_autonode(screen, atab.hyp_nodes, line) # get node for old line
-                        parent = atab.tl.hyp_tab[line] # parent of this line
+                            old_node = get_autonode(screen, atab.hyp_nodes, line) # get node for old line
+                            parent = atab.tl.hyp_tab[line] # parent of this line
 
-                        # P \implies Q will be replaced by ¬P and P \wedge Q
-                        alt_tree1 = deepcopy(complement_tree(tree.left))
-                        new_tab1 = copy_tableau(parent)
-                        new_tab1.tl.tlist1.data[line] = alt_tree1 # insert ¬P
+                            # P \implies Q will be replaced by ¬P and P \wedge Q
+                            alt_tree1 = deepcopy(complement_tree(tree.left))
+                            new_tab1 = copy_tableau(parent)
+                            new_tab1.tl.tlist1.data[line] = alt_tree1 # insert ¬P
 
-                        alt_tree2 = AndNode(deepcopy(tree.left), deepcopy(tree.right))
-                        new_tab2 = copy_tableau(parent)
-                        new_tab2.tl.tlist1.data[line] = alt_tree2 # insert P \wedge Q
+                            alt_tree2 = AndNode(deepcopy(tree.left), deepcopy(tree.right))
+                            new_tab2 = copy_tableau(parent)
+                            new_tab2.tl.tlist1.data[line] = alt_tree2 # insert P \wedge Q
 
-                        if parent == atab: # ordinary split from current tableau
-                            atab.descendants = [new_tab1, new_tab2]
+                            if parent == atab: # ordinary split from current tableau
+                                atab.descendants = [new_tab1, new_tab2]
 
-                            atab_list.append(new_tab2)
-                            atab_list.append(new_tab1)
+                                atab_list.append(new_tab2)
+                                atab_list.append(new_tab1)
 
-                        else: # part of the tree needs duplication
-                            atab_list.append(atab) # reinsert current tableau in atab_list
-                            new_atab_list = [] # update atab_list
-                          
-                            for tab in parent.descendants:
-                                tab2 = copy_tableau(tab, True) # copy descendants of parents
-                                tab3 = copy_tableau(tab, True) # copy descendants of parents
-                                tab.descendants = [tab2, tab3] # link up pseudo-tableaus to originals
-                                new_tab1.descendants.append(tab2) # also link to new_tab1
-                                new_tab2.descendants.append(tab3) # also link to new_tab1
-                                if tab in atab_list:
-                                    new_atab_list.append(tab2)
-                                    new_atab_list.append(tab3)
-                                    atab_list.remove(tab)
+                            else: # part of the tree needs duplication
+                                atab_list.append(atab) # reinsert current tableau in atab_list
+                                new_atab_list = [] # update atab_list
                             
-                            tab_dict = dict() # dictionary matching old tabs to copies
-
-                            for tab in new_tab2.descendants:
-                                duplicate_tableau_trees(screen, tab, tab_dict)
-                            
-                            for tab in new_tab2.descendants:
-                                unmark(tab)
-                            
-                            rewrite_hyp_tar_tabs(screen, new_tab2, tab_dict)
-                            unmark(new_tab2)
-                            update_split_line(screen, new_tab1, line, alt_tree1)
-                            unmark(new_tab1)
-                            update_split_line(screen, new_tab2, line, alt_tree2)
-                            unmark(new_tab2)
-                            
-                            parent.descendants.append(new_tab1)
-                            parent.descendants.append(new_tab2)
-
-                            for tab in atab_list:
-                                new_atab_list.append(tab)
-                                if tab in tab_dict:
-                                    new_atab_list.append(tab_dict[tab])
-
-                            while atab_list:
-                                atab_list.pop()
+                                for tab in parent.descendants:
+                                    tab2 = copy_tableau(tab, True) # copy descendants of parents
+                                    tab3 = copy_tableau(tab, True) # copy descendants of parents
+                                    tab.descendants = [tab2, tab3] # link up pseudo-tableaus to originals
+                                    new_tab1.descendants.append(tab2) # also link to new_tab1
+                                    new_tab2.descendants.append(tab3) # also link to new_tab1
+                                    if tab in atab_list:
+                                        new_atab_list.append(tab2)
+                                        new_atab_list.append(tab3)
+                                        atab_list.remove(tab)
                                 
-                            for tab in new_atab_list:
-                                atab_list.append(tab)
-                            
-                        # create new autotab for the new line
-                        nd1, _ = update_autotab(screen, new_tab1, new_tab1, [line], [], interface, old_node.depth, split_line=line)
-            
-                        node = nd1[0]
-                        node.ancestors = copy(old_node.ancestors) # add derivation history to node
-                    
-                        # apply cleanup moves to new line
-                        dirty1, dirty2 = autocleanup(screen, new_tab1.tl, new_tab1.ttree)
-                        nd2, _ = update_autotab(screen, new_tab1, new_tab1, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
+                                tab_dict = dict() # dictionary matching old tabs to copies
 
-                        for node2 in nd2:
-                            if node2 != node:
-                                node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
+                                for tab in new_tab2.descendants:
+                                    duplicate_tableau_trees(screen, tab, tab_dict)
+                                
+                                for tab in new_tab2.descendants:
+                                    unmark(tab)
+                                
+                                rewrite_hyp_tar_tabs(screen, new_tab2, tab_dict)
+                                unmark(new_tab2)
+                                update_split_line(screen, new_tab1, line, alt_tree1)
+                                unmark(new_tab1)
+                                update_split_line(screen, new_tab2, line, alt_tree2)
+                                unmark(new_tab2)
+                                
+                                parent.descendants.append(new_tab1)
+                                parent.descendants.append(new_tab2)
 
-                        new_tab1.start1 = min(new_tab1.start1, line) # reset incremental completion checking to new line
+                                for tab in atab_list:
+                                    new_atab_list.append(tab)
+                                    if tab in tab_dict:
+                                        new_atab_list.append(tab_dict[tab])
 
-                        # create new autotab for the new line
-                        nd1, _ = update_autotab(screen, new_tab2, new_tab2, [line], [], interface, old_node.depth, split_line=line)
-            
-                        node = nd1[0]
-                        node.ancestors = copy(old_node.ancestors) # add derivation history to node
-                    
-                        # apply cleanup moves to new line
-                        dirty1, dirty2 = autocleanup(screen, new_tab2.tl, new_tab2.ttree)
-                        nd2, _ = update_autotab(screen, new_tab2, new_tab2, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
-
-                        for node2 in nd2:
-                            if node2 != node:
-                                node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
-
-                        new_tab2.start1 = min(new_tab2.start1, line) # reset incremental completion checking to new line
+                                while atab_list:
+                                    atab_list.pop()
                                     
-                        progress = True
+                                for tab in new_atab_list:
+                                    atab_list.append(tab)
+                                
+                            # create new autotab for the new line
+                            nd1, _ = update_autotab(screen, new_tab1, new_tab1, [line], [], interface, old_node.depth, split_line=line)
+                
+                            node = nd1[0]
+                            node.ancestors = copy(old_node.ancestors) # add derivation history to node
+                        
+                            # apply cleanup moves to new line
+                            dirty1, dirty2 = autocleanup(screen, new_tab1.tl, new_tab1.ttree)
+                            nd2, _ = update_autotab(screen, new_tab1, new_tab1, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
 
-                        check_lengths(atab.top_tab)
-                        unmark(atab.top_tab)
-                    
-                        screen.debug("Tableau split")
+                            for node2 in nd2:
+                                if node2 != node:
+                                    node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
 
-                        break
+                            new_tab1.start1 = min(new_tab1.start1, line) # reset incremental completion checking to new line
 
-            if progress:
-                break
+                            # create new autotab for the new line
+                            nd1, _ = update_autotab(screen, new_tab2, new_tab2, [line], [], interface, old_node.depth, split_line=line)
+                
+                            node = nd1[0]
+                            node.ancestors = copy(old_node.ancestors) # add derivation history to node
+                        
+                            # apply cleanup moves to new line
+                            dirty1, dirty2 = autocleanup(screen, new_tab2.tl, new_tab2.ttree)
+                            nd2, _ = update_autotab(screen, new_tab2, new_tab2, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
+
+                            for node2 in nd2:
+                                if node2 != node:
+                                    node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
+
+                            new_tab2.start1 = min(new_tab2.start1, line) # reset incremental completion checking to new line
+                                        
+                            progress = True
+
+                            check_lengths(atab.top_tab)
+                            unmark(atab.top_tab)
+                        
+                            screen.debug("Tableau split")
+
+                            break
+
+                if progress:
+                    break
 
             ht = get_constants_qz(screen, atab.tl, atab.tl.tlist0.data[0]) if atab.tl.tlist0.data else [] # type constants
 
@@ -2587,219 +2588,221 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
 
-            # 6) Safe target expansion
-            for tar in atab.hydra.tars:
-                tar = get_autonode(screen, atab.tar_heads, tar_line)
-                libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=False)
-                
-                for (title, pos, neg, rewrite, filepos, line) in libthms:
-                    # check to see if thm already loaded
-                    line2 = tar.line
+            if False:
+                # 6) Safe target expansion
+                for tar in atab.hydra.tars:
+                    tar = get_autonode(screen, atab.tar_heads, tar_line)
+                    libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=False)
                     
-                    unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
-                                            atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, defn=True)
-                    
-                    if unifies1 or unifies2 or unifies3:
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
-
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
-
-                        thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
+                    for (title, pos, neg, rewrite, filepos, line) in libthms:
+                        # check to see if thm already loaded
+                        line2 = tar.line
                         
-                        if tar.line not in thmnode.applied2: # check we haven't applied it before
-                            thmnode.applied2.append(tar.line) # mark theorem as applied to our target
-                            
-                            n1 = len(tlist1) # any lines added after these are new
-                            n2 = len(tlist2)
-
-                            success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, False)
-                            
-                            if success:
-                                hyp_tab_dep = atab.tl.hyp_tab[line1]
-                                tar_tab_dep = atab.tl.tar_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep, tar_tab_dep)
-                                
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                        
-                                if True: # c1 and c2:
-                                    tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
-                                    atab.hydras.append(atab.hydra)
-                                    hydra_split(screen, tab_dep, tar.line, tar_idxs)
-                                    unmark(tab_dep)
-                            
-                                    if atab.hydras:
-                                        atab.hydra = atab.hydras.pop() # get new hydra
-
-                                    progress = True
-
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
-                                    
-                                    screen.debug("Safe target expansion")
-
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
-
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                if done or progress:
-                                    break
-                if done or progress:
-                    break
-            
-            if done:
-                break
-
-            if progress:
-                continue
-
-            # 7) Safe hypothesis expansion
-
-            for head in heads:
-                line2 = head.line
-
-                libthms = filter_definitions1(screen, atab, index, ht, head.const1, tabc, library=False)
-                
-                for (title, pos, neg, rewrite, filepos, line) in libthms:
-                    unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
+                        unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
                                                 atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, defn=True)
-
-                    if unifies1 or unifies2 or unifies3:
-                        # transfer library result to tableau
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
                         
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
+                        if unifies1 or unifies2 or unifies3:
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
 
-                        if line1 not in head.applied: # check we didn't already apply this impl to this head
-                            head.applied.append(line1) # mark head as applied with our impl
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
 
-                            n1 = len(tlist1) # any lines added after these are new
+                            thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                             
-                            success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, True)
-
-                            if success:
-                                head.backtrackable = True
-                                depth = head.depth + 1
-
-                                hyp_tab_dep1 = atab.tl.hyp_tab[line1]
-                                hyp_tab_dep2 = atab.tl.hyp_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
-
-                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                            if tar.line not in thmnode.applied2: # check we haven't applied it before
+                                thmnode.applied2.append(tar.line) # mark theorem as applied to our target
                                 
-                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                add_ancestors(nd2, nd1, head, None)
-                                c1 = prevent_duplicates(screen, atab, nd1, nd2)
+                                n1 = len(tlist1) # any lines added after these are new
+                                n2 = len(tlist2)
 
-                                if c1:
-                                    if not head.type:
-                                        mark_hyp_inactive(tab_dep, head)
+                                success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, False)
+                                
+                                if success:
+                                    hyp_tab_dep = atab.tl.hyp_tab[line1]
+                                    tar_tab_dep = atab.tl.tar_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep, tar_tab_dep)
+                                    
+                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
+                            
+                                    if True: # c1 and c2:
+                                        tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
+                                        atab.hydras.append(atab.hydra)
+                                        hydra_split(screen, tab_dep, tar.line, tar_idxs)
                                         unmark(tab_dep)
+                                
+                                        if atab.hydras:
+                                            atab.hydra = atab.hydras.pop() # get new hydra
 
-                                    progress = True
-                                    
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
-                                    
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
+                                        progress = True
 
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                if done or progress:
-                                    break
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                        screen.debug("Safe target expansion")
 
-                if done or progress:
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
+
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    if done or progress:
+                                        break
+                    if done or progress:
+                        break
+                
+                if done:
                     break
 
-            if done:
-                break
+                if progress:
+                    continue
 
-            if progress:
-                continue
+                # 7) Safe hypothesis expansion
+
+                for head in heads:
+                    line2 = head.line
+
+                    libthms = filter_definitions1(screen, atab, index, ht, head.const1, tabc, library=False)
+                    
+                    for (title, pos, neg, rewrite, filepos, line) in libthms:
+                        unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
+                                                    atab, line2, filepos, line, pos, neg, rewrite, mv_check=True, defn=True)
+
+                        if unifies1 or unifies2 or unifies3:
+                            # transfer library result to tableau
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                            
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
+
+                            if line1 not in head.applied: # check we didn't already apply this impl to this head
+                                head.applied.append(line1) # mark head as applied with our impl
+
+                                n1 = len(tlist1) # any lines added after these are new
+                                
+                                success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, True)
+
+                                if success:
+                                    head.backtrackable = True
+                                    depth = head.depth + 1
+
+                                    hyp_tab_dep1 = atab.tl.hyp_tab[line1]
+                                    hyp_tab_dep2 = atab.tl.hyp_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
+
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    add_ancestors(nd2, nd1, head, None)
+                                    c1 = prevent_duplicates(screen, atab, nd1, nd2)
+
+                                    if c1:
+                                        if not head.type:
+                                            mark_hyp_inactive(tab_dep, head)
+                                            unmark(tab_dep)
+
+                                        progress = True
+                                        
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
+
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    if done or progress:
+                                        break
+
+                    if done or progress:
+                        break
+
+                if done:
+                    break
+
+                if progress:
+                    continue
 
             # 8) Target expansion
-            for tar in atab.hydra.tars:
-                tar = get_autonode(screen, atab.tar_heads, tar_line)
-                libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=True)
-                
-                for (title, pos, neg, rewrite, filepos, line) in libthms:
-                    # check to see if thm already loaded
-                    line2 = tar.line
+            if False:
+                for tar in atab.hydra.tars:
+                    tar = get_autonode(screen, atab.tar_heads, tar_line)
+                    libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=True)
                     
-                    unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
-                                            atab, line2, filepos, line, pos, neg, rewrite, mv_check=False, defn=True)
-                    
-                    if unifies1 or unifies2 or unifies3:
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
-
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
-
-                        thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
+                    for (title, pos, neg, rewrite, filepos, line) in libthms:
+                        # check to see if thm already loaded
+                        line2 = tar.line
                         
-                        if tar.line not in thmnode.applied2: # check we haven't applied it before
-                            thmnode.applied2.append(tar.line) # mark theorem as applied to our target
-                            
-                            n1 = len(tlist1) # any lines added after these are new
-                            n2 = len(tlist2)
+                        unifies1, unifies2, unifies3, temp_tl, line = backwards_reasoning_possible(screen, \
+                                                atab, line2, filepos, line, pos, neg, rewrite, mv_check=False, defn=True)
+                        
+                        if unifies1 or unifies2 or unifies3:
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
 
-                            success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, False)
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, 0, True, library=True) # update autotab with new lines
+
+                            thmnode = get_autonode(screen, atab.hyp_impls, line1) # get autonode for theorem we want to apply
                             
-                            if success:
-                                hyp_tab_dep = atab.tl.hyp_tab[line1]
-                                tar_tab_dep = atab.tl.tar_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep, tar_tab_dep)
+                            if tar.line not in thmnode.applied2: # check we haven't applied it before
+                                thmnode.applied2.append(tar.line) # mark theorem as applied to our target
                                 
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
-                        
-                                if True: # c1 and c2:
-                                    tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
-                                    atab.hydras.append(atab.hydra)
-                                    hydra_split(screen, tab_dep, tar.line, tar_idxs)
-                                    unmark(tab_dep)
+                                n1 = len(tlist1) # any lines added after these are new
+                                n2 = len(tlist2)
 
-                                    if atab.hydras:
-                                        atab.hydra = atab.hydras.pop() # get new hydra
-
-                                    progress = True
-
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
+                                success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, False)
+                                
+                                if success:
+                                    hyp_tab_dep = atab.tl.hyp_tab[line1]
+                                    tar_tab_dep = atab.tl.tar_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep, tar_tab_dep)
                                     
-                                    screen.debug("Target expansion")
+                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, 0, False)
+                            
+                                    if True: # c1 and c2:
+                                        tar_idxs = hydra_append_new(screen, atab, tar, n2) # split the current hydra and reinsert
+                                        atab.hydras.append(atab.hydra)
+                                        hydra_split(screen, tab_dep, tar.line, tar_idxs)
+                                        unmark(tab_dep)
 
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
+                                        if atab.hydras:
+                                            atab.hydra = atab.hydras.pop() # get new hydra
 
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                if done or progress:
-                                    break
-                if done or progress:
+                                        progress = True
+
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                        screen.debug("Target expansion")
+
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
+
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    if done or progress:
+                                        break
+                    if done or progress:
+                        break
+                
+                if done:
                     break
-            
-            if done:
-                break
 
-            if progress:
-                continue
+                if progress:
+                    continue
 
             # 9) Forwards library reasoning
 
@@ -2959,230 +2962,231 @@ def automate(screen, tl, ttree, interface='curses'):
                 
             # 11) Hypothesis expansion
 
-            for head in heads:
-                line2 = head.line
+            if False:
+                for head in heads:
+                    line2 = head.line
 
-                libthms = filter_definitions1(screen, atab, index, ht, head.const1, tabc, library=True)
-                
-                for (title, pos, neg, rewrite, filepos, line) in libthms:
+                    libthms = filter_definitions1(screen, atab, index, ht, head.const1, tabc, library=True)
                     
-                    unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
-                                                atab, line2, filepos, line, pos, neg, rewrite, mv_check=False, defn=True)
-
-                    if unifies1 or unifies2 or unifies3:
-                        # transfer library result to tableau
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                    for (title, pos, neg, rewrite, filepos, line) in libthms:
                         
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
+                        unifies1, unifies2, unifies3, temp_tl, line = library_forwards_reasoning_possible(screen, \
+                                                    atab, line2, filepos, line, pos, neg, rewrite, mv_check=False, defn=True)
 
-                        if line1 not in head.applied: # check we didn't already apply this impl to this head
-                            head.applied.append(line1) # mark head as applied with our impl
-
-                            n1 = len(tlist1) # any lines added after these are new
+                        if unifies1 or unifies2 or unifies3:
+                            # transfer library result to tableau
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
                             
-                            success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, True)
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, head.depth + 1, True, library=True)
 
-                            if success:
-                                head.backtrackable = True
-                                depth = head.depth + 1
+                            if line1 not in head.applied: # check we didn't already apply this impl to this head
+                                head.applied.append(line1) # mark head as applied with our impl
 
-                                hyp_tab_dep1 = atab.tl.hyp_tab[line1]
-                                hyp_tab_dep2 = atab.tl.hyp_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
+                                n1 = len(tlist1) # any lines added after these are new
+                                
+                                success, dirty1, dirty2 = apply_theorem(screen, atab, unifies1, unifies2, unifies3, line1, line2, True)
 
-                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                add_ancestors(nd2, nd1, head, None)
-                                c1 = prevent_duplicates(screen, atab, nd1, nd2)
+                                if success:
+                                    head.backtrackable = True
+                                    depth = head.depth + 1
 
-                                if c1:
-                                    if not head.type:
-                                        mark_hyp_inactive(tab_dep, head)
-                                        unmark(tab_dep)
+                                    hyp_tab_dep1 = atab.tl.hyp_tab[line1]
+                                    hyp_tab_dep2 = atab.tl.hyp_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
 
-                                    progress = True
-                                    
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
-                                    
-                                    screen.debug("Hypothesis expansion")
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    add_ancestors(nd2, nd1, head, None)
+                                    c1 = prevent_duplicates(screen, atab, nd1, nd2)
 
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
+                                    if c1:
+                                        if not head.type:
+                                            mark_hyp_inactive(tab_dep, head)
+                                            unmark(tab_dep)
 
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                if done or progress:
-                                    break
+                                        progress = True
+                                        
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                        screen.debug("Hypothesis expansion")
 
-                if done or progress:
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
+
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    if done or progress:
+                                        break
+
+                    if done or progress:
+                        break
+
+                if done:
                     break
 
-            if done:
-                break
-
-            if progress:
-                continue
+                if progress:
+                    continue
 
             # 12) Implication atomic predicate expansion
+            if False:
+                for impl in impls:
+                    line2 = impl.line
 
-            for impl in impls:
-                line2 = impl.line
+                    tree = tlist1[line2]
+                    atomic = find_atomic_predicates(screen, tree)
+            
+                    if not atomic: # predicates at the top level would already have been expanded
+                        continue
 
-                tree = tlist1[line2]
-                atomic = find_atomic_predicates(screen, tree)
-        
-                if not atomic: # predicates at the top level would already have been expanded
-                    continue
+                    libthms = filter_definitions3(screen, atab, index, ht, impl.const1, impl.const2, tabc)
 
-                libthms = filter_definitions3(screen, atab, index, ht, impl.const1, impl.const2, tabc)
+                    for title, filepos, line in libthms:
+                        filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
 
-                for title, filepos, line in libthms:
-                    filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
+                        if filtered_atomic:
+                            # transfer library result to tableau
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                            
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
 
-                    if filtered_atomic:
-                        # transfer library result to tableau
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                            if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
+                                impl.applied.append(line1) # mark as applied
+
+                                n1 = len(tlist1) # any lines added after these are new
+                                dirty1 = []
+                                dirty2 = []
+
+                                tcopy = deepcopy(tree) # we'll replace the original line with this
                         
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
+                                for parent, n in filtered_atomic:
+                                    apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
 
-                        if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
-                            impl.applied.append(line1) # mark as applied
+                                    progress = True
 
-                            n1 = len(tlist1) # any lines added after these are new
-                            dirty1 = []
-                            dirty2 = []
+                                if progress:
+                                    tlist1[line2] = tcopy # switch original impl with copy
+                                    atab.hyp_impls.remove(impl) # remove original node from hyp_impls
 
-                            tcopy = deepcopy(tree) # we'll replace the original line with this
-                    
-                            for parent, n in filtered_atomic:
-                                apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
+                                    depth = impl.depth + 1
 
-                                progress = True
+                                    hyp_tab_dep1 = atab.tl.hyp_tab[line1]
+                                    hyp_tab_dep2 = atab.tl.hyp_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
 
-                            if progress:
-                                tlist1[line2] = tcopy # switch original impl with copy
-                                atab.hyp_impls.remove(impl) # remove original node from hyp_impls
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    add_ancestors(nd2, nd1, impl, None)
 
-                                depth = impl.depth + 1
+                                    if True: # c1 and c2:
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                        screen.debug("Implication atomic predicate expansion")
 
-                                hyp_tab_dep1 = atab.tl.hyp_tab[line1]
-                                hyp_tab_dep2 = atab.tl.hyp_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
 
-                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                add_ancestors(nd2, nd1, impl, None)
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    break
+                    if done or progress:
+                        break
 
-                                if True: # c1 and c2:
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
-                                    
-                                    screen.debug("Implication atomic predicate expansion")
-
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
-
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                break
-                if done or progress:
+                if done:
                     break
 
-            if done:
-                break
-
-            if progress:
-                continue
-
-            # 13) Head atomic predicate expansion
-
-            for head in heads:
-                line2 = head.line
-
-                tree = tlist1[line2]
-                atomic = find_atomic_predicates(screen, tree)
-        
-                if not atomic: # predicates at the top level would already have been expanded
+                if progress:
                     continue
 
-                libthms = filter_definitions3(screen, atab, index, ht, head.const1, None, tabc)
+                # 13) Head atomic predicate expansion
 
-                for title, filepos, line in libthms:
-                    filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
+                for head in heads:
+                    line2 = head.line
 
-                    if filtered_atomic:
-                        # transfer library result to tableau
-                        dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                    tree = tlist1[line2]
+                    atomic = find_atomic_predicates(screen, tree)
+            
+                    if not atomic: # predicates at the top level would already have been expanded
+                        continue
+
+                    libthms = filter_definitions3(screen, atab, index, ht, head.const1, None, tabc)
+
+                    for title, filepos, line in libthms:
+                        filtered_atomic, temp_tl, line = atomic_rewrite_possible(screen, atab, atomic, filepos, line)
+
+                        if filtered_atomic:
+                            # transfer library result to tableau
+                            dirty1, dirty2, line1 = load_theorem(screen, atab, temp_tl, filepos, line, defn=True)
+                            
+                            impl = get_autonode(screen, atab.hyp_impls, line1)
+
+                            update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
+
+                            if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
+                                impl.applied.append(line1) # mark as applied
+
+                                n1 = len(tlist1) # any lines added after these are new
+                                dirty1 = []
+                                dirty2 = []
+
+                                tcopy = deepcopy(tree) # we'll replace the original line with this
                         
-                        impl = get_autonode(screen, atab.hyp_impls, line1)
+                                for parent, n in filtered_atomic:
+                                    apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
 
-                        update_autotab(screen, atab, atab.top_tab, dirty1, dirty2, interface, impl.depth + 1, True, library=True)
+                                    progress = True
 
-                        if line1 not in impl.applied: # check we didn't already apply this expansion to this impl
-                            impl.applied.append(line1) # mark as applied
+                                if progress:
+                                    head.backtrackable = True
+                                    tlist1[line2] = tcopy # switch original head with copy
+                                    atab.hyp_heads.remove(head) # remove original node from hyp_heads
 
-                            n1 = len(tlist1) # any lines added after these are new
-                            dirty1 = []
-                            dirty2 = []
+                                    depth = head.depth + 1
 
-                            tcopy = deepcopy(tree) # we'll replace the original line with this
-                    
-                            for parent, n in filtered_atomic:
-                                apply_atomic_rewrite(screen, atab, dirty1, dirty2, parent, n, n1, line1, line2)
+                                    hyp_tab_dep1 = atab.tl.hyp_tab[line1]
+                                    hyp_tab_dep2 = atab.tl.hyp_tab[line2]
+                                    tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
+        
+                                    nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                                    nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
+                                    add_ancestors(nd2, nd1, head, None)
 
-                                progress = True
+                                    if True: # c1 and c2:
+                                        done, partial = check_done(screen, atab, interface)
+                                        if partial:
+                                            old_bt_list = [] # reset backtracking 
+                                        
+                                        screen.debug("Predicate atomic predicate expansion")
 
-                            if progress:
-                                head.backtrackable = True
-                                tlist1[line2] = tcopy # switch original head with copy
-                                atab.hyp_heads.remove(head) # remove original node from hyp_heads
+                                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                                        library.close()
+                                        automation_limit += automation_increment
+                                        return False, atab.tl
 
-                                depth = head.depth + 1
+                                    check_lengths(atab.top_tab)
+                                    unmark(atab.top_tab)
+                        
+                                    break
+                    if done or progress:
+                        break
 
-                                hyp_tab_dep1 = atab.tl.hyp_tab[line1]
-                                hyp_tab_dep2 = atab.tl.hyp_tab[line2]
-                                tab_dep = get_tab_dep(hyp_tab_dep1, hyp_tab_dep2)
-    
-                                nd1, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
-                                nd2, _ = update_autotab(screen, atab, tab_dep, dirty1, dirty2, interface, depth, False)
-                                add_ancestors(nd2, nd1, head, None)
-
-                                if True: # c1 and c2:
-                                    done, partial = check_done(screen, atab, interface)
-                                    if partial:
-                                        old_bt_list = [] # reset backtracking 
-                                    
-                                    screen.debug("Predicate atomic predicate expansion")
-
-                                if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
-                                    library.close()
-                                    automation_limit += automation_increment
-                                    return False, atab.tl
-
-                                check_lengths(atab.top_tab)
-                                unmark(atab.top_tab)
-                    
-                                break
-                if done or progress:
+                if done:
                     break
 
-            if done:
-                break
-
-            if progress:
-                continue
+                if progress:
+                    continue
             
             # 13) Hypothesis "backtracking"
 
@@ -3223,6 +3227,9 @@ def automate(screen, tl, ttree, interface='curses'):
             if progress:
                 continue
             
+            for node in atab.hyps_active:
+                screen.dialog(str(tlist1[node.line]))
+
             screen.debug("Final failure")
             return False, atab.tl
 

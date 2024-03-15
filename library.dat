@@ -708,7 +708,7 @@ Tags: #sets #definition
 ------------------------------
 A = B \iff A \subseteq B \wedge B \subseteq A
 
-Title: Extensionality of sets #
+Title: Extensionality of sets
 [['Set'], [], ('\\iff', ['='], ['\\in']), ('\\iff', ['\\in'], ['='])]
 [['Set'], [], ('\\iff', ['\\neq'], ['\\in']), ('\\iff', ['\\in'], ['\\neq'])]
 Tags: #sets
@@ -1502,6 +1502,18 @@ Tags: #sets
 B \setminus C \subseteq A
 ------------------------------
 B \setminus A \subseteq C
+
+Title: Problem : In set but not difference implies in other set
+[['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
+[['Set'], [], (['\\setminus', '\\subseteq'], ['\\setminus', '\\subseteq'])]
+Tags: #sets
+\forall X : Set, \forall B : Set(X), \forall C : Set(X), \forall x \in X
+------------------------------
+x \in universe(B)
+x \in B
+\neg(x \in B \setminus C)
+------------------------------
+x \in C
 
 Title: Definition of set builder
 [['Pred', 'Set'], [], ('\\iff', ['\\in', '{|}'], ['\\in']), ('\\iff', ['\\in'], ['\\in', '{|}'])]
