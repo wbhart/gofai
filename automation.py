@@ -2048,6 +2048,15 @@ def reinsert_head(screen, atab, head):
         if not tab.marked:
             reinsert_head(screen, tab, head)
 
+def fixup_hyp_tabs(atab, line, new_tab):
+    atab.tl.hyp_tab[line] = new_tab
+
+    atab.marked = True
+
+    for tab in atab.descendants:
+        if not tab.marked:
+            fixup_hyp_tabs(tab, line, new_tab)
+
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
 
@@ -2442,6 +2451,11 @@ def automate(screen, tl, ttree, interface='curses'):
                             for tab in new_atab_list:
                                 atab_list.append(tab)
                             
+                        fixup_hyp_tabs(new_tab1, line, new_tab1)
+                        unmark(new_tab1)
+                        fixup_hyp_tabs(new_tab2, line, new_tab2)
+                        unmark(new_tab2)
+                        
                         # create new autotab for the new line
                         nd1, _ = update_autotab(screen, new_tab1, new_tab1, [line], [], interface, old_node.depth, split_line=line)
             
@@ -2708,6 +2722,8 @@ def automate(screen, tl, ttree, interface='curses'):
                                     done, partial = check_done(screen, atab, interface)
                                     if partial:
                                         old_bt_list = [] # reset backtracking 
+                                    
+                                    screen.debug("Safe hypothesis expansion")
                                     
                                 if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
                                     library.close()
