@@ -1874,6 +1874,9 @@ def mark_tar_inactive(atab, tar):
             mark_tar_inactive(tab, tar)
 
 def get_tab_dep(tab1, tab2):
+    alltabs = []
+    found_tab = []
+
     def find(tab1, tab2):
         if tab1 == tab2:
             return tab1
@@ -1887,6 +1890,25 @@ def get_tab_dep(tab1, tab2):
                     return found
         return None
 
+    def find_all(atab):
+        alltabs.append(atab)
+
+        atab.marked = True
+
+        for tab in atab.descendants:
+            if not tab.marked:
+                find_all(tab)
+
+    def find_first(atab):
+        if atab in alltabs and not found_tab:
+            found_tab.append(atab)
+
+        atab.marked = True
+
+        for tab in atab.descendants:
+            if not tab.marked:
+                find_first(tab)
+
     found = find(tab1, tab2)
     unmark(tab1)
     if not found:
@@ -1897,7 +1919,14 @@ def get_tab_dep(tab1, tab2):
             if len(tabs) == 1:
                 found = tabs[0]
             else:
-                raise Exception("Invalid hypothesis dependency information")
+                find_all(tab1)
+                unmark(tab1)
+                find_first(tab2)
+                unmark(tab2)
+                if found_tab:
+                    found = found_tab[0]
+                else:
+                    raise Exception("Invalid hypothesis dependency information")
 
     return found
         
@@ -2010,15 +2039,15 @@ def rewrite_hyp_tar_tabs(screen, atab, tab_dict):
         if not tab.marked:
             rewrite_hyp_tar_tabs(screen, tab, tab_dict)
 
-def find_tab(atab, tab, level=0):
+def find_tab(screen, atab, tab, level=0):
     if tab == atab:
         return atab, level
     
     for t in atab.descendants:
-        a, l = find_tab(t, tab, level + 1)
+        a, l = find_tab(screen, t, tab, level + 1)
         if a:
             return a, l
-    
+
     return None, None
 
 def remove_tab(atab, tab, level=0):
@@ -2111,8 +2140,6 @@ def automate(screen, tl, ttree, interface='curses'):
                   remove_tabs.append(tab2)
         for tab2 in remove_tabs:
             atab_list.remove(tab2)
-                
-        screen.debug("New tableau: "+str(atab.num))
 
         tlist1 = atab.tl.tlist1.data
         tlist2 = atab.tl.tlist2.data
@@ -2132,6 +2159,8 @@ def automate(screen, tl, ttree, interface='curses'):
 
         clear_screen(screen, atab.tl, interface)
         update_screen(screen, atab, interface)
+
+        screen.debug("New tableau: "+str(atab.num))
 
         done = False # whether all targets are proved
         
