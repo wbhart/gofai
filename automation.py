@@ -1426,7 +1426,8 @@ def load_theorem(screen, atab, temp_tl, filepos, line, defn=False):
             if defn:
                 atab.tl.defn.append(len(tlist1) - 1)
         atab.libthms_loaded[filepos] = j # mark theorem as loaded
-        atab.tl.vars = temp_tl.vars # update vars in main tableau
+        for v in temp_tl.vars:
+            atab.tl.vars[v] = temp_tl.vars[v] # update vars in main tableau (we can't replace vars struct due to var renaming)
         atab.tl.stree = temp_tl.stree # update sort graph in main tableau
             
     return dirty1, dirty2, line
