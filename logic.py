@@ -723,7 +723,7 @@ def library_export(screen, tl, library, title, tags):
         library.write(repr(tar)+"\n")
     library.write("\n")
 
-def cleanup(screen, tl, ttree, defn=False):
+def cleanup(screen, tl, ttree, defn=False, hyp_split=False):
     """
     Automated cleanup moves. This applies numerous moves that the user will
     essentially always want to do. This is applied automatically after every
@@ -946,7 +946,7 @@ def cleanup(screen, tl, ttree, defn=False):
                     n = len(tl1) - 1
                     tl.tlist1.dep[n] = [j]
                     mark_shared(tl2[j], tl1[n])
-                while isinstance(tl2[j], AndNode):
+                while not hyp_split and isinstance(tl2[j], AndNode):
                     # First check we don't have P \wedge P
                     unifies, assign, macros = unify(screen, tl, tl2[j].left, tl2[j].right)
                     unifies = unifies and check_macros(screen, tl, macros, assign, tl.tlist0.data)

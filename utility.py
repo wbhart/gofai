@@ -808,6 +808,7 @@ class TargetNode:
         self.unifies = [] # list of hyps this target unifies with on its own
         self.reason = None # how target was proved (hyp. i, contr. (i, j), equal. -1, andlist None)
         self.extra_hyps = [] # any extra hypotheses which were needed to prove node
+        self.special = False # whether anything can proved this
 
     def __str__(self):
         if not self.andlist:
@@ -868,7 +869,7 @@ def add_descendant(ttree, i, j, hyp=None):
         n = TargetNode(j)
         if hyp:
             n.extra_hyps.append(hyp)
-        ttree.andlist = [n]
+        ttree.andlist.append(n)
         return True
     for P in ttree.andlist:
         if add_descendant(P, i, j, hyp):
@@ -899,6 +900,10 @@ def deps_compatible(screen, tl, ttree, i, j):
                 return t
         return None
 
+    tar = find(ttree, i)
+    if tar.special:
+        return True
+        
     for d in dep_list:
         root = find(ttree, d) # find target d
         if find(root, i): # target i is a descendant of d

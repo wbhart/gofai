@@ -2,7 +2,8 @@ from utility import is_implication, get_constants, get_init_vars, list_merge, de
      TargetNode, update_constraints, process_sorts, append_tree, unquantify, target_compatible, \
      append_quantifiers, relabel, deps_defunct, is_duplicate_upto_metavars, metavars_used, \
      vars_used, max_type_size, complement_tree, sorts_mark, sorts_rollback, is_equality, \
-     target_depends, get_constants_qz, find_hydras, replace_tree, record_move, deps_intersect
+     target_depends, get_constants_qz, find_hydras, replace_tree, record_move, deps_intersect, \
+     add_descendant
 from autoparse import parse_consts
 from moves import check_targets_proved
 from unification import unify, substitute
@@ -1165,8 +1166,8 @@ def filter_definitions3(screen, atab, index, type_consts, const1, const2, tabc):
 
     return thms
 
-def autocleanup(screen, tl, ttree, defn=False):
-    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn)
+def autocleanup(screen, tl, ttree, defn=False, hyp_split=False):
+    dirty1, dirty2 = logic.cleanup(screen, tl, ttree, defn, hyp_split)
     logic.fill_macros(screen, tl)
     ok, error = update_constraints(screen, tl)
     if ok:
@@ -1740,7 +1741,8 @@ def hydra_append_new(screen, atab, tar, n2):
     tlist2 = atab.tl.tlist2.data
 
     tar_idxs = deepcopy(atab.hydra.tars)
-    tar_idxs.remove(tar.line) # we've reasoned back from tar, remove it
+    if tar != None:
+        tar_idxs.remove(tar.line) # we've reasoned back from tar, remove it
 
     for i in range(n2, len(tlist2)): # add new lines
         if not isinstance(tlist2[i], DeadNode):
@@ -1753,18 +1755,19 @@ def hydra_split(screen, atab, line, tar_idxs):
     hydra = None
 
     # find hydra containing line
-    for i in range(len(atab.hydras)):
-        hydra = atab.hydras[i]
-        found = False
-        for tar_line in hydra.tars:
-            if line == tar_line: # found the hydra
-                found = True
-                break
-        if found:
-            break        
+    if line != -1:
+        for i in range(len(atab.hydras)):
+            hydra = atab.hydras[i]
+            found = False
+            for tar_line in hydra.tars:
+                if line == tar_line: # found the hydra
+                    found = True
+                    break
+            if found:
+                break        
 
-    if hydra:
-        atab.hydras.remove(hydra) # remove the hydra
+        if hydra:
+            atab.hydras.remove(hydra) # remove the hydra
 
     hydras = find_hydras(tlist2, tar_idxs)
 
@@ -2086,6 +2089,44 @@ def fixup_hyp_tabs(atab, line, new_tab):
         if not tab.marked:
             fixup_hyp_tabs(tab, line, new_tab)
 
+def tar_complement(ttree, n):
+    path = []
+    comp = []
+
+    def find_path(ttree, n, path):
+        path.append(ttree)
+
+        if ttree.num == n:
+            return True
+
+        for t in ttree.andlist:
+            if find_path(t, n, path):
+                return True
+        
+        path.pop()
+
+        return False
+
+    find_path(ttree, n, path)
+    
+    for node in path:
+        for t in node.andlist:
+            if t not in path:
+                comp.append(t.num)
+
+    return comp
+
+def find_tar(ttree, n,):
+    if ttree.num == n:
+        return ttree
+
+    for t in ttree.andlist:
+        found = find_tar(t, n)
+        if found:
+            return found
+
+    return None
+
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
     global tab_count
@@ -2169,7 +2210,7 @@ def automate(screen, tl, ttree, interface='curses'):
         
         while True: # keep going until theorem proved or progress stalls
             progress = False # whether progress was made at some level of the waterfall
-
+            
             # get all constants in active hypotheses
             hypc = []
             
@@ -2337,7 +2378,7 @@ def automate(screen, tl, ttree, interface='curses'):
                     if (v in atab.hyps_active or v.special) and deps_compatible(screen, atab.tl, atab.ttree, tar.line, v.line):
                         if v not in heads:
                             insert_sort(screen, heads, v)
-
+            
             for head in heads:
                 line2 = head.line
 
@@ -2408,129 +2449,130 @@ def automate(screen, tl, ttree, interface='curses'):
                 break
 
             if progress:
-                continue
+                continue          
 
             # 4) See if there are any disjunctions as hypotheses where we can split the tableau
-            for impl in impls:
-                line = impl.line
-                tree = tlist1[line]
-                if isinstance(tree, ImpliesNode):
-                    mv1 = metavars_used(tree.left)
-                    mv2 = metavars_used(tree.right)
-                    if len(set(mv1).intersection(mv2)) == 0: # there are no shared metavars
-                        atab.hydras.append(atab.hydra) # reinsert current hydra
-                        atab.hydra = None
+            if False:
+                for impl in impls:
+                    line = impl.line
+                    tree = tlist1[line]
+                    if isinstance(tree, ImpliesNode):
+                        mv1 = metavars_used(tree.left)
+                        mv2 = metavars_used(tree.right)
+                        if len(set(mv1).intersection(mv2)) == 0: # there are no shared metavars
+                            atab.hydras.append(atab.hydra) # reinsert current hydra
+                            atab.hydra = None
 
-                        old_node = get_autonode(screen, atab.hyp_nodes, line) # get node for old line
-                        parent = atab.tl.hyp_tab[line] # parent of this line
+                            old_node = get_autonode(screen, atab.hyp_nodes, line) # get node for old line
+                            parent = atab.tl.hyp_tab[line] # parent of this line
 
-                        # P \implies Q will be replaced by ¬P and P \wedge Q
-                        alt_tree1 = deepcopy(complement_tree(tree.left))
-                        new_tab1 = copy_tableau(parent)
-                        new_tab1.tl.tlist1.data[line] = alt_tree1 # insert ¬P
+                            # P \implies Q will be replaced by ¬P and P \wedge Q
+                            alt_tree1 = deepcopy(complement_tree(tree.left))
+                            new_tab1 = copy_tableau(parent)
+                            new_tab1.tl.tlist1.data[line] = alt_tree1 # insert ¬P
 
-                        alt_tree2 = AndNode(deepcopy(tree.left), deepcopy(tree.right))
-                        new_tab2 = copy_tableau(parent)
-                        new_tab2.tl.tlist1.data[line] = alt_tree2 # insert P \wedge Q
+                            alt_tree2 = AndNode(deepcopy(tree.left), deepcopy(tree.right))
+                            new_tab2 = copy_tableau(parent)
+                            new_tab2.tl.tlist1.data[line] = alt_tree2 # insert P \wedge Q
 
-                        if parent == atab: # ordinary split from current tableau
-                            atab.descendants = [new_tab1, new_tab2]
+                            if parent == atab: # ordinary split from current tableau
+                                atab.descendants = [new_tab1, new_tab2]
 
-                            atab_list.append(new_tab2)
-                            atab_list.append(new_tab1)
+                                atab_list.append(new_tab2)
+                                atab_list.append(new_tab1)
 
-                        else: # part of the tree needs duplication
-                            atab_list.append(atab) # reinsert current tableau in atab_list
-                            new_atab_list = [] # update atab_list
-                          
-                            for tab in parent.descendants:
-                                tab2 = copy_tableau(tab, True) # copy descendants of parents
-                                tab3 = copy_tableau(tab, True) # copy descendants of parents
-                                tab.descendants = [tab2, tab3] # link up pseudo-tableaus to originals
-                                new_tab1.descendants.append(tab2) # also link to new_tab1
-                                new_tab2.descendants.append(tab3) # also link to new_tab1
-                                if tab in atab_list:
-                                    new_atab_list.append(tab2)
-                                    new_atab_list.append(tab3)
-                                    atab_list.remove(tab)
+                            else: # part of the tree needs duplication
+                                atab_list.append(atab) # reinsert current tableau in atab_list
+                                new_atab_list = [] # update atab_list
                             
-                            tab_dict = dict() # dictionary matching old tabs to copies
-
-                            for tab in new_tab2.descendants:
-                                duplicate_tableau_trees(screen, tab, tab_dict)
-                            
-                            for tab in new_tab2.descendants:
-                                unmark(tab)
-                            
-                            rewrite_hyp_tar_tabs(screen, new_tab2, tab_dict)
-                            unmark(new_tab2)
-                            update_split_line(screen, new_tab1, line, alt_tree1)
-                            unmark(new_tab1)
-                            update_split_line(screen, new_tab2, line, alt_tree2)
-                            unmark(new_tab2)
-                            
-                            parent.descendants.append(new_tab1)
-                            parent.descendants.append(new_tab2)
-
-                            for tab in atab_list:
-                                new_atab_list.append(tab)
-                                if tab in tab_dict:
-                                    new_atab_list.append(tab_dict[tab])
-
-                            while atab_list:
-                                atab_list.pop()
+                                for tab in parent.descendants:
+                                    tab2 = copy_tableau(tab, True) # copy descendants of parents
+                                    tab3 = copy_tableau(tab, True) # copy descendants of parents
+                                    tab.descendants = [tab2, tab3] # link up pseudo-tableaus to originals
+                                    new_tab1.descendants.append(tab2) # also link to new_tab1
+                                    new_tab2.descendants.append(tab3) # also link to new_tab1
+                                    if tab in atab_list:
+                                        new_atab_list.append(tab2)
+                                        new_atab_list.append(tab3)
+                                        atab_list.remove(tab)
                                 
-                            for tab in new_atab_list:
-                                atab_list.append(tab)
-                            
-                        fixup_hyp_tabs(new_tab1, line, new_tab1)
-                        unmark(new_tab1)
-                        fixup_hyp_tabs(new_tab2, line, new_tab2)
-                        unmark(new_tab2)
-                        
-                        # create new autotab for the new line
-                        nd1, _ = update_autotab(screen, new_tab1, new_tab1, [line], [], interface, old_node.depth, split_line=line)
-            
-                        node = nd1[0]
-                        node.ancestors = copy(old_node.ancestors) # add derivation history to node
-                    
-                        # apply cleanup moves to new line
-                        dirty1, dirty2 = autocleanup(screen, new_tab1.tl, new_tab1.ttree)
-                        nd2, _ = update_autotab(screen, new_tab1, new_tab1, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
+                                tab_dict = dict() # dictionary matching old tabs to copies
 
-                        for node2 in nd2:
-                            if node2 != node:
-                                node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
+                                for tab in new_tab2.descendants:
+                                    duplicate_tableau_trees(screen, tab, tab_dict)
+                                
+                                for tab in new_tab2.descendants:
+                                    unmark(tab)
+                                
+                                rewrite_hyp_tar_tabs(screen, new_tab2, tab_dict)
+                                unmark(new_tab2)
+                                update_split_line(screen, new_tab1, line, alt_tree1)
+                                unmark(new_tab1)
+                                update_split_line(screen, new_tab2, line, alt_tree2)
+                                unmark(new_tab2)
+                                
+                                parent.descendants.append(new_tab1)
+                                parent.descendants.append(new_tab2)
 
-                        new_tab1.start1 = min(new_tab1.start1, line) # reset incremental completion checking to new line
+                                for tab in atab_list:
+                                    new_atab_list.append(tab)
+                                    if tab in tab_dict:
+                                        new_atab_list.append(tab_dict[tab])
 
-                        # create new autotab for the new line
-                        nd1, _ = update_autotab(screen, new_tab2, new_tab2, [line], [], interface, old_node.depth, split_line=line)
-            
-                        node = nd1[0]
-                        node.ancestors = copy(old_node.ancestors) # add derivation history to node
-                    
-                        # apply cleanup moves to new line
-                        dirty1, dirty2 = autocleanup(screen, new_tab2.tl, new_tab2.ttree)
-                        nd2, _ = update_autotab(screen, new_tab2, new_tab2, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
-
-                        for node2 in nd2:
-                            if node2 != node:
-                                node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
-
-                        new_tab2.start1 = min(new_tab2.start1, line) # reset incremental completion checking to new line
+                                while atab_list:
+                                    atab_list.pop()
                                     
-                        progress = True
+                                for tab in new_atab_list:
+                                    atab_list.append(tab)
+                                
+                            fixup_hyp_tabs(new_tab1, line, new_tab1)
+                            unmark(new_tab1)
+                            fixup_hyp_tabs(new_tab2, line, new_tab2)
+                            unmark(new_tab2)
+                            
+                            # create new autotab for the new line
+                            nd1, _ = update_autotab(screen, new_tab1, new_tab1, [line], [], interface, old_node.depth, split_line=line)
+                
+                            node = nd1[0]
+                            node.ancestors = copy(old_node.ancestors) # add derivation history to node
+                        
+                            # apply cleanup moves to new line
+                            dirty1, dirty2 = autocleanup(screen, new_tab1.tl, new_tab1.ttree)
+                            nd2, _ = update_autotab(screen, new_tab1, new_tab1, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
 
-                        check_lengths(atab.top_tab)
-                        unmark(atab.top_tab)
-                    
-                        screen.debug("Tableau split")
+                            for node2 in nd2:
+                                if node2 != node:
+                                    node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
 
-                        break
+                            new_tab1.start1 = min(new_tab1.start1, line) # reset incremental completion checking to new line
 
-            if progress:
-                break
+                            # create new autotab for the new line
+                            nd1, _ = update_autotab(screen, new_tab2, new_tab2, [line], [], interface, old_node.depth, split_line=line)
+                
+                            node = nd1[0]
+                            node.ancestors = copy(old_node.ancestors) # add derivation history to node
+                        
+                            # apply cleanup moves to new line
+                            dirty1, dirty2 = autocleanup(screen, new_tab2.tl, new_tab2.ttree)
+                            nd2, _ = update_autotab(screen, new_tab2, new_tab2, dirty1, dirty2, interface, old_node.depth + 1, split_line=line)
+
+                            for node2 in nd2:
+                                if node2 != node:
+                                    node2.ancestors = copy(old_node.ancestors) # add derivation history to any new nodes
+
+                            new_tab2.start1 = min(new_tab2.start1, line) # reset incremental completion checking to new line
+                                        
+                            progress = True
+
+                            check_lengths(atab.top_tab)
+                            unmark(atab.top_tab)
+                        
+                            screen.debug("Tableau split")
+
+                            break
+
+                if progress:
+                    break
 
             ht = get_constants_qz(screen, atab.tl, atab.tl.tlist0.data[0]) if atab.tl.tlist0.data else [] # type constants
 
@@ -2678,6 +2720,12 @@ def automate(screen, tl, ttree, interface='curses'):
                                     if atab.hydras:
                                         atab.hydra = atab.hydras.pop() # get new hydra
 
+                                    tnode = find_tar(atab.ttree, tar.line)
+                                    if tnode.special:
+                                        for n in range(n2, len(tlist2)):
+                                            tnode = find_tar(atab.ttree, n)
+                                            tnode.special = True
+
                                     progress = True
 
                                     done, partial = check_done(screen, atab, interface)
@@ -2778,7 +2826,7 @@ def automate(screen, tl, ttree, interface='curses'):
                 continue
 
             # 8) Target expansion
-            for tar in atab.hydra.tars:
+            for tar_line in atab.hydra.tars:
                 tar = get_autonode(screen, atab.tar_heads, tar_line)
                 libthms = filter_definitions2(screen, atab, index, tar.const1, hypc, library=True)
                 
@@ -2818,6 +2866,12 @@ def automate(screen, tl, ttree, interface='curses'):
                                     atab.hydras.append(atab.hydra)
                                     hydra_split(screen, tab_dep, tar.line, tar_idxs)
                                     unmark(tab_dep)
+
+                                    tnode = find_tar(atab.ttree, tar.line)
+                                    if tnode.special:
+                                        for n in range(n2, len(tlist2)):
+                                            tnode = find_tar(atab.ttree, n)
+                                            tnode.special = True
 
                                     if atab.hydras:
                                         atab.hydra = atab.hydras.pop() # get new hydra
@@ -3003,8 +3057,77 @@ def automate(screen, tl, ttree, interface='curses'):
                 break
 
             if progress:
-                continue
-                
+                continue  
+
+            # 4) See if there are any implications with a conjunction on the left
+            for impl in impls:
+                line = impl.line
+                stmt = tlist1[line]
+                dirty1 = []
+                dirty2 = []
+                dep = atab.tl.tlist1.dependency(line)
+                n1 = len(tlist1)
+                n2 = len(tlist2)
+                if len(dep) == 1:
+                    depi = dep[0]
+                    append_tree(tlist2, complement_tree(stmt), dirty2)
+                    add_descendant(ttree, depi, len(tlist2) - 1, line)
+
+                    depth = impl.depth
+
+                    update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth, False)
+                    dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree, hyp_split=True)
+                    update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth, False)
+
+                    tnode = find_tar(atab.ttree, n2)
+                    tnode.special = True
+
+                    # negate second target and place in hypotheses
+                    if isinstance(tlist2[n2], AndNode):
+                        dirty1 = []
+                        dirty2 = []
+                        append_tree(tlist1, complement_tree(tlist2[n2].left), dirty1)
+                        atab.tl.tlist1.dep[n1] = tar_complement(atab.ttree, n2)
+                        replace_tree(tlist2, n2, tlist2[n2].right, dirty2)
+
+                        update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth, False)
+                        dirty1, dirty2 = autocleanup(screen, atab.tl, atab.ttree)
+                        update_autotab(screen, atab, atab, dirty1, dirty2, interface, depth, False)
+
+                    if True:
+                        progress = True
+
+                        mark_hyp_inactive(atab, impl)
+                        unmark(atab)
+
+                        tar_idxs = hydra_append_new(screen, atab, None, n2) # split the current hydra and reinsert
+                        atab.hydras.append(atab.hydra)
+                        hydra_split(screen, atab, -1, tar_idxs)
+                        unmark(atab)
+
+                        if atab.hydras:
+                            atab.hydra = atab.hydras.pop() # get new hydra
+
+                        done, partial = check_done(screen, atab, interface)
+                        if partial:
+                            old_bt_list = [] # reset backtracking 
+                        
+                        screen.debug("Hypothesis split")
+
+                    if autotab_remove_deadnodes(screen, atab, heads, impls, interface):
+                        library.close()
+                        automation_limit += automation_increment
+                        return False, atab.tl
+    
+                    if done or progress:
+                        break
+
+            if done:
+                break
+
+            if progress:
+                continue  
+
             # 11) Hypothesis expansion
 
             for head in heads:
