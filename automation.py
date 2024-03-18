@@ -2088,6 +2088,9 @@ def fixup_hyp_tabs(atab, line, new_tab):
 
 def automate(screen, tl, ttree, interface='curses'):
     global automation_limit
+    global tab_count
+
+    tab_count = 0
 
     tlist1 = tl.tlist1.data
     tlist2 = tl.tlist2.data
